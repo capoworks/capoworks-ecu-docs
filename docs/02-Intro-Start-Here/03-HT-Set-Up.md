@@ -1,18 +1,32 @@
 
 # How to first setup a board for use
 
-Congratulations. You got yourself FOME capable hardware. Here are some ideal next steps you can follow in order to prepare for your First Start.
+This guide covers preparing compatible hardware for a first start with Capoworks ECU.
 
 <!-- import assets  -->
 import TunerStudio1 from './Set-up-images/TunerStudio.png'
 
-## Download and install the latest stable firmware release
+## Get firmware for your board
 
-This ensures you get the most recent features and bug fixes. The FOME console comes bundled with each firmware release. In the following links you detailed instructions on [how to upate the firmware](../HT-Updating-The-Firmware). And In-depth information about the [FOME Console](../../Software/FOME-Console)
+There is currently no published stable Capoworks firmware release on GitHub. Obtain an artifact for
+your exact board target from the
+[Capoworks firmware repository's Actions](https://github.com/capoworks/capoworks-ecu/actions) when
+one is available, or build the firmware from source using the repository instructions. Check the
+repository's [releases](https://github.com/capoworks/capoworks-ecu/releases) page for any
+subsequently published stable release. Use the firmware binary, board target, and `.ini` definition
+that match your exact hardware. Do not assume that an upstream or differently branded binary is
+compatible.
 
-:::tip Note 
+Some builds may also supply ECU Console. If your build includes it, use the console supplied with
+that matching build. See [how to update the firmware](../HT-Updating-The-Firmware) and the [ECU
+Console reference](../../Software/FOME-Console).
 
-As per the [FOME Statement](https://www.fome.tech/announcements), we want to make clear that FOME is currently a fork of rusEFI, and that present boards are BOTH rusEFI and FOME compatible. As time goes on, and more changes are made, this compatibility may change.
+:::tip Board and definition compatibility
+
+Compatibility varies by board design and firmware release. Verify the target in the Capoworks
+release notes and use the matching TunerStudio `.ini` definition from the same bundle. Board design
+sources and producer credits are listed in the hardware pages and on [Credits and
+Sources](/credits-and-sources).
 
 :::
 
@@ -20,7 +34,7 @@ As per the [FOME Statement](https://www.fome.tech/announcements), we want to mak
 
 Make sure that you have downloaded the latest version of TunerStudio (TS) from [EFI Analytic's site](https://www.tunerstudio.com/index.php/tuner-studio). Although the base version of the software is free, it is strongly recommended to buy a license for the additional features including auto-tuning and the ability to customize the default dashboard.
 
-Begin the setup by plugging the ECU into the laptop and opening TS. Create a new project and click _detect_ under firmware. Select the COM port corresponding to the FOME ECU in the device list. If the COM port cannot be found or the firmware cannot be automatically detected, click _Other/Browse_ and load the .ini file for the ECU which can either be downloaded or found within the ZIP file on the USB device which appears when the ECU is plugged into the computer.
+Begin the setup by plugging the ECU into the laptop and opening TS. Create a new project and click _detect_ under firmware. Select the COM port corresponding to the Capoworks ECU in the device list. If the COM port cannot be found or the firmware cannot be automatically detected, click _Other/Browse_ and load the matching `.ini` file from the same Capoworks firmware bundle.
 
 ## Start Configurating/Modifying your TunerStudio Project
 

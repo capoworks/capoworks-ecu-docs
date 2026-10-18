@@ -22,7 +22,7 @@ The pump current required to hold the Nernst voltage at 0.45V is directly propor
 
 ## Internal vs External WBO Controller
 
-Most FOME ECUs have in internal wideband controller meaning they only need a wideband sensor plugged in (such as the Bosch LSU 4.9 sensor). There is also the option still of connecting an external wideband sensor to the ECU using an analog output, like the AEM 30-4110 and similar products or over CAN like the AEM X-Series wideband controller/gauge.
+Many supported boards have an internal wideband controller, meaning they only need a wideband sensor plugged in (such as the Bosch LSU 4.9 sensor). There is also the option of connecting an external wideband sensor to the ECU using an analog output, like the AEM 30-4110 and similar products, or over CAN like the AEM X-Series wideband controller/gauge.
 
 ## Internal WBO Coding Documentation
 

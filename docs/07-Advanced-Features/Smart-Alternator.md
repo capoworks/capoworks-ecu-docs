@@ -1,6 +1,6 @@
 # Smart Alternator Control  
 
-FOME ECUs have the ability to control the alternator voltage which is useful for some vehicles like the NB2 Miata where the voltage is controlled through the ECU rather than directly on the alternator (like the NA Miata).
+Capoworks ECU can control the alternator voltage, which is useful for some vehicles like the NB2 Miata where the voltage is controlled through the ECU rather than directly on the alternator (like the NA Miata).
 
 ## How to Tune the Alternator Control
 

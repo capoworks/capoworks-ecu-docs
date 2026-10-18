@@ -8,7 +8,7 @@
 
 ---
 
-Older vehicles will more commonly have a separate ignition module, another name for an "igniter." Strictly speaking of COP or "Coil on plug" applications, examples of this are later 2JZ-powered toyota cars, RB26-powered cars, and earlier 1.8T-powered VAG cars. BMW always has and still uses dumb coils, but instead of having a separate external module for controlling the ignition coils, the IGBTs are internal to the engine computers. Depending on the FOME-powered ECU you have, you ***may*** have IGBTs included for controlling dumb coils. Make sure to check documentation for your particular ECU.
+Older vehicles will more commonly have a separate ignition module, another name for an "igniter." Strictly speaking of COP or "Coil on plug" applications, examples of this are later 2JZ-powered toyota cars, RB26-powered cars, and earlier 1.8T-powered VAG cars. BMW always has and still uses dumb coils, but instead of having a separate external module for controlling the ignition coils, the IGBTs are internal to the engine computers. Depending on the board running Capoworks ECU, you ***may*** have IGBTs included for controlling dumb coils. Make sure to check documentation for your particular ECU.
 
 ---
 

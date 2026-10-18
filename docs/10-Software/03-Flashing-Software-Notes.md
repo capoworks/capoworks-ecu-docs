@@ -12,10 +12,14 @@ manually erase the flash memory before flashing; i.e. perform a full/mass erase 
 
 :::
 
-While the FOME console is the recommended and officially supported way to update FOME firmware on supported boards,
-other mechanisms exist to flash firmware to board supporting FOME.  These tools are also useful in odd situations, like
-the event of a firmware update/flash failure, or some other firmware corruption issue, such that FOME console nor
+While ECU Console is the recommended and officially supported way to update Capoworks firmware on supported boards,
+other mechanisms exist to flash firmware to a compatible board. These tools are also useful in unusual situations, such as
+the event of a firmware update/flash failure, or some other firmware corruption issue, where neither ECU Console nor
 TunerStudio recognize the ECU when connected.
+
+Capoworks bundles may retain inherited artifact names such as `fome.bin` and `fome.dfu`. Use the
+actual filenames supplied in the active release or CI artifact for your board target. The inherited
+names do not imply that an upstream binary is compatible.
 
 For the ECU, you will need to access buttons or pins on the main board to force the processor into bootloader/DFU mode.
 Some boards use a momentary button, likely near to the reset button, to force this mode during power-up.  Others might
@@ -33,8 +37,9 @@ In STM32CubeProgrammer, select the *USB* tab on the right and refresh the port i
 detected. Click *Connect* to connect the ECU to the programmer. Click the *Read* button to read the device memory and to
 validate that the ECU is connected.
 
-Once validated, choose the *Open File* button and load the file marked *fome.bin* within the firmware bundle downloaded
-earlier. This is a binary file containing the ECU firmware. Now choose the *Download* button to write this firmware to
+Once validated, choose the *Open File* button and load the firmware binary from the matching
+Capoworks bundle downloaded earlier; inherited bundles may use the name *fome.bin*. This is a
+binary file containing the ECU firmware. Now choose the *Download* button to write this firmware to
 the ECU. Give it up to several minutes to download and once the status console confirms successful download, disconnect
 from the programmer then unplug the ECU and plug it back in. The ECU should now connect to the computer and TS normally
 again.
@@ -60,11 +65,11 @@ To erase a device, use the following invocation:
 dfu-util -v -d 0483:df11 -a 0 -s :mass-erase:force
 ```
 
-## Troubleshooting updates prior to release FOME 2312
+## Troubleshooting updates prior to the inherited 2312 release
 
 If an error occurs during the DFU update for release 2312 a manual driver update may be required. This may be the case if the ECU is not yet using the OpenBLT bootloader implementation.
 
-When FOME console prompts with a "ConfigManagerErrorCode=28", proceed by opening Device Manager. Look for the device named "STM32 BOOTLOADER"; it may be under "Other Devices".
+When ECU Console prompts with a "ConfigManagerErrorCode=28", proceed by opening Device Manager. Look for the device named "STM32 BOOTLOADER"; it may be under "Other Devices".
 
 ![image](Flashing-Notes/stm32drivererror.png)
 
@@ -74,13 +79,13 @@ Right click the STM32 BOOTLOADER device and select "Update driver" from the cont
 
 Select "Browse my computer for drivers" and proceed to browse and have Windows update the drivers for STM32 BOOTLOADER by directing it to "../drivers/silent_st_drivers/" directory, which is extracted from the ".../drivers/silent_st_drivers2.exe" archive.
 
-Then, unplug the ECU and retry the firmware udpate from FOME console.
+Then, unplug the ECU and retry the firmware update from ECU Console.
 
 Other DFU update errors may occur, such as "Data mismatch found at address" or "looks like ECU didn't reboot to OpenBLT."
 
 ![image](Flashing-Notes/datamismatcherror.png)
 
-Again, unplug the ECU and retry the firmware update. At this point, FOME console should have detected the ECU as "OpenBLT Bootloader". Proceed by updating the firmware via "Manual OpenBLT Update."
+Again, unplug the ECU and retry the firmware update. At this point, ECU Console should have detected the ECU as "OpenBLT Bootloader". Proceed by updating the firmware via "Manual OpenBLT Update."
 
 ![image](Flashing-Notes/openblt.png)
 

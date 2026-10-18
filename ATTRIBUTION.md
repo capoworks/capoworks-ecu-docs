@@ -4,9 +4,13 @@ Capoworks ECU Documentation is an independent fork of the
 [FOME Wiki](https://github.com/FOME-Tech/wiki), originally published at
 [wiki.fome.tech](https://wiki.fome.tech).
 
-Capoworks is not affiliated with, sponsored by, or endorsed by the FOME project, its maintainers, or
-its contributors. References to FOME, its firmware, or its community are retained for provenance and
-to direct readers to authoritative upstream material.
+The inherited documentation also reflects concepts, designs, and software developed by the
+[rusEFI project](https://github.com/rusefi/rusefi). Its contributors and upstream license notices
+remain part of the provenance of this material.
+
+Capoworks is not affiliated with, sponsored by, or endorsed by the FOME or rusEFI projects, their
+maintainers, or their contributors. References to those projects, their firmware, or their
+communities are retained for provenance and to direct readers to authoritative upstream material.
 
 ## Authors and history
 
@@ -25,5 +29,8 @@ not a substitute for the complete Git history.
 
 Original FOME Wiki material is licensed under the
 [Creative Commons Attribution-ShareAlike 4.0 International License](LICENSE) (CC BY-SA 4.0).
-Adaptations and additions in this fork are distributed under the same license. If a file carries a
-separate notice, that notice takes precedence for that file.
+Adaptations and additions in the Capoworks ECU documentation are distributed under the same
+license. Copyright, authorship, archived markings, and any separate upstream license notice take
+precedence for the material to which they apply. See [Credits and
+Sources](docs/99-Useful-Information/Credits-and-Sources.md) for the upstream projects, creator and
+license notices, and the treatment of inherited artifacts.

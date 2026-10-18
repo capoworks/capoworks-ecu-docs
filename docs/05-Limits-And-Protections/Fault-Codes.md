@@ -1,6 +1,6 @@
 # Fault Codes
 
-FOME reports problems as OBD-II style fault codes (DTCs). Most of them are standard `P0xxx`/`P2xxx` codes with their usual meanings, so a code you see here means roughly what it would mean on a factory ECU.
+Capoworks ECU reports problems as OBD-II style fault codes (DTCs). Most of them are standard `P0xxx`/`P2xxx` codes with their usual meanings, so a code you see here means roughly what it would mean on a factory ECU.
 
 ## Reading a code
 
@@ -19,7 +19,7 @@ The `Last error` and `Error#1`–`Error#8` gauges show the eight most recent fau
 
 The tables below list both forms, so you can just look up the number you see.
 
-The FOME console also prints a plain-English line when the fault happens, for example `WARNING: Sensor fault: CLT input too low`. That's usually faster to read than the code.
+ECU Console also prints a plain-English line when the fault happens, for example `WARNING: Sensor fault: CLT input too low`. That's usually faster to read than the code.
 
 ### On the check engine light
 
@@ -27,7 +27,7 @@ If your board has a MIL output configured, it blinks stored codes out as **hexad
 
 ### Over CAN
 
-FOME answers OBD-II service `0x03` (read stored DTCs) on the CAN bus, so a generic scan tool will read the codes normally. Pending and permanent DTCs (services `0x07` and `0x0A`) are not supported.
+Capoworks ECU answers OBD-II service `0x03` (read stored DTCs) on the CAN bus, so a generic scan tool will read the codes normally. Pending and permanent DTCs (services `0x07` and `0x0A`) are not supported.
 
 ## Clearing codes
 
@@ -154,9 +154,9 @@ These require a board with smart driver chips capable of reporting output diagno
 | P0652 | 1618 | Second 5V sensor supply low | As P0642, for boards with a second sensor supply (Proteus) |
 | P2900 | 10496 | Wideband controller 1 fault | The controller is reporting a fault of its own. The console message names it — usually sensor heater, sensor open, or overheating |
 | P2901 | 10497 | Wideband controller 2 fault | As P2900 |
-| P2902 | 10498 | Wideband controller firmware too old | Update the wideband controller's firmware to match this FOME build |
+| P2902 | 10498 | Wideband controller firmware too old | Update the wideband controller's firmware to match this Capoworks ECU build |
 
-P2900–P2902 are FOME-specific codes, not standard OBD codes — a generic scan tool will not have a description for them.
+P2900–P2902 are Capoworks ECU-specific codes, not standard OBD codes — a generic scan tool will not have a description for them.
 
 ## Configuration errors
 
@@ -173,10 +173,11 @@ These are *fatal* — the ECU refuses to run the engine and TunerStudio shows a 
 
 ## Internal codes (6000 and above)
 
-Codes numbered 6000 and up are FOME internal diagnostics, not OBD codes. They aren't sent over CAN and they're rarely actionable — they indicate either a firmware bug or a configuration so far out of range that the firmware couldn't cope.
+Codes numbered 6000 and up are internal Capoworks ECU diagnostics, not OBD codes. They aren't sent over CAN and they're rarely actionable — they indicate either a firmware bug or a configuration so far out of range that the firmware couldn't cope.
 
-If you see one, the TunerStudio console message next to it is the useful part. Report the code together with that message and your tune on the [Discord](https://discord.gg/GXPEbcM) `#firmware`
-channel.
+If you see one, the TunerStudio console message next to it is the useful part. Follow the support
+instructions in the [Capoworks firmware repository](https://github.com/capoworks/capoworks-ecu), and
+report the code together with that message, your tune, board target, and exact Capoworks release.
 
 The full list is in
-[`firmware/controllers/algo/obd_error_codes.h`](https://github.com/FOME-Tech/fome-fw/blob/master/firmware/controllers/algo/obd_error_codes.h).
+[`firmware/controllers/algo/obd_error_codes.h`](https://github.com/capoworks/capoworks-ecu/blob/master/firmware/controllers/algo/obd_error_codes.h).

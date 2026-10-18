@@ -1,4 +1,4 @@
-# FOME Fuel and Ignition Cut Codes ("Clear Reason")
+# Capoworks ECU Fuel and Ignition Cut Codes ("Clear Reason")
 
 The log channels `Fuel: Cut Code` and `Ign: Cut Code` indicate why fuel or spark is being cut using one of the codes below. These are not necessarily errors, but just indicate why the particular cut was performed.
 
@@ -19,4 +19,4 @@ The log channels `Fuel: Cut Code` and `Ign: Cut Code` indicate why fuel or spark
 |12|`EnginePhase`|Engine Sync|Disabled due to lacking engine-cam sync to avoid non-sync spark on engines with symmetrical crank (NB2, Nissan VQ/MR) or odd firing order (VTwin Harley, Viper)|
 |14|`IgnitionOff`|Ignition Off|The ignition switch is turned off|
 |15|`Lua`|Lua requested|A Lua script requested a cut|
-|17|`LambdaProtection`|Lambda protect|Lambda protection cut to protect the engine. Lambda was leaner than the configured allowed for the current operating condition.| 
+|17|`LambdaProtection`|Lambda protect|Lambda protection cut to protect the engine. Lambda was leaner than the configured allowed for the current operating condition.|

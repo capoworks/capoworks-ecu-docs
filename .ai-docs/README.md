@@ -67,8 +67,11 @@ contain the bot change yet.
   concurrent or human update makes the push fail instead of being overwritten.
 
 The fixed commits use identity `ai-docs-sync[bot]`. The checkout does not persist
-credentials. Only the finalize step receives the write-capable `GITHUB_TOKEN`;
-only the generation step receives `DEEPSEEK_API_KEY`.
+credentials. Both prepare and finalize receive the same job-scoped `GITHUB_TOKEN`
+with `contents`, pull-request, and Actions write permissions; prepare uses it only
+for read-only API operations, while finalize writes and opens the pull request.
+Generation receives only `DEEPSEEK_API_KEY` and no `GITHUB_TOKEN`; separate build
+workflows have `contents: read` and no model secret.
 
 ## Validation and trust boundary
 
@@ -100,12 +103,14 @@ the API's default thinking mode.
 
 ## Preview dispatch limitation
 
-GitHub does not start pull-request workflows from a PR opened with
-`GITHUB_TOKEN`. After opening the PR, the workflow explicitly dispatches
+GitHub can suppress or require manual approval of pull-request workflow runs
+triggered by a PR opened with `GITHUB_TOKEN`, so do not rely on them starting
+automatically. After opening the PR, the workflow explicitly dispatches
 `build-preview.yml` on `master` with the exact bot commit SHA in an input named
 `ref`. The read-only preview workflow must honor that manual `ref`. This
 supplemental dispatch does not create, attach, or satisfy required pull-request
-status checks. Branch protection must not assume otherwise.
+status checks; approving PR checks is a separate action. Branch protection must
+not assume otherwise.
 
 The integrated preview workflow validates that `inputs.ref` is a full commit
 SHA and checks out that exact revision. If PR creation succeeds but the

@@ -10,11 +10,11 @@ Hard cuts apply when an engine reaches the __RPM hard limit__. In most cases, it
 
 ### Fuel cut  
 
-If __Cut fuel on RPM limit__ is set to __yes__, FOME will stop injecting fuel once the engine reaches the __RPM hard limit__. The engine speed must drop below the __RPM hard limit__ by the number of RPM specified in __Hard limit hysteresis__ before fuel injection is resumed.
+If __Cut fuel on RPM limit__ is set to __yes__, Capoworks ECU will stop injecting fuel once the engine reaches the __RPM hard limit__. The engine speed must drop below the __RPM hard limit__ by the number of RPM specified in __Hard limit hysteresis__ before fuel injection is resumed.
 
 ### Spark cut  
 
-If __Cut spark on RPM limit__ is set to __yes__, FOME will stop firing the ignition coil(s) once the engine reaches the __RPM hard limit__. The engine speed must drop below the __RPM hard limit__ by the number of RPM specified in __Hard limit hysteresis__ before ignition is resumed.
+If __Cut spark on RPM limit__ is set to __yes__, Capoworks ECU will stop firing the ignition coil(s) once the engine reaches the __RPM hard limit__. The engine speed must drop below the __RPM hard limit__ by the number of RPM specified in __Hard limit hysteresis__ before ignition is resumed.
 
 :::danger  
 

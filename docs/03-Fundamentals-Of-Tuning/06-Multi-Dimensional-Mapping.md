@@ -2,16 +2,16 @@
 
 ## This page is under construction
 
-Multi-dimensional mapping is a new feature that has been recently introduced to FOME.  
+Multi-dimensional mapping is a Capoworks ECU feature.
 It is a method of overlaying multiple compensation maps over the simple Load vs RPM ignition and fuel table.  
 The term Multi-dimensional comes from the fact that each compensation table adds an extra dimension to the basic 3d map.  
-In FOME you are currently able to activate up to 4 additional compensation maps, each with it's own configurable blend curve.  
+In Capoworks ECU you are currently able to activate up to 4 additional compensation maps, each with its own configurable blend curve.
 
 The purpose of these tables is to be able to configure an additional input that changes the fuelling or timing, for instance to compensate for things like Ethanol content, Different fuel octane rating or simple variable valve timing.  
 
 ## How it works
 
-FOME allows the following inputs to be used as the input for each of the compensation maps:  
+Capoworks ECU allows the following inputs to be used as the input for each of the compensation maps:
 TPS,  
 MAP,  
 CLT,  

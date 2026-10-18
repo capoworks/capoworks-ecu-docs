@@ -1,6 +1,8 @@
 # Atlas
 
-ECU brain module for the open source FOME ECU firmware.
+Atlas is an ECU brain module documented for use with Capoworks ECU distributions and other
+compatible open-source ECU firmware. Confirm the board and firmware target before flashing.
+
 ![Atlas Render](../Atlas/atlas_render.webp)
 
 ## System
@@ -29,4 +31,4 @@ ECU brain module for the open source FOME ECU firmware.
 
 ## Where to Buy
 
-[🇺🇲 HappyCactusGarage](https://happycactusgarage.com/products/fome-atlas-ecu-brain-module)
+Where to buy / seller: [🇺🇲 HappyCactusGarage](https://happycactusgarage.com/products/fome-atlas-ecu-brain-module)

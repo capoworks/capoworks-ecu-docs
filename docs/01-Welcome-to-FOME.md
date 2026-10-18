@@ -4,34 +4,29 @@ slug: /
 # (also numbered prefixes are NOT to be used in links, because Docusaurus 2.4.1 matches them automatically )
 ---
 
-# Welcome to Capoworks ECU documentation
+# Welcome to Capoworks ECU Documentation
 
-:::note Independent documentation fork
+Capoworks ECU documentation is a practical guide to selecting compatible hardware, setting up an
+ECU, configuring and tuning an engine, and using the Capoworks firmware distribution. It brings
+together configuration reference material, vehicle-specific guidance, and explanations of the
+underlying engine-management concepts.
 
-This site is an independently maintained documentation fork for Capoworks ECU. Its starting content
-comes from the [original FOME Wiki](https://wiki.fome.tech), but Capoworks is not affiliated with or
-endorsed by the FOME project.
+If you are new to the platform, start with the [Capoworks ECU overview](Intro-Start-Here/Overview)
+and then follow the setup and safe-first-start guides in the order shown. Before flashing firmware,
+confirm that the board, firmware binary, and TunerStudio `.ini` definition all come from the same
+Capoworks release.
 
-The inherited pages have not all been fully audited for Capoworks-specific behavior, firmware
-compatibility, hardware, or other fork changes. Until that review is complete, treat upstream
-instructions as source material rather than a Capoworks guarantee. The
-[Capoworks firmware repository](https://github.com/capoworks/capoworks-ecu) is the source for
-Capoworks firmware. Some inherited pages may still link to upstream FOME firmware releases, and
-firmware `.ini` help links require a separate audit and may need to be updated for Capoworks.
-
-:::
-
-FOME is a new project intending to deliver a user focused high feature ECU with open source hardware options and open firmware that give control back to the user, owner and driver.
-
-As there are many complicated topics to cover we recommend that you start with the topics in the "intro" section to the left.
-The first page to view should probably be [the FOME Overview page](Intro-Start-Here/Overview).
+This documentation is based on project and community source material. Always verify wiring, sensor
+compatibility, and engine settings against the documentation for your exact board and current
+firmware before running an engine. Source and attribution details are on the
+[Credits and Sources](/credits-and-sources) page.
 
 ## Index
 
 ### Intro - Start here
 
-- [FOME Overview](Intro-Start-Here/Overview)
-- [Hardware Running FOME](Intro-Start-Here/Hardware-Running-FOME)
+- [Capoworks ECU Overview](Intro-Start-Here/Overview)
+- [Hardware for Capoworks ECU](Intro-Start-Here/Hardware-Running-FOME)
 - [How to setup a board for first use](Intro-Start-Here/HT-Set-Up)
 - [Updating the firmware](Intro-Start-Here/HT-Updating-The-Firmware)
 - [Performing a safe first start](Intro-Start-Here/HT-First-Start-Safely)
@@ -42,7 +37,7 @@ The first page to view should probably be [the FOME Overview page](Intro-Start-H
 
 ---
 
-### Fundamentals of FOME tuning
+### Fundamentals of Capoworks ECU tuning
 
 - [Air Fuel Ratio](Fundamentals-Of-Tuning/AFR)
 - [Acceleration Compensation](Fundamentals-Of-Tuning/Acceleration-Compensation)

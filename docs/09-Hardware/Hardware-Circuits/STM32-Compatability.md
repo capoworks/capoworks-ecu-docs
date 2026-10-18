@@ -1,1 +1,1 @@
-# STM32 Compatibility with FOME
+# STM32 Compatibility with Capoworks ECU

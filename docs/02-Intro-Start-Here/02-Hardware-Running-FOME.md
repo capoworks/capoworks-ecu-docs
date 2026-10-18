@@ -1,4 +1,4 @@
-# Hardware Running FOME
+# Hardware for Capoworks ECU
 
 import fomePNP from './Hardware-Running-FOME-imgs/Miata-FOME.png';
 import universal112 from '../09-Hardware/04-Base-Boards/universal112.webp'
@@ -9,7 +9,7 @@ Most recent offerings consist of a two-part system. A brain board that gets atta
 ## Brain Boards
 
 This is where the real action happens. Designed to be consistent across different base board applications to simplify design, ensure repeatability, and reduce cost.
-    - [Atlas](/Hardware/Brain-Boards/Atlas/FOME-Atlas) Formerly Polygonus
+    - [Atlas](/Hardware/Brain-Boards/Atlas/FOME-Atlas) (formerly Polygonus)
 
 ## Base Boards
 
@@ -17,18 +17,18 @@ This is where brain boards get attached to.
 
 ### Wire-In
 
-<img src={universal112} alt="fomepnp" style={{width:'100%', height:'auto', aspectRatio: '18/9', objectFit:'cover', objectPosition:'0 45%'}} />
+<img src={universal112} alt="Universal 112 base board" style={{width:'100%', height:'auto', aspectRatio: '18/9', objectFit:'cover', objectPosition:'0 45%'}} />
 
 This is Ideal for Custom Wiring Harnesses, complex engine swaps,  or peope willing to cut and modify their OEM harnesses to use another connector.
 
-- FOME Official:
+- Compatible hardware designs:
   - [Universal 112](/Hardware/Base-Boards/Polygonus-Universal-112/Universal-112)
 
 ### Plug-And-Play
 
-<img src={fomePNP} alt="fomepnp" style={{width:'100%', height:'auto', aspectRatio: '14/9', objectFit:'cover', objectPosition:'0 45%'}} />
+<img src={fomePNP} alt="Archived upstream PnP example" style={{width:'100%', height:'auto', aspectRatio: '14/9', objectFit:'cover', objectPosition:'0 45%'}} />
 
-[FOMEPnP](Hardware-Running-FOME-imgs/Miata-FOME.png)
+[Archived upstream PnP example](Hardware-Running-FOME-imgs/Miata-FOME.png)
 _Offered and Supported by Third Parties._  Often Fully assembled solutions unless stated otherwise. Either Brain + Baseboard or Custom All-in-One boards with OEM connector for several makes and models. Some of them include housing/enclosure. And others are meant to replace the OEM ECU PCB inside of the original ECU case.
 
 - Mazda:
@@ -47,7 +47,10 @@ _Offered and Supported by Third Parties._  Often Fully assembled solutions unles
 
 ## RusEFI
 
-Some older pre-fork RusEFI ECUs are compatible with FOME Firmware: _See [GitHub Releases](https://github.com/FOME-Tech/fome-fw/releases)_
+Some older pre-fork rusEFI ECUs may be compatible with a matching Capoworks firmware build. Confirm
+the board target and compatible definition in the [Capoworks firmware release
+notes](https://github.com/capoworks/capoworks-ecu/releases), and use the firmware and `.ini` from
+that same bundle.
 
 - Proteus (F4,F7,H7 Microcontroller)
 - MicroRusEFI (F4,F7)

@@ -48,7 +48,7 @@ __Summary of knock detection and protection:__
 7. Set up the Max Knock Retard table to define maximum allowable ignition timing retardation.
 
 :::warning
-The following steps assumes your ECU is running the latest release of FOME (2312)
+The following steps assume your ECU is running a compatible Capoworks firmware release.
 :::
 
 1. __Enable the knock sensor__, and calculate the estimated knock filter frequency (kHz). For now, configure the first setting “cylinder bore” as 0.00mm.

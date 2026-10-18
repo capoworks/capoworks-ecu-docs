@@ -6,16 +6,16 @@ description: Use Lua to extend and customize firmware behavior
 
 ## Introduction
 
-FOME extends and customizes firmware functionality and behavior through an embedded [Lua
+Capoworks ECU extends and customizes firmware functionality and behavior through an embedded [Lua
 interpreter](https://www.lua.org/docs.html). Sensors, signals, and engine controller state are exposed for reading
 and manipulation, allowing the user to tailor a control strategy to fit a specific application's needs.
 
-This page documents the most up-to-date version of FOME's Lua scripting support: not all interfaces are supported in
+This page documents the current Capoworks ECU Lua scripting support: not all interfaces are supported in
 earlier versions.
 
 ## Overview
 
-FOME exposes a Lua interface comprising a number of functions and types for inspecting and manipulating firmware
+Capoworks ECU exposes a Lua interface comprising a number of functions and types for inspecting and manipulating firmware
 state and configuration. At a high level, the interface is organized into these categories:
 
 - A small utility library, including timers, PIDs, and user-defined lookups; see the [Utilities](#utilities) reference.
@@ -25,13 +25,14 @@ state and configuration. At a high level, the interface is organized into these 
 - CAN bus communication; see the [CAN Bus](#can-bus) reference.
 - Subsystem-specific hooks for [Launch Control](#launch-control), [Boost Control](#boost-control), [Crankshaft Position Input](#crankshaft-position-input), and [Vehicle Speed](#vehicle-speed).
 
-For examples, see the files in FOME's [`lua/examples/` directory](https://github.com/FOME-Tech/fome-fw/tree/master/firmware/controllers/lua/examples/).
+For examples, see the files in the Capoworks firmware [`lua/examples/`
+directory](https://github.com/capoworks/capoworks-ecu/tree/master/firmware/controllers/lua/examples/).
 
 For a basic introduction to the Lua language itself, see the [Lua reference manual](https://www.lua.org/manual/5.4/).
 
 ## Conventions
 
-- The Lua interpreter will trigger an error if there is a mistake in the program: check the FOME Console to see errors and script output.
+- The Lua interpreter will trigger an error if there is a mistake in the program: check ECU Console to see errors and script output.
 - Index conventions vary by function. Most `index` parameters (e.g. PWM channels, aux analog/digital, digital I/O) are 0-based, but tables, curves, Lua gauges, persistent values, and CAN bus channels are 1-based, matching their numbering in TunerStudio. Each function's documentation calls out the correct range.
 
 ## Writing Your Script
@@ -41,24 +42,24 @@ The entire Lua script is read and validated at startup, then a global script fun
 Here is a simple script to illustrate this behavior:
 
 ```lua
-print('Hello FOME via Lua!')
+print('Hello Capoworks ECU via Lua!')
 
 function onTick()
-    print('FOME called onTick()')
+    print('Capoworks ECU called onTick()')
 end
 ```
 
 ## User-Defined Lookup Tables and Curves
 
-FOME provides for user-defined lookup tables and curves for use with Lua scripting. These tables and curves are set in
-the FOME configuration (via TunerStudio) and lookups are interpolated along their definition.
+Capoworks ECU provides for user-defined lookup tables and curves for use with Lua scripting. These tables and curves are set in
+the Capoworks ECU configuration (via TunerStudio) and lookups are interpolated along their definition.
 
 The tables and curves have user-definable names up to sixteen characters long. Their names and definitions are
 configurable in the *Advanced > Lua Calibrations* menu in TunerStudio.
 
 ### 3D Tables
 
-FOME provides four user-definable three-dimensional tables for use with Lua scripting. The first table affords the most
+Capoworks ECU provides four user-definable three-dimensional tables for use with Lua scripting. The first table affords the most
 precision, defined by single-precision floating-point values, while the remaining three tables are defined by 8-bit
 integers; all tables are eight by eight in dimension, defined by 16-bit integer coordinates.
 
@@ -71,7 +72,7 @@ Two functions are provided to interact with the user-defined tables:
 
 ### 2D Curves
 
-FOME provides six user-definable two-dimensional curves for use with Lua scripting. The first two curves afford the
+Capoworks ECU provides six user-definable two-dimensional curves for use with Lua scripting. The first two curves afford the
 most accuracy, defined by sixteen single-precision floating-point coordinates, while the remaining four curves are
 defined by eight single-precision floating-point coordinates.
 
@@ -84,7 +85,7 @@ Two functions are provided to interact with the user-defined curves:
 
 ## User-Defined Settings
 
-FOME provides eight user-definable single-precision floating-point settings for use with Lua scripting.
+Capoworks ECU provides eight user-definable single-precision floating-point settings for use with Lua scripting.
 
 ![lua user-defined settings](./Lua-Scripting/user-defined-settings.png)
 
@@ -94,7 +95,7 @@ One function is provided to interact with the user-defined settings:
 
 ## Persistent Values
 
-FOME provides 64 numeric persistent values for use with Lua scripting. Persistent values are stored in MCU backup
+Capoworks ECU provides 64 numeric persistent values for use with Lua scripting. Persistent values are stored in MCU backup
 SRAM, which is preserved across ignition/power cycles for as long as the ECU has any source of power (including the
 backup battery on supported boards). They are useful for retaining state between runs, e.g. trip counters or learned
 values.
@@ -110,7 +111,7 @@ a Lua error.
 ### Utilities
 
 :::info
-These functions are included in all builds of FOME unless otherwise noted.
+These functions are included in all Capoworks ECU builds unless otherwise noted.
 :::
 
 <!--
@@ -122,7 +123,7 @@ Currently not implemented.
 #### `mcu_standby()`
 
 :::warning
-`mcu_standby` is only available in FOME builds targeting STM32 F4 and STM32 F7 MCUs.
+`mcu_standby` is only available in Capoworks ECU builds targeting STM32 F4 and STM32 F7 MCUs.
 :::
 
 Causes the firmware to place the MCU into a low current consumption standby mode.
@@ -140,7 +141,7 @@ Print a line of text to the ECU's log.
 
 #### `setTickRate(frequency)`
 
-Set the frequency at which the firmware passes context to the Lua script. Primarily, this controls how often FOME calls
+Set the frequency at which the firmware passes context to the Lua script. Primarily, this controls how often Capoworks ECU calls
 the script's `onTick` function. Additionally, this affects how often other functions and callbacks of the script, like
 `onCanRx`, are invoked.
 
@@ -340,7 +341,7 @@ Returns the value of an auxiliary digital input sensor (i.e. Lua Digital Aux Inp
 #### `getDigital(index)`
 
 Returns the current value of a digital I/O channel of the specified index.
-Channels are indexed as follows (from [`lua_hooks.cpp`](https://github.com/FOME-Tech/fome-fw/blob/master/firmware/controllers/lua/lua_hooks.cpp#L287)):
+Channels are indexed as follows (from [`lua_hooks.cpp`](https://github.com/capoworks/capoworks-ecu/blob/master/firmware/controllers/lua/lua_hooks.cpp#L287)):
 
 |index|description|
 |-:|:-|
@@ -352,7 +353,7 @@ Channels are indexed as follows (from [`lua_hooks.cpp`](https://github.com/FOME-
 
 |parameter|type|description|
 |-:|--|:-|
-|`index`|integer|The index of the digital channel to return; 0 through 4; see [`lua_hooks.cpp`](https://github.com/FOME-Tech/fome-fw/blob/master/firmware/controllers/lua/lua_hooks.cpp#L287).|
+|`index`|integer|The index of the digital channel to return; 0 through 4; see [`lua_hooks.cpp`](https://github.com/capoworks/capoworks-ecu/blob/master/firmware/controllers/lua/lua_hooks.cpp#L287).|
 
 #### `readPin(name)`
 
@@ -408,7 +409,7 @@ Checks whether a particular sensor is configured (whether it is currently valid 
 
 |parameter|type|description|
 |-:|--|:-|
-|`name`|string|The name of the sensor to check; see [`sensor_type.h`](https://github.com/FOME-Tech/fome-fw/blob/master/firmware/controllers/sensors/sensor_type.h#L18).|
+|`name`|string|The name of the sensor to check; see [`sensor_type.h`](https://github.com/capoworks/capoworks-ecu/blob/master/firmware/controllers/sensors/sensor_type.h#L18).|
 
 #### `getSensor(name)`
 
@@ -416,7 +417,7 @@ Returns the value of a sensor by its name.
 
 |parameter|type|description|
 |-:|--|:-|
-|`name`|string|The name of the sensor to get the value of; see [`sensor_type.h`](https://github.com/FOME-Tech/fome-fw/blob/master/firmware/controllers/sensors/sensor_type.h#L18).|
+|`name`|string|The name of the sensor to get the value of; see [`sensor_type.h`](https://github.com/capoworks/capoworks-ecu/blob/master/firmware/controllers/sensors/sensor_type.h#L18).|
 
 #### `getSensorRaw(name)`
 
@@ -428,7 +429,7 @@ Returns 0 if the sensor doesn't support raw readings, isn't configured/valid, or
 
 |parameter|type|description|
 |-:|--|:-|
-|`name`|string|The name of the sensor to get the value of; see [`sensor_type.h`](https://github.com/FOME-Tech/fome-fw/blob/master/firmware/controllers/sensors/sensor_type.h#L18).|
+|`name`|string|The name of the sensor to get the value of; see [`sensor_type.h`](https://github.com/capoworks/capoworks-ecu/blob/master/firmware/controllers/sensors/sensor_type.h#L18).|
 
 #### `Sensor`
 
@@ -444,7 +445,7 @@ sensor = Sensor.new("OilPressure")
 
 |parameter|type|description|
 |-:|--|:-|
-|`name`|string|The name of the sensor to control; see [`sensor_type.h`](https://github.com/FOME-Tech/fome-fw/blob/master/firmware/controllers/sensors/sensor_type.h#L18).|
+|`name`|string|The name of the sensor to control; see [`sensor_type.h`](https://github.com/capoworks/capoworks-ecu/blob/master/firmware/controllers/sensors/sensor_type.h#L18).|
 
 ##### `Sensor.set(value)`
 
@@ -487,17 +488,17 @@ reconfigured.
 
 #### `getOutput(name)`
 
-Returns the value of an output channel from FOME: allows inspection of internal firmware state. Valid output names
+Returns the value of an output channel from Capoworks ECU, allowing inspection of internal firmware state. Valid output names
 are the live data channels listed in `output_channels.txt` and related generated headers (the same names visible in
 TunerStudio gauges and logs).
 
 |parameter|type|description|
 |-:|--|:-|
-|`name`|string|The name of a FOME output channel to return the value of.|
+|`name`|string|The name of a Capoworks ECU output channel to return the value of.|
 
 #### `getChannel(name)`
 
-Returns the (floating point) value of a "channel" from FOME, given its name.  Valid channel names are (from [`lua_getchannel.cpp`](https://github.com/FOME-Tech/fome-fw/blob/master/firmware/controllers/lua/lua_getchannel.cpp)):
+Returns the (floating point) value of a "channel" from Capoworks ECU, given its name.  Valid channel names are (from [`lua_getchannel.cpp`](https://github.com/capoworks/capoworks-ecu/blob/master/firmware/controllers/lua/lua_getchannel.cpp)):
 
 |name|description|
 |-:|:-|
@@ -508,11 +509,11 @@ Returns the (floating point) value of a "channel" from FOME, given its name.  Va
 
 |parameter|type|description|
 |-:|--|:-|
-|`name`|string|The name of a FOME channel to return the value of.|
+|`name`|string|The name of a Capoworks ECU channel to return the value of.|
 
 #### `setClutchUpState(isUp)`
 
-Use `setClutchUpState` to tell FOME about a CAN-based clutch pedal.
+Use `setClutchUpState` to tell Capoworks ECU about a CAN-based clutch pedal.
 
 |parameter|type|description|
 |-:|--|:-|
@@ -520,7 +521,7 @@ Use `setClutchUpState` to tell FOME about a CAN-based clutch pedal.
 
 #### `setBrakePedalState(isUp)`
 
-Use `setBrakePedalState` to tell FOME about a CAN-based brake pedal.
+Use `setBrakePedalState` to tell Capoworks ECU about a CAN-based brake pedal.
 
 |parameter|type|description|
 |-:|--|:-|
@@ -528,7 +529,7 @@ Use `setBrakePedalState` to tell FOME about a CAN-based brake pedal.
 
 #### `setAcRequestState(isRequested)`
 
-Use `setAcRequestState` to tell FOME about a CAN-based A/C request.
+Use `setAcRequestState` to tell Capoworks ECU about a CAN-based A/C request.
 
 |parameter|type|description|
 |-:|--|:-|
@@ -735,18 +736,18 @@ Returns the current commanded idle valve/ETB position, as a percentage.
 ### CAN Bus
 
 :::info
-These functions are included in builds of FOME that incorporate [CAN](/Advanced-Features/CAN) support.
+These functions are included in Capoworks ECU builds that incorporate [CAN](/Advanced-Features/CAN) support.
 :::
 
-All FOME boards support at least one CAN bus, which has index 1. Some recent boards support multiple CAN buses, with
+All supported boards running Capoworks ECU support at least one CAN bus, which has index 1. Some recent boards support multiple CAN buses, with
 index 2 and higher.
 
 The `canRxAdd` and `canRxAddMask` functions are available in various forms with differing number and types of
 parameters. They are conceptually the same, with `canRxAddMask` providing an extra argument to filter specific frames
-by a bit-mask. Currently, FOME allows for up to 48 different CAN frame reception filters, and will issue an error when
+by a bit-mask. Currently, Capoworks ECU allows for up to 48 different CAN frame reception filters, and will issue an error when
 attempting to add more filters than the limit (*`OBD_PCM_Processor_Fault`: Too many Lua CAN RX filters*).
 
-When not using the forms of `canRxAdd` and `canRxAddMask` with a `callback` argument, FOME will invoke the global
+When not using the forms of `canRxAdd` and `canRxAddMask` with a `callback` argument, Capoworks ECU will invoke the global
 `onCanRx` function defined in the Lua script.  Otherwise, the function referenced in the `callback` argument will be
 invoked.
 
@@ -856,7 +857,7 @@ Adds a CAN frame reception filter, filtering by CAN ID on all CAN buses.
 #### `enableCanTx(isEnabled)`
 
 :::info
-`enableCanTx` is available in all builds of FOME, regardless of incorporated CAN support.
+`enableCanTx` is available in all Capoworks ECU builds, regardless of incorporated CAN support.
 :::
 
 Used to enable or disable CAN transmission. CAN transmission is enabled by default at startup.
@@ -881,7 +882,7 @@ Transmits a CAN frame on the specified CAN bus, with the supplied CAN ID and dat
 #### `setSparkSkipRatio(ratio)`
 
 :::info
-`setSparkSkipRatio` is only included in builds of FOME with launch control support enabled.
+`setSparkSkipRatio` is only included in Capoworks ECU builds with launch control support enabled.
 :::
 
 Sets the target ratio of ignition events to be skipped (suppressed) by the soft spark limiter. A value of 0 fires every spark; 1.0 skips every spark.
@@ -949,7 +950,7 @@ Sets a Lua-controlled additive offset applied to the boost control open-loop dut
 ### Vehicle Speed
 
 :::info
-These functions are only included in builds of FOME with the gear-detection module enabled.
+These functions are only included in Capoworks ECU builds with the gear-detection module enabled.
 :::
 
 #### `getCurrentGear()`

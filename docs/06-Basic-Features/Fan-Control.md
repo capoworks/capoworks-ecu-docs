@@ -1,6 +1,6 @@
 # Fan Control
 
-FOME can control two serrate fan circuits with the settings found under __Base Engine>Outputs__. The fans can be configured for a range of conditions to keep the car cool. You can never cool your car too much in most climates.
+Capoworks ECU can control two separate fan circuits with the settings found under __Base Engine>Outputs__. The fans can be configured for a range of conditions to keep the car cool. You can never cool your car too much in most climates.
 
 ## Fan Outputs
 

@@ -10,7 +10,7 @@ Which cylinder needs trimming is identified by comparing how evenly each cylinde
 
 - Wideband O2 with cylinder balancing / sequential cutoff: Momentarily disabling or leaning each cylinder and observing RPM or lambda change—cylinders that cause a larger change are contributing more and may need trimming. For example, richening one cylinder by 10% on a 4-cyl engine should in theory result in a 2.5% overall (10%/4 cylinders) WBO2 reading increase. If it results in less of a percentage change, that cylinder is likely running lean and needs a slight trim increase.
 
-- Knock sensor data per cylinder: Cylinders that knock earlier are often leaner or more efficient and may need additional fuel. FOME logs the knock data for each cylinder so this can be a useful way of determining if one cylinder needs slightly more fuel added.
+- Knock sensor data per cylinder: Cylinders that knock earlier are often leaner or more efficient and may need additional fuel. Capoworks ECU logs the knock data for each cylinder so this can be a useful way of determining if one cylinder needs slightly more fuel added.
 
 - Spark plug reading: Differences in color or deposits indicate relative richness or leanness.
 
