@@ -1,6 +1,6 @@
 # Board-protected settings in TunerStudio
 
-Some settings are fixed by your ECU board. The firmware restores these values after every TunerStudio write, so editing them would cause configuration CRC errors. FOME now marks these settings as protected in TunerStudio.
+Some settings are fixed by your ECU board. The firmware restores these values after every TunerStudio write, so editing them would cause configuration CRC errors. Capoworks ECU marks these settings as protected in TunerStudio.
 
 ## What you will see
 

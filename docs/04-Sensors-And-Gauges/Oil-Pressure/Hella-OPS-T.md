@@ -1,6 +1,6 @@
 # Hella OPS+T oil pressure and temperature sensor
 
-FOME supports the Hella OPS+T combined digital oil pressure and temperature sensor, part number `6PR 010 378-207`. One digital input provides both oil pressure and oil temperature.
+Capoworks ECU supports the Hella OPS+T combined digital oil pressure and temperature sensor, part number `6PR 010 378-207`. One digital input provides both oil pressure and oil temperature.
 
 ## Wiring
 
