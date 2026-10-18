@@ -41,8 +41,10 @@ source force-push.
 The sync gathers every full commit diff plus bounded, deterministically selected
 current source files and relevant source/target wiki documents. Inline files
 named `hella_opst.md` and `tunerstudio-protection.md` receive retrieval
-priority. Oversize, truncated, or partially decoded source material fails the
-run; it is never silently clipped.
+priority. Current source files are hard-capped at 300,000 bytes each and
+700,000 bytes in aggregate, while the prepared context and serialized model
+prompt are hard-capped at 1,500,000 bytes. Oversize, truncated, or partially
+decoded source material fails the run; it is never silently clipped.
 
 If source `master` already equals the merged cursor, the run exits before an API
 call. If there are commits but no user-facing impact, the bot still opens a

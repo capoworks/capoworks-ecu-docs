@@ -196,12 +196,12 @@ class TransientTransportFailure(SyncFailure):
 class Limits:
     max_commits: int = 40
     max_diff_bytes: int = 700_000
-    max_prompt_bytes: int = 950_000
+    max_prompt_bytes: int = 1_500_000
     max_command_bytes: int = 2_000_000
     max_source_files: int = 8_000
     max_current_files: int = 80
-    max_current_file_bytes: int = 96_000
-    max_current_total_bytes: int = 450_000
+    max_current_file_bytes: int = 300_000
+    max_current_total_bytes: int = 700_000
     max_wiki_docs: int = 14
     max_wiki_file_bytes: int = 128_000
     max_wiki_total_bytes: int = 300_000
@@ -1372,7 +1372,7 @@ class DeepSeekClient:
         settings: AISettings,
         *,
         endpoint: str = AI_ENDPOINT,
-        max_prompt_bytes: int = 950_000,
+        max_prompt_bytes: int = 1_500_000,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         if not api_key:
@@ -1386,8 +1386,10 @@ class DeepSeekClient:
 
     def generate(self, context: Mapping[str, Any]) -> ModelResult:
         messages = build_messages(context)
-        prompt_bytes = sum(
-            len(message["content"].encode("utf-8")) for message in messages
+        prompt_bytes = len(
+            json.dumps(messages, ensure_ascii=False, separators=(",", ":")).encode(
+                "utf-8"
+            )
         )
         if prompt_bytes > self.max_prompt_bytes:
             raise LimitFailure(

@@ -710,6 +710,45 @@ class SourceSafetyTests(unittest.TestCase):
             source.clone()
         self.assertEqual(len(runner.calls), 1)
 
+    def test_known_large_source_files_fit_caps_but_oversize_fails(self) -> None:
+        known_sizes = {
+            "firmware/tunerstudio/tunerstudio.template.ini": 262_086,
+            "firmware/integration/fome_config.txt": 123_819,
+        }
+        limits = sync.Limits()
+        self.assertEqual(sum(known_sizes.values()), 385_905)
+        self.assertLessEqual(sum(known_sizes.values()), limits.max_current_total_bytes)
+        source_size = 0
+
+        def handler(
+            args: list[str], cwd: object, maximum: int
+        ) -> sync.CommandResult:
+            if "cat-file" in args:
+                return sync.CommandResult(stdout=f"{source_size}\n".encode(), stderr=b"")
+            if args[:2] == ["git", "show"]:
+                return sync.CommandResult(
+                    stdout=b"x" * source_size, stderr=b""
+                )
+            raise AssertionError(args)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            source = self.make_source(
+                handler,
+                pathlib.Path(temporary),
+                limits,
+            )
+            source._tree_set = set(known_sizes)
+            for path, expected_size in known_sizes.items():
+                source_size = expected_size
+                content = source._file_at_head(path, limits.max_current_file_bytes)
+                self.assertEqual(len(content.encode("utf-8")), expected_size)
+            source_size = limits.max_current_file_bytes + 1
+            source._tree_set.add("firmware/oversized.txt")
+            with self.assertRaisesRegex(sync.LimitFailure, "limit is 300000"):
+                source._file_at_head(
+                    "firmware/oversized.txt", limits.max_current_file_bytes
+                )
+
 
 class ModelTransportTests(unittest.TestCase):
     def response(
@@ -836,6 +875,23 @@ class BuildPreviewRecoveryTests(unittest.TestCase):
             message,
         )
         self.assertIn("source range are intact", message)
+
+    def test_serialized_messages_prompt_is_capped_before_dispatch(self) -> None:
+        transport = FakeTransport([])
+        client = sync.DeepSeekClient(
+            transport,
+            "secret",
+            sync.AISettings(
+                model="deepseek-chat", max_tokens=500, timeout_seconds=10, retries=1
+            ),
+        )
+        messages = [{"role": "user", "content": "x" * 1_500_000}]
+        with mock.patch.object(sync, "build_messages", return_value=messages):
+            with self.assertRaisesRegex(
+                sync.LimitFailure, "maximum is 1500000"
+            ):
+                client.generate({"range": {"head_inclusive": SHA_ONE}})
+        self.assertEqual(transport.requests, [])
 
 
 if __name__ == "__main__":
