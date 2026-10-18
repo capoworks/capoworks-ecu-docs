@@ -33,10 +33,32 @@ firmware repository.
 
 The initial merged state starts at source commit
 `6b31ebaec865d7ea856b20a3211c7a0310e29ef2`. Its first sync backfills the five
-fork commits through `be02e3cdaa2c177d05853a41af6dacc9c0766b77`. A normal run
-reads the entire range from the authoritative cursor to source `master`, up to
-40 commits. It proves the cursor is an ancestor and refuses to advance after a
-source force-push.
+fork commits through `be02e3cdaa2c177d05853a41af6dacc9c0766b77`. Until that
+initial backfill is marked complete, the existing whole-range backfill behavior
+is retained, including the 40-commit limit and validation of the configured
+fifth commit.
+
+After the initial backfill, each documentation pull request covers one
+first-parent integration event. A run first resolves and records immutable
+source head `H`, verifies that the source clone is exactly `H`, and lists
+`cursor..H` in first-parent reverse order. It selects the earliest candidate
+`B` for which the merged cursor is an ancestor of `B`, and proves that `B` is an
+ancestor of `H`. Remaining commits through `H` stay deferred to later, separate
+pull requests.
+
+The complete revision list `cursor..B` is then recomputed without taking a
+topological prefix, so every child and merge commit in that integration event
+receives exactly one decision. The 40-commit limit applies to this chosen range,
+not to the remaining first-parent backlog. Tree and source-file reads use `B`;
+they never use `H`, even though the cloned source branch must still equal `H`.
+The prepared context and PR body distinguish the `B` range head from observed
+`H`, and the merged state advances the cursor only to `B`.
+
+For a merge, changed paths include the first-parent delta plus paths changed by
+combined conflict resolution. The merge patch uses a combined diff and records
+its parents explicitly. Constituent commits are audited separately. A clean
+merge has no additional impact beyond those children; conflict resolutions are
+described only when they have their own user-facing effect.
 
 The sync gathers every full commit diff plus bounded, deterministically selected
 current source files and relevant source/target wiki documents. Inline files
@@ -44,7 +66,10 @@ named `hella_opst.md` and `tunerstudio-protection.md` receive retrieval
 priority. Current source files are hard-capped at 300,000 bytes each and
 700,000 bytes in aggregate, while the prepared context and serialized model
 prompt are hard-capped at 1,500,000 bytes. Oversize, truncated, or partially
-decoded source material fails the run; it is never silently clipped.
+decoded source material fails the run; it is never silently clipped. If one
+chosen integration event contains more than 40 commits, the run stops with
+Action Required, names the exact event SHA `B`, and requires a manually reviewed
+pull request for that event. It does not advance the cursor or skip the event.
 
 If source `master` already equals the merged cursor, the run exits before an API
 call. If there are commits but no user-facing impact, the bot still opens a
@@ -96,6 +121,13 @@ replacements. All output is validated before any file is written:
 The PR stores the source range, actual response model, actual token usage, and
 all per-commit evidence in `.ai-docs/state.json` and the PR body. Invalid or
 oversize output rejects the complete change set before writes.
+
+Finalization also writes an immutable batch audit at
+`.ai-docs/history/<batch-head>.json`. It retains the complete previous
+`last_sync`, including the initial backfill now present in state, together with
+the new batch audit and cursor transition. An existing equal history file is
+reused without rewriting it. An existing file with different bytes stops the
+run for inspection; history files are append-only.
 
 Model requests use JSON mode, an explicit bounded `max_tokens` value, and
 `thinking: {"type": "disabled"}` so the structured result is not consumed by

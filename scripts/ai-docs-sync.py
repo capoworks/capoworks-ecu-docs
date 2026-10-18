@@ -43,6 +43,7 @@ TARGET_BRANCH = "master"
 BOT_BRANCH = "automation/firmware-docs"
 SOURCE_URL = f"https://github.com/{SOURCE_REPOSITORY}.git"
 STATE_PATH = ".ai-docs/state.json"
+HISTORY_DIR = ".ai-docs/history"
 AI_ENDPOINT = "https://api.deepseek.com/chat/completions"
 DEFAULT_MODEL = "deepseek-flash"
 PR_MARKER = "<!-- ai-docs-sync:v1 -->"
@@ -258,6 +259,7 @@ class AISettings:
 @dataclasses.dataclass(frozen=True)
 class SourceCommit:
     sha: str
+    parents: tuple[str, ...]
     author: str
     authored_at: str
     subject: str
@@ -269,6 +271,7 @@ class SourceCommit:
 class SourceSnapshot:
     base: str
     head: str
+    observed_head: str
     commits: tuple[SourceCommit, ...]
     current_files: Mapping[str, str]
     source_wiki_docs: Mapping[str, str]
@@ -451,6 +454,7 @@ class SourceRepository:
         self.target_root = target_root
         self.repo_path = work_dir / "source.git"
         self._repo: GitRepository | None = None
+        self._tree_commit: str | None = None
         self._tree: tuple[str, ...] | None = None
         self._tree_set: set[str] | None = None
 
@@ -514,12 +518,12 @@ class SourceRepository:
             raise SyncFailure("cloned source head is not a commit id")
         return head
 
-    def prove_ancestor(self, base: str, head: str) -> None:
+    def _is_ancestor(self, base: str, head: str) -> bool:
         if not SHA_RE.fullmatch(base) or not SHA_RE.fullmatch(head):
             raise ValidationFailure("source range contains an invalid commit id")
         repo = self.clone()
         try:
-            result = self.runner.run(
+            self.runner.run(
                 ["git", "merge-base", "--is-ancestor", base, head],
                 cwd=repo.root,
                 env=_public_git_env(),
@@ -527,21 +531,35 @@ class SourceRepository:
                 timeout=60,
             )
         except SyncFailure as exc:
+            if "exited with status 1" in str(exc):
+                return False
+            raise
+        return True
+
+    def prove_ancestor(self, base: str, head: str) -> None:
+        if not SHA_RE.fullmatch(base) or not SHA_RE.fullmatch(head):
+            raise ValidationFailure("source range contains an invalid commit id")
+        try:
+            is_ancestor = self._is_ancestor(base, head)
+        except SyncFailure as exc:
             raise SyncFailure(
                 "source master no longer contains the merged cursor commit; "
                 "refusing a force-pushed history"
             ) from exc
-        if result.stdout:
-            raise SyncFailure("unexpected output while proving source ancestry")
+        if not is_ancestor:
+            raise SyncFailure(
+                "source master no longer contains the merged cursor commit; "
+                "refusing a force-pushed history"
+            )
 
     def _run_git(self, args: Sequence[str], max_bytes: int) -> bytes:
         return self.clone().run(args, max_output_bytes=max_bytes)
 
-    def _tree_paths(self) -> tuple[str, ...]:
-        if self._tree is not None:
+    def _tree_paths(self, commit: str) -> tuple[str, ...]:
+        if self._tree_commit == commit and self._tree is not None:
             return self._tree
         data = self._run_git(
-            ["ls-tree", "-r", "-z", "--name-only", "HEAD"],
+            ["ls-tree", "-r", "-z", "--name-only", commit],
             self.limits.max_command_bytes,
         )
         raw_paths = [part for part in data.split(b"\0") if part]
@@ -550,91 +568,117 @@ class SourceRepository:
                 f"source tree has more than {self.limits.max_source_files} files"
             )
         paths = tuple(part.decode("utf-8", "strict") for part in raw_paths)
+        self._tree_commit = commit
         self._tree = paths
         self._tree_set = set(paths)
         return paths
 
-    def _changed_paths(self, sha: str) -> tuple[str, ...]:
-        data = self._run_git(
-            [
-                "diff-tree",
-                "--root",
-                "--no-commit-id",
-                "--name-status",
-                "-r",
-                "-z",
-                "--find-renames",
-                sha,
-            ],
-            512_000,
-        )
-        fields = data.split(b"\0")
+    @staticmethod
+    def _decode_paths(data: bytes, sha: str) -> tuple[str, ...]:
         paths: list[str] = []
-        index = 0
-        while index < len(fields) and fields[index]:
-            status = fields[index].decode("ascii", "strict")
-            index += 1
-            if status.startswith(("R", "C")):
-                if index + 1 >= len(fields):
-                    raise SyncFailure(f"malformed rename record in commit {sha}")
-                index += 1
-                new_path = fields[index].decode("utf-8", "strict")
-                index += 1
-            else:
-                if index >= len(fields):
-                    raise SyncFailure(f"malformed path record in commit {sha}")
-                new_path = fields[index].decode("utf-8", "strict")
-                index += 1
-            if not new_path or "\n" in new_path or "\r" in new_path:
+        for raw_path in data.split(b"\0"):
+            if not raw_path:
+                continue
+            path = raw_path.decode("utf-8", "strict")
+            if not path or "\n" in path or "\r" in path:
                 raise SyncFailure(f"commit {sha} contains an unsupported path")
-            paths.append(new_path)
+            paths.append(path)
         return tuple(sorted(set(paths)))
 
-    def _commit(self, sha: str) -> SourceCommit:
+    def _changed_paths(self, sha: str) -> tuple[str, ...]:
+        commit = self._commit_metadata(sha)
+        common = [
+            "--no-commit-id",
+            "--name-only",
+            "-r",
+            "-z",
+            "--find-renames",
+        ]
+        if len(commit[1]) > 1:
+            parents = commit[1]
+            first_parent_data = self._run_git(
+                ["diff-tree", *common, parents[0], sha],
+                512_000,
+            )
+            combined_data = self._run_git(
+                ["diff-tree", "--cc", *common, sha],
+                512_000,
+            )
+            paths = set(self._decode_paths(first_parent_data, sha))
+            paths.update(self._decode_paths(combined_data, sha))
+            return tuple(sorted(paths))
+        if commit[1]:
+            data = self._run_git(
+                ["diff-tree", *common, commit[1][0], sha],
+                512_000,
+            )
+        else:
+            data = self._run_git(
+                ["diff-tree", "--root", *common, sha],
+                512_000,
+            )
+        return self._decode_paths(data, sha)
+
+    def _commit_metadata(
+        self, sha: str
+    ) -> tuple[str, tuple[str, ...], str, str, str]:
         metadata = self._run_git(
-            ["show", "-s", "--format=%H%x00%an%x00%aI%x00%s%x00", sha],
+            ["show", "-s", "--format=%H%x00%P%x00%an%x00%aI%x00%s%x00", sha],
             64_000,
         )
         fields = metadata.split(b"\0")
-        if len(fields) < 5:
+        if len(fields) < 6:
             raise SyncFailure(f"commit metadata is malformed for {sha}")
-        commit_sha, author, authored_at, subject = (
-            fields[0].decode("utf-8", "strict"),
-            fields[1].decode("utf-8", "strict"),
-            fields[2].decode("utf-8", "strict"),
-            fields[3].decode("utf-8", "strict"),
-        )
+        commit_sha = fields[0].decode("utf-8", "strict")
+        parents = tuple(fields[1].decode("ascii", "strict").split())
+        author = fields[2].decode("utf-8", "strict")
+        authored_at = fields[3].decode("utf-8", "strict")
+        subject = fields[4].decode("utf-8", "strict")
         if commit_sha != sha:
             raise SyncFailure("source commit metadata does not match the requested commit")
-        patch_bytes = self._run_git(
-            [
-                "show",
-                "--format=fuller",
-                "--patch",
-                "--binary",
-                "--full-index",
-                "--find-renames",
-                "--no-color",
-                "--no-ext-diff",
-                "--no-textconv",
-                sha,
-            ],
-            self.limits.max_diff_bytes,
+        if not all(SHA_RE.fullmatch(parent) for parent in parents):
+            raise SyncFailure(f"commit {sha} has an invalid parent commit id")
+        return commit_sha, parents, author, authored_at, subject
+
+    def _commit(self, sha: str) -> SourceCommit:
+        _, parents, author, authored_at, subject = self._commit_metadata(sha)
+        show_args = [
+            "show",
+            "--format=fuller",
+            "--patch",
+            "--binary",
+            "--full-index",
+            "--find-renames",
+            "--no-color",
+            "--no-ext-diff",
+            "--no-textconv",
+        ]
+        if len(parents) > 1:
+            show_args.append("--cc")
+        show_args.append(sha)
+        patch_bytes = self._run_git(show_args, self.limits.max_diff_bytes)
+        parents_header = (
+            "Parents: " + (" ".join(parents) if parents else "(root)") + "\n"
         )
         return SourceCommit(
             sha=sha,
+            parents=parents,
             author=author,
             authored_at=authored_at,
             subject=subject,
             changed_paths=self._changed_paths(sha),
-            patch=patch_bytes.decode("utf-8", "strict"),
+            patch=parents_header + patch_bytes.decode("utf-8", "strict"),
         )
 
-    def _file_at_head(self, path: str, max_bytes: int) -> str:
-        tree = self._tree_set if self._tree_set is not None else set(self._tree_paths())
+    def _file_at_commit(self, commit: str, path: str, max_bytes: int) -> str:
+        tree = (
+            self._tree_set
+            if self._tree_commit == commit and self._tree_set is not None
+            else set(self._tree_paths(commit))
+        )
         if path not in tree:
-            raise ValidationFailure(f"source file is absent at head: {path}")
-        size_data = self._run_git(["cat-file", "-s", f"HEAD:{path}"], 128)
+            raise ValidationFailure(f"source file is absent at {commit}: {path}")
+        size_data = self._run_git(["cat-file", "-s", f"{commit}:{path}"], 128)
         try:
             size = int(size_data.decode("ascii", "strict").strip())
         except ValueError as exc:
@@ -643,11 +687,43 @@ class SourceRepository:
             raise LimitFailure(
                 f"source file {path} is {size} bytes; the limit is {max_bytes}"
             )
-        data = self._run_git(["show", f"HEAD:{path}"], max_bytes)
+        data = self._run_git(["show", f"{commit}:{path}"], max_bytes)
         try:
             return data.decode("utf-8", "strict")
         except UnicodeDecodeError as exc:
             raise LimitFailure(f"selected source file is not UTF-8 text: {path}") from exc
+
+    def _select_integration_event(self, base: str, observed_head: str) -> str:
+        candidates_data = self._run_git(
+            [
+                "rev-list",
+                "--first-parent",
+                "--reverse",
+                f"{base}..{observed_head}",
+            ],
+            self.limits.max_command_bytes,
+        )
+        candidates = [
+            line
+            for line in candidates_data.decode("ascii", "strict").splitlines()
+            if line
+        ]
+        for candidate in candidates:
+            if not SHA_RE.fullmatch(candidate):
+                raise SyncFailure(
+                    "source first-parent history contains an invalid commit id"
+                )
+            if self._is_ancestor(base, candidate):
+                if not self._is_ancestor(candidate, observed_head):
+                    raise SyncFailure(
+                        f"selected integration event {candidate} is not an ancestor "
+                        f"of observed source head {observed_head}"
+                    )
+                return candidate
+        raise SyncFailure(
+            "source first-parent history has no integration event descended from "
+            f"cursor {base} and leading to observed head {observed_head}"
+        )
 
     def _target_doc_paths(self) -> tuple[str, ...]:
         if self.target_root is None:
@@ -682,15 +758,45 @@ class SourceRepository:
         with full.open("r", encoding="utf-8", errors="strict", newline="") as handle:
             return handle.read()
 
-    def snapshot(self, base: str, expected_head: str) -> SourceSnapshot:
+    def snapshot(
+        self,
+        base: str,
+        expected_head: str,
+        *,
+        integration_event: bool = False,
+    ) -> SourceSnapshot:
         head = self.cloned_head()
         if head != expected_head:
             raise SyncFailure(
                 "source master moved between resolution and clone; retry the workflow"
             )
         self.prove_ancestor(base, head)
+        range_head = (
+            self._select_integration_event(base, head) if integration_event else head
+        )
+        count_data = self._run_git(
+            ["rev-list", "--count", f"{base}..{range_head}"],
+            128,
+        )
+        try:
+            commit_count = int(count_data.decode("ascii", "strict").strip())
+        except ValueError as exc:
+            raise SyncFailure("could not count source integration event commits") from exc
+        if commit_count > self.limits.max_commits:
+            if integration_event:
+                raise ActionRequired(
+                    f"source integration event {range_head} contains {commit_count} "
+                    f"commits, exceeding the {self.limits.max_commits}-commit limit; "
+                    "a manually reviewed pull request is needed for this event"
+                )
+            raise LimitFailure(
+                f"source range has {commit_count} commits; "
+                f"maximum is {self.limits.max_commits}"
+            )
+        if commit_count < 1:
+            raise ValidationFailure("source range is unexpectedly empty")
         commits_data = self._run_git(
-            ["rev-list", "--reverse", "--topo-order", f"{base}..{head}"],
+            ["rev-list", "--reverse", "--topo-order", f"{base}..{range_head}"],
             16_384,
         )
         shas = [
@@ -698,12 +804,11 @@ class SourceRepository:
             for line in commits_data.decode("ascii", "strict").splitlines()
             if line
         ]
-        if len(shas) > self.limits.max_commits:
-            raise LimitFailure(
-                f"source range has {len(shas)} commits; maximum is {self.limits.max_commits}"
+        if len(shas) != commit_count or len(set(shas)) != commit_count:
+            raise SyncFailure(
+                f"source integration event {range_head} has incomplete or duplicate "
+                "commit coverage"
             )
-        if not shas:
-            raise ValidationFailure("source range is unexpectedly empty")
         for sha in shas:
             if not SHA_RE.fullmatch(sha):
                 raise SyncFailure("source history contains an invalid commit id")
@@ -716,7 +821,7 @@ class SourceRepository:
         changed_paths = sorted(
             {path for commit in commits for path in commit.changed_paths}
         )
-        tree = set(self._tree_paths())
+        tree = set(self._tree_paths(range_head))
         current_paths = [
             path
             for path in changed_paths
@@ -732,7 +837,9 @@ class SourceRepository:
         current_bytes = 0
         keywords = _keywords_from_commits(commits)
         for path in current_paths:
-            content = self._file_at_head(path, self.limits.max_current_file_bytes)
+            content = self._file_at_commit(
+                range_head, path, self.limits.max_current_file_bytes
+            )
             current_bytes += len(content.encode("utf-8"))
             if current_bytes > self.limits.max_current_total_bytes:
                 raise LimitFailure(
@@ -755,7 +862,9 @@ class SourceRepository:
         source_docs: dict[str, str] = {}
         source_doc_bytes = 0
         for path in selected_source_docs:
-            content = self._file_at_head(path, self.limits.max_wiki_file_bytes)
+            content = self._file_at_commit(
+                range_head, path, self.limits.max_wiki_file_bytes
+            )
             source_doc_bytes += len(content.encode("utf-8"))
             if source_doc_bytes > self.limits.max_wiki_total_bytes:
                 raise LimitFailure("source wiki retrieval exceeded its byte limit")
@@ -779,7 +888,8 @@ class SourceRepository:
 
         return SourceSnapshot(
             base=base,
-            head=head,
+            head=range_head,
+            observed_head=head,
             commits=commits,
             current_files=current_files,
             source_wiki_docs=source_docs,
@@ -1386,11 +1496,7 @@ class DeepSeekClient:
 
     def generate(self, context: Mapping[str, Any]) -> ModelResult:
         messages = build_messages(context)
-        prompt_bytes = len(
-            json.dumps(messages, ensure_ascii=False, separators=(",", ":")).encode(
-                "utf-8"
-            )
-        )
+        prompt_bytes = len(serialize_messages(messages))
         if prompt_bytes > self.max_prompt_bytes:
             raise LimitFailure(
                 f"serialized prompt is {prompt_bytes} bytes; "
@@ -1566,6 +1672,15 @@ Rules:
   release, and do not imply that upstream binaries are compatible with a fork.
 - Preserve the existing English language.
 - Cover every supplied commit exactly once, in the supplied order.
+- The supplied range head is the selected integration event and is the new
+  cursor. `observed_head` may be a newer immutable source observation; do not
+  infer unlisted changes from it or attempt to document beyond the selected
+  commit range.
+- Treat each merge commit as an integration audit. Its child commits are supplied
+  and audited separately, so do not repeat a child's documentation impact on the
+  merge decision. A clean merge with no additional user-facing impact beyond its
+  children must be marked no-impact. If the merge has conflict-resolution changes,
+  explain their distinct user-facing effect using the combined diff evidence.
 - Mark update only when user-facing documentation needs a change. Include one
   specific evidence item or more for every decision.
 - files contains complete Markdown file replacements, not patches. Return an
@@ -1591,6 +1706,18 @@ Rules:
         + "\nUNTRUSTED_DATA_JSON_END"
     )
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
+
+
+def serialize_messages(messages: Sequence[Mapping[str, str]]) -> bytes:
+    """Return the exact JSON bytes whose size is capped before dispatch."""
+
+    return json.dumps(
+        messages, ensure_ascii=False, separators=(",", ":")
+    ).encode("utf-8")
+
+
+def serialized_message_bytes(context: Mapping[str, Any]) -> int:
+    return len(serialize_messages(build_messages(context)))
 
 
 def load_state(path: pathlib.Path) -> dict[str, Any]:
@@ -1671,9 +1798,11 @@ def _context_payload(
             "head_inclusive": snapshot.head,
             "commit_count": len(snapshot.commits),
         },
+        "observed_head": snapshot.observed_head,
         "commits": [
             {
                 "sha": commit.sha,
+                "parents": list(commit.parents),
                 "author": commit.author,
                 "authored_at": commit.authored_at,
                 "subject": commit.subject,
@@ -1758,8 +1887,12 @@ def prepare_phase(
         LOG.info("%s; later runs will catch up", lifecycle.reason)
         return 0
 
-    snapshot = source.snapshot(cursor, head)
     initial = state["initial_backfill"]
+    snapshot = source.snapshot(
+        cursor,
+        head,
+        integration_event=bool(initial["completed"]),
+    )
     if not initial["completed"]:
         expected_count = initial["commit_count"]
         expected_tip = initial["through_commit"]
@@ -1774,9 +1907,7 @@ def prepare_phase(
             )
     target_head = _git_output(source.runner, root, ["rev-parse", "HEAD"]).strip()
     context = _context_payload(state, snapshot, lifecycle, target_head)
-    prompt_bytes = len(
-        json.dumps(context, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-    )
+    prompt_bytes = serialized_message_bytes(context)
     if prompt_bytes > limits.max_prompt_bytes:
         raise LimitFailure(
             f"prepared input is {prompt_bytes} bytes; "
@@ -1789,6 +1920,8 @@ def prepare_phase(
             "status": "ready",
             "reason": "source range prepared",
             "range": context["range"],
+            "observed_head": context["observed_head"],
+            "prompt_bytes": prompt_bytes,
             "lifecycle_remote_sha": lifecycle.remote_sha,
         },
     )
@@ -1911,6 +2044,55 @@ def _validate_next_state(state: Any) -> None:
         raise LimitFailure("next state exceeds the 500,000-byte limit")
 
 
+def _history_record(
+    state: Mapping[str, Any], next_state: Mapping[str, Any]
+) -> dict[str, Any]:
+    batch_head = next_state["cursor_commit"]
+    if not isinstance(batch_head, str) or not SHA_RE.fullmatch(batch_head):
+        raise ValidationFailure("history batch head is not a full commit id")
+    return {
+        "schema_version": 1,
+        "batch_head": batch_head,
+        "previous_cursor_commit": state["cursor_commit"],
+        "cursor_commit": batch_head,
+        "previous_last_sync": copy.deepcopy(state["last_sync"]),
+        "last_sync": copy.deepcopy(next_state["last_sync"]),
+    }
+
+
+def _history_text(record: Mapping[str, Any]) -> str:
+    return json.dumps(record, indent=2, ensure_ascii=False) + "\n"
+
+
+def _history_write_entry(
+    root: pathlib.Path,
+    state: Mapping[str, Any],
+    next_state: Mapping[str, Any],
+) -> tuple[str, str] | None:
+    """Return a new immutable batch-history write, or reuse an equal file."""
+
+    record = _history_record(state, next_state)
+    relative = f"{HISTORY_DIR}/{record['batch_head']}.json"
+    path = root / pathlib.PurePosixPath(relative)
+    text = _history_text(record)
+    if path.is_symlink():
+        raise ActionRequired(f"batch history path is not a regular file: {relative}")
+    if not path.exists():
+        return relative, text
+    if not path.is_file():
+        raise ActionRequired(f"batch history path is not a regular file: {relative}")
+    try:
+        existing = path.read_bytes()
+    except OSError as exc:
+        raise ActionRequired(f"could not validate batch history {relative}: {exc}") from exc
+    if existing != text.encode("utf-8"):
+        raise ActionRequired(
+            f"batch history {relative} already exists with different content; "
+            "history is append-only and will not be rewritten"
+        )
+    return None
+
+
 def atomic_write_set(root: pathlib.Path, files: Mapping[str, str]) -> None:
     """Stage all writes first, then replace files with rollback on failure."""
 
@@ -1972,8 +2154,11 @@ def _pull_request_body(
         "### Source range",
         "",
         f"- Base (exclusive): `{range_data['base_exclusive']}`",
-        f"- Head (inclusive): `{range_data['head_inclusive']}`",
+        f"- Integration event head (new cursor): `{range_data['head_inclusive']}`",
+        f"- Observed source head: `{context['observed_head']}`",
         f"- Commits: {range_data['commit_count']}",
+        "- Scope: one first-parent integration event; later firmware events "
+        "remain deferred to separate pull requests.",
         f"- Model: `{model}`",
         "- Actual usage: "
         + ", ".join(f"{key}={value}" for key, value in sorted(usage.items())),
@@ -1988,6 +2173,13 @@ def _pull_request_body(
         )
         for evidence in decision.evidence:
             lines.append(f"  - Evidence: {evidence}")
+    lines.extend(
+        [
+            "",
+            "Merge commits are integration audits. Constituent commits are listed "
+            "separately, and a clean merge has no additional impact beyond them.",
+        ]
+    )
     lines.extend(
         [
             "",
@@ -2144,6 +2336,7 @@ def finalize_phase(
     )
     writes = {file.path: file.content for file in result.files}
     writes[STATE_PATH] = state_text
+    history_entry = _history_write_entry(root, state, next_state)
 
     _git_output(runner, root, ["check-ref-format", "--branch", BOT_BRANCH])
     runner.run(
@@ -2152,8 +2345,12 @@ def finalize_phase(
         max_output_bytes=16_384,
         timeout=60,
     )
-    atomic_write_set(root, writes)
     add_paths = [*[file.path for file in result.files], STATE_PATH]
+    if history_entry is not None:
+        history_path, history_text = history_entry
+        writes[history_path] = history_text
+        add_paths.append(history_path)
+    atomic_write_set(root, writes)
     runner.run(
         ["git", "add", "--", *add_paths],
         cwd=root,
