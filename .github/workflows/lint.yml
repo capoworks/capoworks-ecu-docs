@@ -3,7 +3,7 @@
 # Configuration files:
 # - typescript: tsconfig.json
 # - links: scripts/linkValidator.js
-# - makrdown: .markdownlint.jsonc
+# - markdown: .markdownlint.jsonc
 name: Lint
 permissions:
   contents: read
@@ -21,9 +21,12 @@ on:
 jobs:
   code:
     runs-on: ubuntu-latest
+    if: github.repository_owner == 'capoworks'
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version-file: ".nvmrc"
@@ -33,9 +36,12 @@ jobs:
 
   links:
     runs-on: ubuntu-latest
+    if: github.repository_owner == 'capoworks'
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version-file: ".nvmrc"
@@ -45,9 +51,12 @@ jobs:
 
   markdown:
     runs-on: ubuntu-latest
+    if: github.repository_owner == 'capoworks'
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version-file: ".nvmrc"

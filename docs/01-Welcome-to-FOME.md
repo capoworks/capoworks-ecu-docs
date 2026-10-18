@@ -4,7 +4,22 @@ slug: /
 # (also numbered prefixes are NOT to be used in links, because Docusaurus 2.4.1 matches them automatically )
 ---
 
-# Welcome to FOME
+# Welcome to Capoworks ECU documentation
+
+:::note Independent documentation fork
+
+This site is an independently maintained documentation fork for Capoworks ECU. Its starting content
+comes from the [original FOME Wiki](https://wiki.fome.tech), but Capoworks is not affiliated with or
+endorsed by the FOME project.
+
+The inherited pages have not all been fully audited for Capoworks-specific behavior, firmware
+compatibility, hardware, or other fork changes. Until that review is complete, treat upstream
+instructions as source material rather than a Capoworks guarantee. The
+[Capoworks firmware repository](https://github.com/capoworks/capoworks-ecu) is the source for
+Capoworks firmware. Some inherited pages may still link to upstream FOME firmware releases, and
+firmware `.ini` help links require a separate audit and may need to be updated for Capoworks.
+
+:::
 
 FOME is a new project intending to deliver a user focused high feature ECU with open source hardware options and open firmware that give control back to the user, owner and driver.
 

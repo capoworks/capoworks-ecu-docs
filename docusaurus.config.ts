@@ -1,29 +1,17 @@
 import type { Options, ThemeConfig } from '@docusaurus/preset-classic';
 import type { Config } from '@docusaurus/types';
-import crypto from 'crypto';
-import fs from 'fs';
 import { themes } from 'prism-react-renderer';
 
 const lightCodeTheme = themes.github;
 const darkCodeTheme = themes.dracula;
 
-const url = 'https://wiki.fome.tech';
-const isBuild = process.env.NODE_ENV === 'production';
-const pdfName = 'wiki.fome.pdf';
-
-const pdfChecksum = () => {
-  const data = fs.readFileSync(`static/pdf/${pdfName}`, 'utf8');
-
-  return crypto.createHash('md5').update(data, 'utf8').digest('hex');
-};
-
-const pdfUrl = `${isBuild ? url : 'http://localhost:3000'}/pdf/${pdfName}?v=${pdfChecksum()}`;
+const url = 'https://capoworks.github.io';
 
 const config: Config = {
-  title: 'FOME Wiki',
+  title: 'Capoworks ECU',
   tagline: 'Free Open Motorsports ECU',
   url,
-  baseUrl: '/',
+  baseUrl: '/capoworks-ecu-docs/',
 
   // strict URL validation
   onBrokenLinks: 'throw',
@@ -31,13 +19,12 @@ const config: Config = {
 
   noIndex: false, // adds <meta name="robots" content="noindex, nofollow"> to every page
   favicon: 'img/icons/favicon.ico',
-  trailingSlash: true, // adds trailing slash to all links since we are using Cloudflare Pages
+  trailingSlash: true, // adds trailing slash to all links for GitHub Pages
   // staticDirectories: ['public', 'static'],
 
   // GitHub pages deployment config.
-  // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'FOME-Tech', // Usually your GitHub org/user name.
-  projectName: '', // Usually your repo name.
+  organizationName: 'capoworks',
+  projectName: 'capoworks-ecu-docs',
 
   // Even if you don't use internalization, you can use this field to set useful
   // metadata like html lang. For example, if your site is Chinese, you may want
@@ -55,7 +42,7 @@ const config: Config = {
           routeBasePath: '/', // Serve the docs at the site's root
           sidebarPath: require.resolve('./sidebars.ts'),
           // Remove this to remove the "edit this page" links.
-          editUrl: 'https://github.com/FOME-Tech/wiki/tree/master',
+          editUrl: 'https://github.com/capoworks/capoworks-ecu-docs/tree/master',
           remarkPlugins: [require('remark-math')],
           rehypePlugins: [[require('rehype-katex'), { output: 'mathml' }]],
         },
@@ -99,7 +86,8 @@ const config: Config = {
       {
         redirects: [
           // Client side redirect addresses specified in INI files (HT & TS)
-          // eg. https://wiki.fome.tech/r/fuel -> https://wiki.fome.tech/category/fuel/
+          // eg. https://capoworks.github.io/capoworks-ecu-docs/r/fuel ->
+          // https://capoworks.github.io/capoworks-ecu-docs/category/fuel/
           {
             from: '/r/fuel',
             to: '/category/fuel/',
@@ -140,25 +128,19 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
-      title: '',
+      title: 'Capoworks ECU',
       logo: {
-        alt: 'FOME Logo',
-        src: 'img/logo-transparent.png',
+        alt: 'Capoworks ECU logo',
+        src: 'img/capoworks-logo.svg',
         style: {
-          height: 30,
+          height: 34,
           marginTop: -2,
         },
       },
       hideOnScroll: true,
       items: [
         {
-          href: pdfUrl,
-          label: 'PDF',
-          position: 'right',
-          target: '_blank',
-        },
-        {
-          href: 'https://github.com/FOME-Tech/wiki',
+          href: 'https://github.com/capoworks/capoworks-ecu-docs',
           label: 'GitHub',
           position: 'right',
         },
@@ -172,7 +154,7 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'Community',
+          title: 'FOME community',
           items: [
             {
               label: 'Discord',
@@ -188,17 +170,17 @@ const config: Config = {
           title: 'More',
           items: [
             {
-              to: pdfUrl,
-              label: 'PDF version',
+              label: 'Original FOME Wiki',
+              href: 'https://wiki.fome.tech',
               target: '_blank',
             },
             {
-              label: 'FOME.tech',
-              href: 'https://www.fome.tech',
+              label: 'Capoworks firmware',
+              href: 'https://github.com/capoworks/capoworks-ecu',
             },
             {
-              label: 'GitHub',
-              href: 'https://github.com/FOME-Tech',
+              label: 'Capoworks on GitHub',
+              href: 'https://github.com/capoworks',
             },
           ],
         },

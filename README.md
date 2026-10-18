@@ -1,19 +1,24 @@
-# Wiki
+# Capoworks ECU Documentation
 
-This is the source code for the FOME Wiki - [wiki.fome.tech](https://wiki.fome.tech).
+This repository contains the source for the
+[Capoworks ECU documentation](https://capoworks.github.io/capoworks-ecu-docs/).
+
+The site is an independent fork that uses the FOME Wiki as its initial documentation source. It is
+not affiliated with or endorsed by FOME. See [ATTRIBUTION.md](ATTRIBUTION.md) for source, authorship,
+history, and license information.
 
 ## Development
 
-FOME Wiki is built using [Docusaurus 3](https://docusaurus.io/).
+Capoworks ECU documentation is built using [Docusaurus 3](https://docusaurus.io/).
 
 ### Installation
 
 Required [Node.js](https://nodejs.dev/) is defined in [.nvmrc](/.nvmrc). If you use [nvm](https://github.com/nvm-sh/nvm), run `nvm use` to switch to the correct version.
 
-To install dependencies, run:
+To install the dependencies locked by this repository, run:
 
 ```bash
-npm install
+npm ci
 ```
 
 ### Local Development
@@ -23,6 +28,7 @@ npm start
 ```
 
 This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+The site is served at <http://localhost:3000/capoworks-ecu-docs/> by default.
 
 Docusaurus guides: [https://docusaurus.io/docs/category/guides](https://docusaurus.io/docs/category/guides)
 
@@ -44,29 +50,26 @@ This command generates static content into the `build` directory and can be serv
 
 ### Redirection
 
-Some addresses have client-side redirection set up here: [docusaurus.config.js](/docusaurus.config.js) (section `redirects: [...]`).
+Some addresses have client-side redirection set up here:
+[docusaurus.config.ts](docusaurus.config.ts) (section `redirects: [...]`).
 
 Those addresses come from the INI files (TS & HT). This gives more flexibility when wiki pages are moved or renamed.
 
 Example:
 
 ```bash
-https://wiki.fome.tech/r/fuel -> https://wiki.fome.tech/category/fuel/
+https://capoworks.github.io/capoworks-ecu-docs/r/fuel -> https://capoworks.github.io/capoworks-ecu-docs/category/fuel/
 ```
 
-### Generate PDF
+## Firmware and INI guidance
 
-Required [Prince XML](https://www.princexml.com/).
+The [Capoworks firmware repository](https://github.com/capoworks/capoworks-ecu) is the source for
+Capoworks firmware. This documentation repository does not bundle firmware.
 
-Build and serve docs locally before generating PDF:
+Some inherited pages may still link to upstream FOME firmware releases. Firmware `.ini` help links
+may still open the upstream FOME wiki; those links need a future update in the firmware repository.
 
-```bash
-npm run build
-npm run serve
-```
+## Attribution
 
-In another terminal, run this to generate PDF:
-
-```bash
-npm run pdf
-```
+The imported documentation remains available under CC BY-SA 4.0. Source links, contributor
+attribution, and the preservation of Git history are documented in [ATTRIBUTION.md](ATTRIBUTION.md).

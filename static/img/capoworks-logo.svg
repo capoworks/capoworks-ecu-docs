@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" role="img" aria-labelledby="title">
+  <title id="title">Capoworks ECU logo</title>
+  <rect width="40" height="40" rx="8" fill="#18213a"/>
+  <path d="M29.2 12.8a10.5 10.5 0 1 0 0 14.4l-3.7-3.7a5.3 5.3 0 1 1 0-7l3.7-3.7Z" fill="#60d7e8"/>
+  <path d="M26.7 15.3a7 7 0 1 0 0 9.4" fill="none" stroke="#f4f7ff" stroke-width="2.2" stroke-linecap="round"/>
+</svg>
