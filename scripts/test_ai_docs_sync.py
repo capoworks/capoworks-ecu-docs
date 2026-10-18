@@ -477,6 +477,8 @@ class FakeSource:
         self.integration_event = integration_event
         if self.snapshot_value is None:
             raise AssertionError("snapshot should not be called")
+        if isinstance(self.snapshot_value, Exception):
+            raise self.snapshot_value
         return self.snapshot_value
 
 
@@ -663,6 +665,85 @@ class PrepareCursorAndFailureTests(TempDocs):
         self.assertEqual(prepared["observed_head"], SHA_THREE)
         self.assertEqual(status["prompt_bytes"], sync.serialized_message_bytes(prepared))
 
+    def test_completed_backfill_exact_prompt_limit_requires_action(self) -> None:
+        state = json.loads((self.root / sync.STATE_PATH).read_text(encoding="utf-8"))
+        state["initial_backfill"]["completed"] = True
+        state["initial_backfill"]["through_commit"] = SHA_ONE
+        (self.root / sync.STATE_PATH).write_text(
+            json.dumps(state, indent=2) + "\n", encoding="utf-8"
+        )
+        docs_repo = RealGitRepository(self.root)
+        docs_repo.commit("docs base", {"docs/Existing.md": "# Existing\n"})
+        snapshot = sync.SourceSnapshot(
+            base=SHA_ONE,
+            head=SHA_TWO,
+            observed_head=SHA_THREE,
+            commits=(
+                sync.SourceCommit(
+                    sha=SHA_TWO,
+                    parents=(SHA_ONE,),
+                    author="Sync Test",
+                    authored_at="2026-10-18T00:00:00+00:00",
+                    subject="event",
+                    changed_paths=("src/event.c",),
+                    patch="Parents: " + SHA_ONE + "\n",
+                ),
+            ),
+            current_files={},
+            source_wiki_docs={},
+            target_wiki_docs={},
+        )
+        lifecycle = sync.Lifecycle(
+            action="proceed", remote_sha=None, reason="ready"
+        )
+        target_head = docs_repo.git("rev-parse", "HEAD").stdout.strip()
+        expected_context = sync._context_payload(
+            state, snapshot, lifecycle, target_head
+        )
+        prompt_bytes = sync.serialized_message_bytes(expected_context)
+        work_dir = self.root / "prompt-work"
+        state_before = (self.root / sync.STATE_PATH).read_bytes()
+
+        with self.assertRaises(sync.ActionRequired) as raised:
+            sync.prepare_phase(
+                root=self.root,
+                work_dir=work_dir,
+                github=FakeGithub(lifecycle),
+                source=FakeSource(SHA_THREE, snapshot=snapshot),
+                limits=sync.Limits(max_prompt_bytes=prompt_bytes - 1),
+            )
+
+        message = str(raised.exception)
+        self.assertIn(SHA_TWO, message)
+        self.assertIn(f"prepared input is {prompt_bytes} bytes", message)
+        self.assertIn("manually reviewed pull request", message)
+        self.assertIn("cursor was not advanced", message)
+        self.assertEqual((self.root / sync.STATE_PATH).read_bytes(), state_before)
+        self.assertFalse((work_dir / "prepared.json").exists())
+        self.assertFalse((work_dir / "status.json").exists())
+
+    def test_incomplete_backfill_snapshot_limit_remains_limit_failure(self) -> None:
+        work_dir = self.root / "initial-limit-work"
+        state_before = (self.root / sync.STATE_PATH).read_bytes()
+        with self.assertRaises(sync.LimitFailure):
+            sync.prepare_phase(
+                root=self.root,
+                work_dir=work_dir,
+                github=FakeGithub(
+                    sync.Lifecycle(
+                        action="proceed", remote_sha=None, reason="ready"
+                    )
+                ),
+                source=FakeSource(
+                    SHA_TWO,
+                    snapshot=sync.LimitFailure("initial range exceeded a limit"),
+                ),
+                limits=self.limits,
+            )
+        self.assertEqual((self.root / sync.STATE_PATH).read_bytes(), state_before)
+        self.assertFalse((work_dir / "prepared.json").exists())
+        self.assertFalse((work_dir / "status.json").exists())
+
     def test_later_phases_skip_before_reading_credentials(self) -> None:
         work_dir = self.root / "work"
         work_dir.mkdir()
@@ -820,6 +901,21 @@ class SourceSafetyTests(unittest.TestCase):
             source = self.make_source(handler, pathlib.Path(temporary))
             with self.assertRaisesRegex(sync.SyncFailure, "force-pushed history"):
                 source.snapshot(SHA_ONE, SHA_TWO)
+
+    def test_merge_base_fatal_status_is_not_treated_as_nonancestor(self) -> None:
+        def handler(args: list[str], cwd: object, maximum: int) -> object:
+            if "merge-base" in args:
+                raise sync.SyncFailure(
+                    "git merge-base exited with status 128: fatal repository error"
+                )
+            raise AssertionError(args)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            source = self.make_source(handler, pathlib.Path(temporary))
+            with self.assertRaisesRegex(
+                sync.SyncFailure, "status 128: fatal repository error"
+            ):
+                source._is_ancestor(SHA_ONE, SHA_TWO)
 
     def test_more_than_forty_commits_fails_closed(self) -> None:
         def handler(args: list[str], cwd: object, maximum: int) -> object:
@@ -998,11 +1094,12 @@ class IntegrationEventGitTests(unittest.TestCase):
         *,
         target_root: pathlib.Path | None = None,
         work_name: str = "source-work",
+        limits: sync.Limits | None = None,
     ) -> sync.SourceRepository:
         return sync.SourceRepository(
             sync.CappedRunner(),
             self.root / work_name,
-            sync.Limits(),
+            limits or sync.Limits(),
             source_url=str(self.repository.root),
             target_root=target_root,
         )
@@ -1170,6 +1267,73 @@ class IntegrationEventGitTests(unittest.TestCase):
         self.assertIn("manually reviewed pull request", message)
         self.assertEqual(state_path.read_bytes(), before)
         self.assertFalse((self.root / "oversized-work/prepared.json").exists())
+
+    def test_event_source_file_limit_requires_action_without_ready_artifacts(
+        self,
+    ) -> None:
+        cursor = self.repository.commit("base", {"base.txt": "base\n"})
+        self.repository.checkout("large-source", create=True)
+        self.repository.commit(
+            "large source",
+            {"firmware/oversized.c": "x" * 65},
+        )
+        self.repository.checkout("master")
+        event = self.repository.merge("large-source", "large source integration")
+
+        target = self.root / "source-limit-docs"
+        target.mkdir()
+        (target / "docs").mkdir()
+        docs_repo = RealGitRepository(target)
+        docs_repo.commit("docs base", {"docs/Placeholder.md": "# Placeholder\n"})
+        state = {
+            "schema_version": 1,
+            "source_repository": sync.SOURCE_REPOSITORY,
+            "source_branch": sync.SOURCE_BRANCH,
+            "target_repository": sync.TARGET_REPOSITORY,
+            "target_branch": sync.TARGET_BRANCH,
+            "cursor_commit": cursor,
+            "initial_backfill": {
+                "through_commit": cursor,
+                "commit_count": 5,
+                "completed": True,
+            },
+            "last_sync": None,
+        }
+        state_path = target / sync.STATE_PATH
+        state_path.parent.mkdir()
+        state_path.write_text(json.dumps(state), encoding="utf-8")
+        before = state_path.read_bytes()
+        work_dir = self.root / "source-limit-work"
+
+        with self.assertRaises(sync.ActionRequired) as raised:
+            sync.prepare_phase(
+                root=target,
+                work_dir=work_dir,
+                github=FakeGithub(
+                    sync.Lifecycle(
+                        action="proceed",
+                        remote_sha=None,
+                        reason="no bot branch",
+                    )
+                ),
+                source=self.source(
+                    target_root=target,
+                    limits=sync.Limits(max_current_file_bytes=32),
+                ),
+                limits=sync.Limits(max_current_file_bytes=32),
+            )
+
+        message = str(raised.exception)
+        self.assertIn(event, message)
+        self.assertIn(
+            "source file firmware/oversized.c is 65 bytes; the limit is 32",
+            message,
+        )
+        self.assertIn("manually reviewed pull request", message)
+        self.assertIn("cursor was not advanced", message)
+        self.assertEqual(state_path.read_bytes(), before)
+        self.assertFalse((work_dir / "prepared.json").exists())
+        self.assertFalse((work_dir / "status.json").exists())
 
 
 class ModelTransportTests(unittest.TestCase):

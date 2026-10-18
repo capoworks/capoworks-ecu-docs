@@ -66,10 +66,14 @@ named `hella_opst.md` and `tunerstudio-protection.md` receive retrieval
 priority. Current source files are hard-capped at 300,000 bytes each and
 700,000 bytes in aggregate, while the prepared context and serialized model
 prompt are hard-capped at 1,500,000 bytes. Oversize, truncated, or partially
-decoded source material fails the run; it is never silently clipped. If one
-chosen integration event contains more than 40 commits, the run stops with
-Action Required, names the exact event SHA `B`, and requires a manually reviewed
-pull request for that event. It does not advance the cursor or skip the event.
+decoded source material fails the run; it is never silently clipped. If the
+chosen integration event exceeds a preparation safety limit, including its
+commit count, diff or file caps, current-payload or wiki caps, or the exact
+serialized prompt size, the run stops with Action Required. The message names
+the exact event SHA `B` and the original limit violation, and requires a
+manually reviewed pull request for that event. It does not advance the cursor or
+skip the event. During the initial backfill, limit failures retain their normal
+fail-closed behavior instead of this integration-event recovery message.
 
 If source `master` already equals the merged cursor, the run exits before an API
 call. If there are commits but no user-facing impact, the bot still opens a

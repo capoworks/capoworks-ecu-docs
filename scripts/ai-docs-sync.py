@@ -181,6 +181,14 @@ class LimitFailure(SyncFailure):
     """A configured or hard safety limit was exceeded."""
 
 
+class IntegrationEventLimitFailure(LimitFailure):
+    """A limit failed after a first-parent integration event was selected."""
+
+    def __init__(self, event_sha: str, violation: str) -> None:
+        super().__init__(violation)
+        self.event_sha = event_sha
+
+
 class ValidationFailure(SyncFailure):
     """Generated or persisted data failed strict validation."""
 
@@ -531,7 +539,7 @@ class SourceRepository:
                 timeout=60,
             )
         except SyncFailure as exc:
-            if "exited with status 1" in str(exc):
+            if re.search(r"\bexited with status 1(?::|$)", str(exc)):
                 return False
             raise
         return True
@@ -771,9 +779,22 @@ class SourceRepository:
                 "source master moved between resolution and clone; retry the workflow"
             )
         self.prove_ancestor(base, head)
-        range_head = (
-            self._select_integration_event(base, head) if integration_event else head
-        )
+        if integration_event:
+            range_head = self._select_integration_event(base, head)
+            try:
+                return self._snapshot_range(base, range_head, head, integration_event=True)
+            except LimitFailure as exc:
+                raise IntegrationEventLimitFailure(range_head, str(exc)) from exc
+        return self._snapshot_range(base, head, head, integration_event=False)
+
+    def _snapshot_range(
+        self,
+        base: str,
+        range_head: str,
+        observed_head: str,
+        *,
+        integration_event: bool,
+    ) -> SourceSnapshot:
         count_data = self._run_git(
             ["rev-list", "--count", f"{base}..{range_head}"],
             128,
@@ -889,7 +910,7 @@ class SourceRepository:
         return SourceSnapshot(
             base=base,
             head=range_head,
-            observed_head=head,
+            observed_head=observed_head,
             commits=commits,
             current_files=current_files,
             source_wiki_docs=source_docs,
@@ -1859,6 +1880,14 @@ def read_json(path: pathlib.Path) -> Any:
         raise ValidationFailure(f"could not read workflow artifact {path.name}: {exc}") from exc
 
 
+def _event_limit_action(event_sha: str, violation: str) -> ActionRequired:
+    return ActionRequired(
+        f"source integration event {event_sha} exceeds a preparation safety limit: "
+        f"{violation}; a manually reviewed pull request is needed for this event, "
+        "and the cursor was not advanced"
+    )
+
+
 def prepare_phase(
     *,
     root: pathlib.Path,
@@ -1888,11 +1917,17 @@ def prepare_phase(
         return 0
 
     initial = state["initial_backfill"]
-    snapshot = source.snapshot(
-        cursor,
-        head,
-        integration_event=bool(initial["completed"]),
-    )
+    initial_completed = bool(initial["completed"])
+    try:
+        snapshot = source.snapshot(
+            cursor,
+            head,
+            integration_event=initial_completed,
+        )
+    except IntegrationEventLimitFailure as exc:
+        if not initial_completed:
+            raise
+        raise _event_limit_action(exc.event_sha, str(exc)) from exc
     if not initial["completed"]:
         expected_count = initial["commit_count"]
         expected_tip = initial["through_commit"]
@@ -1909,10 +1944,13 @@ def prepare_phase(
     context = _context_payload(state, snapshot, lifecycle, target_head)
     prompt_bytes = serialized_message_bytes(context)
     if prompt_bytes > limits.max_prompt_bytes:
-        raise LimitFailure(
+        violation = (
             f"prepared input is {prompt_bytes} bytes; "
             f"maximum is {limits.max_prompt_bytes}"
         )
+        if initial_completed:
+            raise _event_limit_action(snapshot.head, violation)
+        raise LimitFailure(violation)
     write_json(_run_workflow_artifacts(work_dir)[1], context)
     write_json(
         _run_workflow_artifacts(work_dir)[0],
