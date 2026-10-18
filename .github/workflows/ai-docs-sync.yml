@@ -1,0 +1,93 @@
+name: AI firmware docs sync
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+  repository_dispatch:
+    types: [firmware-updated]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-docs-sync
+  cancel-in-progress: false
+
+jobs:
+  unit-tests:
+    name: Sync unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.repository == 'capoworks/capoworks-ecu-docs'
+    permissions:
+      contents: read
+    steps:
+      - name: Check out documentation repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Run stdlib unit tests
+        run: >-
+          python3 -m unittest discover
+          --start-directory scripts
+          --pattern 'test_ai_docs_sync.py'
+          --verbose
+
+  sync:
+    name: Prepare, generate, and open documentation PR
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.repository == 'capoworks/capoworks-ecu-docs'
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - name: Check out documentation master without persisted credentials
+        uses: actions/checkout@v7
+        with:
+          ref: master
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Prepare source range and audit context
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AI_DOCS_WORK_DIR: ${{ runner.temp }}/ai-docs-sync
+        run: python3 -u scripts/ai-docs-sync.py prepare
+
+      # This is the only step that receives the model credential. It does not
+      # receive a GitHub token and does not execute source files or generated MDX.
+      - name: Generate and validate structured documentation
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          AI_DOCS_MODEL: ${{ vars.AI_DOCS_MODEL || 'deepseek-chat' }}
+          AI_DOCS_MAX_TOKENS: ${{ vars.AI_DOCS_MAX_TOKENS }}
+          AI_DOCS_TIMEOUT_SECONDS: ${{ vars.AI_DOCS_TIMEOUT_SECONDS }}
+          AI_DOCS_RETRIES: ${{ vars.AI_DOCS_RETRIES }}
+          AI_DOCS_MAX_CURRENT_FILES: ${{ vars.AI_DOCS_MAX_CURRENT_FILES }}
+          AI_DOCS_MAX_WIKI_DOCS: ${{ vars.AI_DOCS_MAX_WIKI_DOCS }}
+          AI_DOCS_MAX_OUTPUT_FILES: ${{ vars.AI_DOCS_MAX_OUTPUT_FILES }}
+          AI_DOCS_WORK_DIR: ${{ runner.temp }}/ai-docs-sync
+        run: python3 -u scripts/ai-docs-sync.py generate
+
+      # This step never receives DEEPSEEK_API_KEY. It revalidates everything,
+      # writes atomically, pushes with a lease, opens a PR, and dispatches CI.
+      - name: Validate, commit, push, and open pull request
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AI_DOCS_WORK_DIR: ${{ runner.temp }}/ai-docs-sync
+        run: python3 -u scripts/ai-docs-sync.py finalize

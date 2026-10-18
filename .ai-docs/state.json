@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "source_repository": "capoworks/capoworks-ecu",
+  "source_branch": "master",
+  "target_repository": "capoworks/capoworks-ecu-docs",
+  "target_branch": "master",
+  "cursor_commit": "6b31ebaec865d7ea856b20a3211c7a0310e29ef2",
+  "initial_backfill": {
+    "through_commit": "be02e3cdaa2c177d05853a41af6dacc9c0766b77",
+    "commit_count": 5,
+    "completed": false
+  },
+  "last_sync": null
+}
