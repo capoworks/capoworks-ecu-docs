@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "batch_head": "ed9747d02c5269065b65d0a27300f7a30fad49cb",
+  "previous_cursor_commit": "0e8064d99d3341484c5181e477fbe1a162f9367c",
+  "cursor_commit": "ed9747d02c5269065b65d0a27300f7a30fad49cb",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "1527675646d8ca071ac2870b7401410d866c97d1",
+      "head_inclusive": "0e8064d99d3341484c5181e477fbe1a162f9367c",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for safe DC actuator reconfiguration. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); no new user setting or workflow requires a guide. The ledger limits the integration merge to the audited original.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "d629cb128c7d9d87241a941636da131dd8526877",
+        "decision": "no-impact",
+        "rationale": "Stops and detaches invalid motor bindings and safely terminates PWM outputs; existing actuator configuration fields and workflows remain unchanged.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Electronic throttle and DC wastegate outputs stop immediately when disabled or when reinitialization fails.",
+          "[firmware/controllers/system/dc_motor.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/system/dc_motor.cpp): Replacement validation stops the previous motor binding and disabled slots detach cleanly.",
+          "[firmware/controllers/system/timer/pwm_generator_logic.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/system/timer/pwm_generator_logic.cpp): Software PWM terminal states are applied synchronously and forced STM32 output holds the inactive state."
+        ]
+      },
+      {
+        "commit": "0e8064d99d3341484c5181e477fbe1a162f9367c",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #14 adds no impact beyond d629cb128c7d9d87241a941636da131dd8526877; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #39 maps original PR #14 / d629cb128c7d9d87241a941636da131dd8526877 to merge 0e8064d99d3341484c5181e477fbe1a162f9367c; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 0e8064d99d3341484c5181e477fbe1a162f9367c has parents 1527675646d8ca071ac2870b7401410d866c97d1 and d629cb128c7d9d87241a941636da131dd8526877",
+          "[firmware/controllers/system/dc_motor.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/system/dc_motor.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "0e8064d99d3341484c5181e477fbe1a162f9367c",
+      "head_inclusive": "ed9747d02c5269065b65d0a27300f7a30fad49cb",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for actuator inhibition across blocking burns. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); no new user setting or workflow requires a guide. The ledger limits the integration merge to the audited original.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "5fe02ec470abc4042ab4ebc6e1bc9b9e4cce175f",
+        "decision": "no-impact",
+        "rationale": "Latches ETB and DC outputs off during blocking flash I/O until fresh feedback and a new control cycle; it changes safety behavior without a new user setting.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Blocking calibration burns inhibit electronic-throttle and DC wastegate outputs until fresh feedback and a new valid cycle.",
+          "[firmware/controllers/actuators/electronic_throttle.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/actuators/electronic_throttle.cpp): Burn gating stops configured ETB control and resumes only after newer valid sensor updates.",
+          "[firmware/controllers/sensors/core/sensor.h](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/sensors/core/sensor.h): Sensor timestamps carry freshness through stored, redundant and proxy providers."
+        ]
+      },
+      {
+        "commit": "ed9747d02c5269065b65d0a27300f7a30fad49cb",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #15 adds no impact beyond 5fe02ec470abc4042ab4ebc6e1bc9b9e4cce175f; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #40 maps original PR #15 / 5fe02ec470abc4042ab4ebc6e1bc9b9e4cce175f to merge ed9747d02c5269065b65d0a27300f7a30fad49cb; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: ed9747d02c5269065b65d0a27300f7a30fad49cb has parents 0e8064d99d3341484c5181e477fbe1a162f9367c and 5fe02ec470abc4042ab4ebc6e1bc9b9e4cce175f",
+          "[firmware/controllers/actuators/electronic_throttle.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/actuators/electronic_throttle.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "batch_head": "ed3e5c7f9f365826eae8551d3e873cefe53ea8a6",
+  "previous_cursor_commit": "319d4e5145062a0fc802d3bc3f79a7f3be233625",
+  "cursor_commit": "ed3e5c7f9f365826eae8551d3e873cefe53ea8a6",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "28d56b01d7b3e7136bf15bbad3000be8ef91c84f",
+      "head_inclusive": "319d4e5145062a0fc802d3bc3f79a7f3be233625",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for portable Core8 build and explicit DFU tasks. Source evidence is pinned at [.vscode/scripts/README.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/.vscode/scripts/README.md); guide target for a separate docs PR: docs/10-Software/Core8-Build-Tools.md (not claimed public here). The ledger limits the integration merge to the audited original.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "034ec75bc1e9bf7391eeb0050b13038c0f60e3d7",
+        "decision": "update",
+        "rationale": "Adds a portable Core8 build helper and makes flashing an explicit, signature-checked DFU action; users maintaining Core8 firmware need build and upload guidance.",
+        "evidence": [
+          "[.vscode/scripts/README.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/.vscode/scripts/README.md): Documents the default Core8 build task and the non-default explicit USB DFU task.",
+          "[.vscode/scripts/core8_dfu.sh](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/.vscode/scripts/core8_dfu.sh): Bundled ARM binutils and BIN/ELF/INI signature checks gate the explicit programmer call.",
+          "guide target: docs/10-Software/Core8-Build-Tools.md (pending separate docs PR; not claimed public)"
+        ]
+      },
+      {
+        "commit": "319d4e5145062a0fc802d3bc3f79a7f3be233625",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #21 adds no impact beyond 034ec75bc1e9bf7391eeb0050b13038c0f60e3d7; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #47 maps original PR #21 / 034ec75bc1e9bf7391eeb0050b13038c0f60e3d7 to merge 319d4e5145062a0fc802d3bc3f79a7f3be233625; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 319d4e5145062a0fc802d3bc3f79a7f3be233625 has parents 28d56b01d7b3e7136bf15bbad3000be8ef91c84f and 034ec75bc1e9bf7391eeb0050b13038c0f60e3d7",
+          "[.vscode/scripts/core8_dfu.sh](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/.vscode/scripts/core8_dfu.sh): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/10-Software/Core8-Build-Tools.md"
+    ],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "319d4e5145062a0fc802d3bc3f79a7f3be233625",
+      "head_inclusive": "ed3e5c7f9f365826eae8551d3e873cefe53ea8a6",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for dedicated air-mass model calibration and atomic fuel publication. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); guide target for a separate docs PR: docs/08-Fuel/Fuel-Algorithms/Airmass-Models-and-Migration.md, docs/08-Fuel/Fuel-Algorithms/AlphaN.md, docs/08-Fuel/Fuel-Algorithms/MAF.md, docs/08-Fuel/Fuel-Algorithms/SD.md (not claimed public here). The ledger limits the integration merge to the audited original.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "fef0a82ef6899b7b09c77ad0c9dd4f8996fe1733",
+        "decision": "update",
+        "rationale": "Introduces dedicated SD, Alpha-N and MAF calibration inputs, generation validation and atomic per-cylinder fuel publication, with manual tune transfer for layout 20026.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Adds a dedicated 16x16 Alpha-N filling map and independent model inputs; older binary tunes require manual transfer.",
+          "[firmware/controllers/algo/airmass/alphan_airmass.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/algo/airmass/alphan_airmass.cpp): The Alpha-N model evaluates its dedicated filling table and captured physical inputs.",
+          "[firmware/controllers/engine_cycle/airmass_injection_state.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/engine_cycle/airmass_injection_state.cpp): Complete per-cylinder fuel results publish under one lock while admission closes on stop, tune writes and invalid calculations.",
+          "guide targets: docs/08-Fuel/Fuel-Algorithms/Airmass-Models-and-Migration.md, docs/08-Fuel/Fuel-Algorithms/AlphaN.md, docs/08-Fuel/Fuel-Algorithms/MAF.md, docs/08-Fuel/Fuel-Algorithms/SD.md (reviewed paths; separate docs work)"
+        ]
+      },
+      {
+        "commit": "ed3e5c7f9f365826eae8551d3e873cefe53ea8a6",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #22 adds no impact beyond fef0a82ef6899b7b09c77ad0c9dd4f8996fe1733; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #48 maps original PR #22 / fef0a82ef6899b7b09c77ad0c9dd4f8996fe1733 to merge ed3e5c7f9f365826eae8551d3e873cefe53ea8a6; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: ed3e5c7f9f365826eae8551d3e873cefe53ea8a6 has parents 319d4e5145062a0fc802d3bc3f79a7f3be233625 and fef0a82ef6899b7b09c77ad0c9dd4f8996fe1733",
+          "[firmware/controllers/algo/airmass/alphan_airmass.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/algo/airmass/alphan_airmass.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/08-Fuel/Fuel-Algorithms/Airmass-Models-and-Migration.md",
+      "docs/08-Fuel/Fuel-Algorithms/AlphaN.md",
+      "docs/08-Fuel/Fuel-Algorithms/MAF.md",
+      "docs/08-Fuel/Fuel-Algorithms/SD.md"
+    ],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  }
+}

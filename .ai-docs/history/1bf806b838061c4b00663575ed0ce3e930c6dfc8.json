@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "batch_head": "1bf806b838061c4b00663575ed0ce3e930c6dfc8",
+  "previous_cursor_commit": "21260be2bf5ba5f7afa8df8b0ec193b719e6242b",
+  "cursor_commit": "1bf806b838061c4b00663575ed0ce3e930c6dfc8",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "77ce47cc2527050c3130c2ddc010b3b49b460f8f",
+      "head_inclusive": "21260be2bf5ba5f7afa8df8b0ec193b719e6242b",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for experimental causal time-budget dwell planning. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); guide target for a separate docs PR: docs/11-Ignition/Ignition-Settings/Experimental-Timing.md (not claimed public here). The ledger limits the integration merge to the audited original.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "ea47b68b374a863051e7f0ef62a068a068b138d7",
+        "decision": "update",
+        "rationale": "Adds opt-in causal time-budget dwell planning with occurrence ownership and physical-deadline bounds; Legacy remains default, but eligibility and retarget limits need guidance.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Time-budget planning requires individual coils and keeps Legacy fallback; each target is tied to one TDC occurrence.",
+          "[firmware/controllers/engine_cycle/ignition_retarget.h](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/engine_cycle/ignition_retarget.h): Retargeting enforces causal ETA, minimum dwell and the physical output deadline.",
+          "[firmware/controllers/engine_cycle/spark_logic.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/engine_cycle/spark_logic.cpp): Superseded callback generations are invalidated before replacement callbacks are registered.",
+          "guide target: docs/11-Ignition/Ignition-Settings/Experimental-Timing.md (reviewed path; separate docs PR)"
+        ]
+      },
+      {
+        "commit": "21260be2bf5ba5f7afa8df8b0ec193b719e6242b",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #26 adds no impact beyond ea47b68b374a863051e7f0ef62a068a068b138d7; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #51 maps original PR #26 / ea47b68b374a863051e7f0ef62a068a068b138d7 to merge 21260be2bf5ba5f7afa8df8b0ec193b719e6242b; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 21260be2bf5ba5f7afa8df8b0ec193b719e6242b has parents 77ce47cc2527050c3130c2ddc010b3b49b460f8f and ea47b68b374a863051e7f0ef62a068a068b138d7",
+          "[firmware/controllers/engine_cycle/ignition_retarget.h](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/engine_cycle/ignition_retarget.h): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/11-Ignition/Ignition-Settings/Experimental-Timing.md"
+    ],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "21260be2bf5ba5f7afa8df8b0ec193b719e6242b",
+      "head_inclusive": "1bf806b838061c4b00663575ed0ce3e930c6dfc8",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for independent captured consumer load coordinates. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); guide target for a separate docs PR: docs/08-Fuel/Fuel-Settings/Load-Sources.md (not claimed public here). The ledger limits the integration merge to the audited original.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "45298b9020a52059c278d3d0ba16bae89b7e6a7f",
+        "decision": "update",
+        "rationale": "Adds independent full-precision load selectors for fuel, ignition, protection and actuator consumers, with fallback and diagnostic semantics that users must configure correctly.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Independent full-precision load coordinates and per-function selector UI are added for the listed consumers.",
+          "[firmware/controllers/algo/airmass_loads.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/algo/airmass_loads.cpp): Captured consumer coordinates are resolved after fuel publication and invalidated by tune generation changes.",
+          "[firmware/tunerstudio/tunerstudio.template.ini](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/tunerstudio/tunerstudio.template.ini): Per-consumer load-source fields and diagnostic cursors are exposed independently of Fuel strategy.",
+          "guide target: docs/08-Fuel/Fuel-Settings/Load-Sources.md (reviewed path; separate docs PR)"
+        ]
+      },
+      {
+        "commit": "1bf806b838061c4b00663575ed0ce3e930c6dfc8",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #27 adds no impact beyond 45298b9020a52059c278d3d0ba16bae89b7e6a7f; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #52 maps original PR #27 / 45298b9020a52059c278d3d0ba16bae89b7e6a7f to merge 1bf806b838061c4b00663575ed0ce3e930c6dfc8; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 1bf806b838061c4b00663575ed0ce3e930c6dfc8 has parents 21260be2bf5ba5f7afa8df8b0ec193b719e6242b and 45298b9020a52059c278d3d0ba16bae89b7e6a7f",
+          "[firmware/controllers/algo/airmass_loads.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/algo/airmass_loads.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/08-Fuel/Fuel-Settings/Load-Sources.md"
+    ],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  }
+}

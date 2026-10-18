@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "batch_head": "1527675646d8ca071ac2870b7401410d866c97d1",
+  "previous_cursor_commit": "c13a8c50e1bbe4bd2712a738340e6015c2689d43",
+  "cursor_commit": "1527675646d8ca071ac2870b7401410d866c97d1",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "d50ee53a7b34f5d3f3d6d4613f2d2a3c4a672d83",
+      "head_inclusive": "c13a8c50e1bbe4bd2712a738340e6015c2689d43",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for configuration flash request serialization. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); no new user setting or workflow requires a guide. The ledger limits the integration merge to the audited original.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "17bedf37d6acbe4bb9bce5e08bb4d2aee5906302",
+        "decision": "no-impact",
+        "rationale": "Serializes saves and reads and defers reentrant writes; it fixes internal storage coordination without exposing a new setting or workflow.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Configuration flash operations are serialized so concurrent saves and reads cannot overwrite each other.",
+          "[firmware/controllers/flash_main.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/flash_main.cpp): Atomic write claiming retains requests that arrive during active I/O and rejects overlapping reads.",
+          "[firmware/controllers/configuration_write_state.h](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/configuration_write_state.h): Explicit write/read ownership state tracks active, deferred and failed requests."
+        ]
+      },
+      {
+        "commit": "c13a8c50e1bbe4bd2712a738340e6015c2689d43",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #12 adds no impact beyond 17bedf37d6acbe4bb9bce5e08bb4d2aee5906302; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #37 maps original PR #12 / 17bedf37d6acbe4bb9bce5e08bb4d2aee5906302 to merge c13a8c50e1bbe4bd2712a738340e6015c2689d43; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: c13a8c50e1bbe4bd2712a738340e6015c2689d43 has parents d50ee53a7b34f5d3f3d6d4613f2d2a3c4a672d83 and 17bedf37d6acbe4bb9bce5e08bb4d2aee5906302",
+          "[firmware/controllers/flash_main.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/flash_main.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "c13a8c50e1bbe4bd2712a738340e6015c2689d43",
+      "head_inclusive": "1527675646d8ca071ac2870b7401410d866c97d1",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for verified flash-copy replacement. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); no new user setting or workflow requires a guide. The ledger limits the integration merge to the audited original.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "08dae0fbbb1cd0c741d7ffb3b247aff4f4b301e6",
+        "decision": "no-impact",
+        "rationale": "Preserves a verified configuration copy until erase, programming, byte, header and CRC checks pass; this is a reliability fix with no new tuning control.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Calibration burns verify erase, programmed bytes, header and CRC before replacing the remaining valid copy.",
+          "[firmware/controllers/configuration_storage.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/configuration_storage.cpp): Copy verification and bounded CRC reads gate replacement of the last verified copy.",
+          "[firmware/controllers/flash_main.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/flash_main.cpp): Failure reports the write phase, address and verified-copy count."
+        ]
+      },
+      {
+        "commit": "1527675646d8ca071ac2870b7401410d866c97d1",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #13 adds no impact beyond 08dae0fbbb1cd0c741d7ffb3b247aff4f4b301e6; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #38 maps original PR #13 / 08dae0fbbb1cd0c741d7ffb3b247aff4f4b301e6 to merge 1527675646d8ca071ac2870b7401410d866c97d1; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 1527675646d8ca071ac2870b7401410d866c97d1 has parents c13a8c50e1bbe4bd2712a738340e6015c2689d43 and 08dae0fbbb1cd0c741d7ffb3b247aff4f4b301e6",
+          "[firmware/controllers/configuration_storage.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/configuration_storage.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  }
+}

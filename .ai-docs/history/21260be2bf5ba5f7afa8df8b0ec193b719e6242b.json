@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "batch_head": "21260be2bf5ba5f7afa8df8b0ec193b719e6242b",
+  "previous_cursor_commit": "77ce47cc2527050c3130c2ddc010b3b49b460f8f",
+  "cursor_commit": "21260be2bf5ba5f7afa8df8b0ec193b719e6242b",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "809de8f8ec49b1442e9e5fa8f7fe73005da8be74",
+      "head_inclusive": "77ce47cc2527050c3130c2ddc010b3b49b460f8f",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for experimental cycle-profile ignition angle conversion. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); guide target for a separate docs PR: docs/11-Ignition/Ignition-Settings/Experimental-Timing.md (not claimed public here). The ledger limits the integration merge to the audited original.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "69f7973f5da52a1d5e6b37a848cc7a88205ac01f",
+        "decision": "update",
+        "rationale": "Adds an opt-in cycle-profile angle conversion for ignition charge and firing while retaining Legacy as the default; timing requirements and fallback need operator guidance.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Experimental cycle-profile conversion is opt-in, uses supported missing-tooth rising-edge history and falls back to Legacy timing.",
+          "[firmware/controllers/trigger/ignition_cycle_profile.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/trigger/ignition_cycle_profile.cpp): Recent tooth timing builds the cycle profile and resets on synchronization changes.",
+          "[firmware/tunerstudio/tunerstudio.template.ini](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/tunerstudio/tunerstudio.template.ini): Ignition scheduling exposes Legacy and Cycle profile (experimental).",
+          "guide target: docs/11-Ignition/Ignition-Settings/Experimental-Timing.md (reviewed path; separate docs PR)"
+        ]
+      },
+      {
+        "commit": "77ce47cc2527050c3130c2ddc010b3b49b460f8f",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #24 adds no impact beyond 69f7973f5da52a1d5e6b37a848cc7a88205ac01f; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #50 maps original PR #24 / 69f7973f5da52a1d5e6b37a848cc7a88205ac01f to merge 77ce47cc2527050c3130c2ddc010b3b49b460f8f; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 77ce47cc2527050c3130c2ddc010b3b49b460f8f has parents 809de8f8ec49b1442e9e5fa8f7fe73005da8be74 and 69f7973f5da52a1d5e6b37a848cc7a88205ac01f",
+          "[firmware/controllers/trigger/ignition_cycle_profile.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/trigger/ignition_cycle_profile.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/11-Ignition/Ignition-Settings/Experimental-Timing.md"
+    ],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "77ce47cc2527050c3130c2ddc010b3b49b460f8f",
+      "head_inclusive": "21260be2bf5ba5f7afa8df8b0ec193b719e6242b",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for experimental causal time-budget dwell planning. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); guide target for a separate docs PR: docs/11-Ignition/Ignition-Settings/Experimental-Timing.md (not claimed public here). The ledger limits the integration merge to the audited original.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "ea47b68b374a863051e7f0ef62a068a068b138d7",
+        "decision": "update",
+        "rationale": "Adds opt-in causal time-budget dwell planning with occurrence ownership and physical-deadline bounds; Legacy remains default, but eligibility and retarget limits need guidance.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Time-budget planning requires individual coils and keeps Legacy fallback; each target is tied to one TDC occurrence.",
+          "[firmware/controllers/engine_cycle/ignition_retarget.h](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/engine_cycle/ignition_retarget.h): Retargeting enforces causal ETA, minimum dwell and the physical output deadline.",
+          "[firmware/controllers/engine_cycle/spark_logic.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/engine_cycle/spark_logic.cpp): Superseded callback generations are invalidated before replacement callbacks are registered.",
+          "guide target: docs/11-Ignition/Ignition-Settings/Experimental-Timing.md (reviewed path; separate docs PR)"
+        ]
+      },
+      {
+        "commit": "21260be2bf5ba5f7afa8df8b0ec193b719e6242b",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #26 adds no impact beyond ea47b68b374a863051e7f0ef62a068a068b138d7; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #51 maps original PR #26 / ea47b68b374a863051e7f0ef62a068a068b138d7 to merge 21260be2bf5ba5f7afa8df8b0ec193b719e6242b; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 21260be2bf5ba5f7afa8df8b0ec193b719e6242b has parents 77ce47cc2527050c3130c2ddc010b3b49b460f8f and ea47b68b374a863051e7f0ef62a068a068b138d7",
+          "[firmware/controllers/engine_cycle/ignition_retarget.h](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/engine_cycle/ignition_retarget.h): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/11-Ignition/Ignition-Settings/Experimental-Timing.md"
+    ],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "batch_head": "91b74aedfd7b58da66d95f259c16086c7c3e5093",
+  "previous_cursor_commit": "a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd",
+  "cursor_commit": "91b74aedfd7b58da66d95f259c16086c7c3e5093",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "1bf806b838061c4b00663575ed0ce3e930c6dfc8",
+      "head_inclusive": "a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for SD and Alpha-N air-mass blending. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); guide target for a separate docs PR: docs/08-Fuel/Fuel-Algorithms/Blended.md, docs/02-Intro-Start-Here/09-Which-Fuel-Method-For-Me.md (not claimed public here). The ledger limits the integration merge to the audited original.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "eee63c82b531db9bc6fa640c58ad76cf740a2ff0",
+        "decision": "update",
+        "rationale": "Adds an SD + Alpha-N strategy using a TPS or measured-MAP authority table, branch fallback and new diagnostics, with layout 20031 manual transfer and breakpoint re-entry needs.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Adds an SD + Alpha-N authority table with selectable TPS or measured-MAP axes and manual calibration transfer.",
+          "[firmware/controllers/algo/airmass/blended_airmass.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/algo/airmass/blended_airmass.cpp): The model combines raw branch masses, applies shared corrections once and records branch fallback.",
+          "[firmware/tunerstudio/tunerstudio.template.ini](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/tunerstudio/tunerstudio.template.ini): Fuel strategy includes SD + Alpha-N and exposes the authority Y-axis and blend table.",
+          "guide targets: docs/08-Fuel/Fuel-Algorithms/Blended.md and the SD + Alpha-N selector entry in docs/02-Intro-Start-Here/09-Which-Fuel-Method-For-Me.md (reviewed paths; separate docs PR)"
+        ]
+      },
+      {
+        "commit": "a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #28 adds no impact beyond eee63c82b531db9bc6fa640c58ad76cf740a2ff0; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #53 maps original PR #28 / eee63c82b531db9bc6fa640c58ad76cf740a2ff0 to merge a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd has parents 1bf806b838061c4b00663575ed0ce3e930c6dfc8 and eee63c82b531db9bc6fa640c58ad76cf740a2ff0",
+          "[firmware/controllers/algo/airmass/blended_airmass.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/algo/airmass/blended_airmass.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/08-Fuel/Fuel-Algorithms/Blended.md",
+      "docs/02-Intro-Start-Here/09-Which-Fuel-Method-For-Me.md"
+    ],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd",
+      "head_inclusive": "91b74aedfd7b58da66d95f259c16086c7c3e5093",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for per-model cylinder fuel trims. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); guide target for a separate docs PR: docs/08-Fuel/Fuel-Settings/Cylinder-Fuel-Trim.md (not claimed public here). The ledger limits the integration merge to the audited original.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "223895c17f82f9fd07bac9e81414661440ac7475",
+        "decision": "update",
+        "rationale": "Replaces former 4x4 residual trims with separate 16x16 Speed Density and Alpha-N families, advances layout to 20032 and requires manual trim recreation and Core8 memory trade-off guidance.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Separate 16x16 SD and Alpha-N per-cylinder trim families replace the former 4x4 residual maps in layout 20032.",
+          "[firmware/controllers/algo/cylinder_model_fuel_trim.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/algo/cylinder_model_fuel_trim.cpp): Trim factors are derived from captured native coordinates and effective weighted branch masses, then published with the fuel transaction.",
+          "[docs/user/cylinder-model-fuel-trims.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/docs/user/cylinder-model-fuel-trims.md): The source note records the model-family selection, manual migration and Core8 Lua-heap/stack trade-off.",
+          "guide target: docs/08-Fuel/Fuel-Settings/Cylinder-Fuel-Trim.md (reviewed path; separate docs PR)"
+        ]
+      },
+      {
+        "commit": "91b74aedfd7b58da66d95f259c16086c7c3e5093",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #29 adds no impact beyond 223895c17f82f9fd07bac9e81414661440ac7475; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #54 maps original PR #29 / 223895c17f82f9fd07bac9e81414661440ac7475 to merge 91b74aedfd7b58da66d95f259c16086c7c3e5093; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 91b74aedfd7b58da66d95f259c16086c7c3e5093 has parents a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd and 223895c17f82f9fd07bac9e81414661440ac7475",
+          "[firmware/controllers/algo/cylinder_model_fuel_trim.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/algo/cylinder_model_fuel_trim.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/08-Fuel/Fuel-Settings/Cylinder-Fuel-Trim.md"
+    ],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  }
+}

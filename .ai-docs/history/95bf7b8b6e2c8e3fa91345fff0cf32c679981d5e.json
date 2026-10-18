@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "batch_head": "95bf7b8b6e2c8e3fa91345fff0cf32c679981d5e",
+  "previous_cursor_commit": "4147d3781a395438265f649585ff6ad48105330d",
+  "cursor_commit": "95bf7b8b6e2c8e3fa91345fff0cf32c679981d5e",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "947b8993ee21dc5e73b3293a402223dd1ec7d41c",
+      "head_inclusive": "4147d3781a395438265f649585ff6ad48105330d",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for constant-time trigger queue membership. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); no new user setting or workflow requires a guide. The ledger limits the integration merge to the audited original.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "715146fc7c3950e402e38a679d6c282a79e06917",
+        "decision": "no-impact",
+        "rationale": "Replaces membership scans and linked-list bookkeeping with explicit queue ownership; this is an internal performance and correctness change with no user configuration.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Explicit trigger queue membership and tail pointers provide constant-time insertion and unqueued-event cancellation.",
+          "[firmware/controllers/system/timer/trigger_scheduler.h](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/system/timer/trigger_scheduler.h): Waiting and due ownership plus head/tail queues replace linked-list membership scans."
+        ]
+      },
+      {
+        "commit": "4147d3781a395438265f649585ff6ad48105330d",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #9 adds no impact beyond 715146fc7c3950e402e38a679d6c282a79e06917; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #34 maps original PR #9 / 715146fc7c3950e402e38a679d6c282a79e06917 to merge 4147d3781a395438265f649585ff6ad48105330d; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 4147d3781a395438265f649585ff6ad48105330d has parents 947b8993ee21dc5e73b3293a402223dd1ec7d41c and 715146fc7c3950e402e38a679d6c282a79e06917",
+          "[firmware/controllers/system/timer/trigger_scheduler.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/system/timer/trigger_scheduler.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "4147d3781a395438265f649585ff6ad48105330d",
+      "head_inclusive": "95bf7b8b6e2c8e3fa91345fff0cf32c679981d5e",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for ignition occurrence identities. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); no new user setting or workflow requires a guide. The ledger limits the integration merge to the audited original.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "f01c4982a37e047ad2411c49052b0dffc6dcb165",
+        "decision": "no-impact",
+        "rationale": "Prevents stale callbacks from mutating a newer ignition occurrence; existing ignition settings and tuning workflow are unchanged.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Closes ignition occurrences atomically, rejects obsolete callbacks and preserves charged-output discharge.",
+          "[firmware/controllers/engine_cycle/spark_logic.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/engine_cycle/spark_logic.cpp): Generation tokens and snapshotted outputs/dwell guard charge, fire and underdwell callbacks.",
+          "[firmware/controllers/algo/event_registry.h](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/algo/event_registry.h): Occurrence and charge identities are carried by value through event callbacks."
+        ]
+      },
+      {
+        "commit": "95bf7b8b6e2c8e3fa91345fff0cf32c679981d5e",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #10 adds no impact beyond f01c4982a37e047ad2411c49052b0dffc6dcb165; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #35 maps original PR #10 / f01c4982a37e047ad2411c49052b0dffc6dcb165 to merge 95bf7b8b6e2c8e3fa91345fff0cf32c679981d5e; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 95bf7b8b6e2c8e3fa91345fff0cf32c679981d5e has parents 4147d3781a395438265f649585ff6ad48105330d and f01c4982a37e047ad2411c49052b0dffc6dcb165",
+          "[firmware/controllers/engine_cycle/spark_logic.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/engine_cycle/spark_logic.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  }
+}
