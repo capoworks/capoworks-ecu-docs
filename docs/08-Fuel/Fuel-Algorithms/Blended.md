@@ -20,7 +20,9 @@ blended cylinder air mass =
 
 The authority is a percentage. A **0%** cell uses SD only, a **100%** cell uses
 Alpha-N only, and an intermediate cell mixes the two cylinder-air-mass
-results. Common fuel corrections are applied after that mix.
+results. After that mix, one shared air-mass correction multiplier is applied
+to the blended mass before fuel is calculated; the correction is not applied
+separately to each branch or again later in fuel computation.
 
 This is not a VE-percentage blend and it does not blend fuel pulse widths. The
 existing **VE blend tables** are separate correction overlays; they do not
@@ -55,6 +57,17 @@ The two authority choices have different meanings:
 - **Measured MAP kPa** schedules authority from a valid measured MAP reading
   and its pressure breakpoints. A MAP estimate cannot authorize the blend.
 
+For measured-MAP authority, the load must be a valid finite measured MAP from
+`0` through `1000` kPa. If that coordinate is unavailable, the firmware does
+not schedule the authority table: requested authority is `0%`, so it first
+tries the SD branch, then uses a healthy Alpha-N branch if SD cannot complete.
+It marks authority unavailable and branch fallback in diagnostics, and the
+admission state is degraded rather than faulted when a complete branch carries
+the calculation. A missing authority coordinate alone therefore does not
+immediately reject the calculation. If both branches fail, admission is
+closed. A permitted TPS/RPM MAP estimate may serve the SD fallback, but it
+never becomes the measured-MAP authority-table coordinate.
+
 The authority Y-axis selects how much Alpha-N contributes; it does not retarget
 either model. The SD branch remains indexed by its MAP/RPM table and the
 Alpha-N branch remains indexed by its TPS/RPM filling table.
@@ -69,7 +82,7 @@ engine calibration or safe operating recommendation.
 
 ## Calibration requirements
 
-The blended authority table is nonlinearly interpolated, so its axes must meet
+The blended authority table is bilinearly interpolated, so its axes must meet
 the firmware's strict checks:
 
 - The authority load axis has 8 finite, non-negative, strictly increasing
@@ -104,10 +117,10 @@ air-mass calculation:
   Alpha-N table and calculated mass after changing either policy.
 
 If the separate idle VE table is enabled, its **Idle VE load source** controls
-the idle overlay's coordinate. The choices are model default, measured MAP,
-TPS, or effective MAP. A missing coordinate for that choice causes idle-VE
-fallback and marks the affected branch degraded. In blended operation, review
-the idle policy as well as both main branch tables.
+the idle overlay's coordinate. The choices are **Model default**,
+**Measured MAP**, **TPS**, or **Effective MAP**. A missing coordinate for that
+choice causes idle-VE fallback and marks the affected branch degraded. In
+blended operation, review the idle policy as well as both main branch tables.
 
 ## Fallback and diagnostics
 
@@ -123,26 +136,31 @@ correct for the engine, fuel, sensors or operating condition.
 Log and inspect these TunerStudio channels while commissioning and testing the
 strategy:
 
-- **Air blend: admission state** shows whether the composite is not ready,
-  ready, degraded, or faulted.
-- **Air blend: requested Alpha-N** and **Air blend: effective Alpha-N** show
-  the table request and the authority actually used after fallback.
-- **Air blend: fault** and **Air blend: flags** identify the fault class and
-  fallback details.
+- **Air blend: injection admission state** shows whether the composite is not
+  ready, ready, degraded, or faulted.
+- **Air blend: requested Alpha-N weight** and
+  **Air blend: effective Alpha-N weight** show the table request and the
+  authority actually used after fallback.
+- **Air blend: model fault** and **Air blend: model flags** identify the fault
+  class and fallback details.
 - **Air blend: SD raw mass**, **Air blend: Alpha-N raw mass** and
-  **Air blend: common correction** show the pre-blend masses and the single
-  correction multiplier applied afterward.
-- **Air blend: SD load**, **Air blend: Alpha-N load**, **Air blend: SD VE**,
-  **Air blend: Alpha-N filling** and **Air blend: authority coordinate** show
-  which branch coordinates and table values participated.
-- **Airmass: temperature used**, **Airmass: temperature source**,
-  **Alpha-N: BARO coefficient** and **Airmass: fallback flags** expose the
-  pressure and temperature policies.
+  **Air blend: common correction multiplier** show the pre-blend masses and
+  the single correction multiplier applied afterward.
+- **Air blend: SD branch load**, **Air blend: Alpha-N branch load**,
+  **Air blend: SD branch VE**, **Air blend: Alpha-N branch filling** and
+  **Air blend: authority Y coordinate** show which branch coordinates and
+  table values participated.
+- **Airmass: Temperature used**, **Airmass: Temperature source**,
+  **Alpha-N: BARO coefficient** and
+  **Airmass: Temperature/MAP estimate fallback flags** expose the pressure and
+  temperature policies.
 
-For decoded numeric logs, **Air blend: admission state** uses `1` for not
-ready, `2` for ready, `3` for faulted and `4` for degraded in this strategy.
-**Air blend: fault** uses `0` none, `1` configuration, `2` sensor,
-`3` correction, `4` result, `5` load, `6` strategy change and `7` scheduling.
+For decoded numeric logs, **Air blend: injection admission state** maps to
+`AirmassInjectionStatus`: `0` `Legacy` (not used by this composite strategy),
+`1` `NotReady`, `2` `Ready`, `3` `Faulted` and `4` `Degraded`.
+**Air blend: model fault** maps to `AirmassInjectionFault`: `0` `None`,
+`1` `Configuration`, `2` `Sensor`, `3` `Correction`, `4` `Result`, `5` `Load`,
+`6` `StrategyChange` and `7` `Scheduling`.
 
 Verify that the selected authority coordinate has the expected units, the
 effective authority matches the request when no fallback is active, and the
