@@ -18,7 +18,7 @@ const config: Config = {
   onDuplicateRoutes: 'throw',
 
   noIndex: false, // adds <meta name="robots" content="noindex, nofollow"> to every page
-  favicon: 'img/icons/favicon.ico',
+  favicon: 'img/capoworks-logo.png',
   trailingSlash: true, // adds trailing slash to all links for GitHub Pages
   // staticDirectories: ['public', 'static'],
 
@@ -122,19 +122,21 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: 'img/icons/android-chrome-512x512.png',
+    image: 'img/capoworks-logo.png',
     colorMode: {
-      defaultMode: 'dark',
+      defaultMode: 'light',
       respectPrefersColorScheme: true,
     },
     navbar: {
       title: 'Capoworks ECU',
       logo: {
-        alt: 'Capoworks ECU logo',
-        src: 'img/capoworks-logo.svg',
+        alt: 'Capoworks logo',
+        src: 'img/capoworks-logo.png',
         style: {
-          height: 34,
-          marginTop: -2,
+          width: 36,
+          height: 36,
+          marginTop: -1,
+          borderRadius: 5,
         },
       },
       hideOnScroll: true,
@@ -154,29 +156,15 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'FOME community',
+          title: 'Capoworks',
           items: [
             {
-              label: 'Discord',
-              href: 'https://discord.gg/EEg2fbhQD4',
-            },
-            {
-              label: 'Facebook',
-              href: 'https://www.facebook.com/profile.php?id=100088049271157',
-            },
-          ],
-        },
-        {
-          title: 'More',
-          items: [
-            {
-              label: 'Original FOME Wiki',
-              href: 'https://wiki.fome.tech',
-              target: '_blank',
-            },
-            {
-              label: 'Capoworks firmware',
+              label: 'Firmware',
               href: 'https://github.com/capoworks/capoworks-ecu',
+            },
+            {
+              label: 'Documentation repository',
+              href: 'https://github.com/capoworks/capoworks-ecu-docs',
             },
             {
               label: 'Capoworks on GitHub',
@@ -184,8 +172,18 @@ const config: Config = {
             },
           ],
         },
+        {
+          title: 'Resources',
+          items: [
+            {
+              label: 'Credits and Sources',
+              to: '/credits-and-sources/',
+            },
+          ],
+        },
       ],
-      // copyright: `Copyright © ${new Date().getFullYear()} FOME`,
+      copyright:
+        'Documentation is available under CC BY-SA 4.0. See the linked Credits and Sources page for attribution.',
     },
     prism: {
       theme: lightCodeTheme,

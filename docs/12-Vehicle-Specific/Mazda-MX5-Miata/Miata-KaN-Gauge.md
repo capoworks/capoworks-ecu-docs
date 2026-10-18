@@ -4,7 +4,13 @@
 
 Product description and purchase link: [BMM KaN Multi Fit CAN Gauge](https://www.beermoneymotorsports.com/products/kan-gauge-for-rusefi).
 
-The KaN gauge is a multi function, multi fit gauge designed for Fome ECUs. The gauge has generic mounting options to fit any car and specific mounting solutions to fit into multiple locations on a Miata including the oil pressure gauge hole, an air conditioning vent or into a standard 52mm gauge pod. Data is sent to the gauge via CAN bus communication wires coming from the ECU and the layout of the gauge can be configured wirelessly using its standalone WiFi network. This article will detail the installation and setup of a gauge into your Mnpmiata.
+The KaN gauge is a multi-function, multi-fit third-party gauge documented for compatible ECU
+installations. Confirm with the producer that the gauge protocol and any selected profile are
+compatible with your board, Capoworks firmware, and definition. The gauge has generic mounting
+options to fit many cars and specific mounting solutions for several locations on a Miata, including
+the oil pressure gauge hole, an air conditioning vent, or a standard 52mm gauge pod. Data is sent to
+the gauge over CAN bus from the ECU, and the layout can be configured over its standalone WiFi
+network. This article explains the installation and setup of the gauge in a Miata.
 
 ## Github Repository
 
@@ -152,7 +158,7 @@ Through the KaN gauge web page, the interface can be configured to your desired 
 
 ### Gauge configuration
 
-In the gauge configuration menu, the look and sensor selection can be configured. First select the desired configuration to modify (1, 2 or 3), these are the three gauge layout screens that can be cycled through using the button. Under that the gauge type can be selected. There are images of each possible gauge type on the [KaN V2 Github here](https://github.com/Keith-N/KaN_Gauge_V2/wiki/Gauge-Types). Under that the current sensor selection displays which sensors have been selected for the chosen layout. For the sensor selection there are two "Select Gauge Sensors" boxes, only use the FOME one if using a FOME ECU and ditto for megasquirt (MS).
+In the gauge configuration menu, the look and sensor selection can be configured. First select the desired configuration to modify (1, 2 or 3), these are the three gauge layout screens that can be cycled through using the button. Under that the gauge type can be selected. There are images of each possible gauge type on the [KaN V2 Github here](https://github.com/Keith-N/KaN_Gauge_V2/wiki/Gauge-Types). Under that the current sensor selection displays which sensors have been selected for the chosen layout. For the sensor selection there are two "Select Gauge Sensors" boxes. `FOME` is the gauge's inherited profile name; use it only when the gauge producer confirms protocol compatibility with your Capoworks ECU release. The other profile is for MegaSquirt (MS).
 
 ![image](<Miata-KaN/kansensorconfig.png>)
 

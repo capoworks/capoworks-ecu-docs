@@ -1,17 +1,20 @@
-# Simulator
+# ECU Simulator
 
-In addition to the numerous specific ECU hardware FOME targets, also made available is a build called the FOME
-Simulator. The FOME Simulator is a special build of FOME designed to run on a modern computer. Naturally, many features
+In addition to the supported ECU hardware targets, Capoworks distributions may provide an ECU
+Simulator build. The ECU Simulator is a special build of the firmware designed to run on a modern computer. Naturally, many features
 are missing as a general computer lacks hardware support, but the core remains. Additionally some functions are adapted
 to commonly available features and sensors and outputs are mocked.
 
-FOME Simulator not only aids development of FOME by aiding debugging, but also allows users to become familiar with the
+ECU Simulator not only aids development by simplifying debugging, but also allows users to become familiar with the
 system and tuning without spending any money and dealing with physical hardware.
 
-FOME Simulator is provided with every release and snapshot bundle, and can be launched directly from the FOME Console or run manually (the `console/fome_simulator.exe` binary).
+When included, ECU Simulator is provided in the matching release or snapshot bundle and can be
+launched directly from ECU Console or run manually. Inherited packages may retain the executable
+name `console/fome_simulator.exe`; use the binary supplied in your active Capoworks artifact.
 
-Currently the FOME Simulator is only built and distributed for Windows (x86_64), but it successfully builds and runs on
-other platforms like Linux, and even works correctly under Wine.
+When available, the inherited ECU Simulator build targets Windows (x86_64). It may also build and
+run on other platforms such as Linux or under Wine, but those configurations are not implied to be
+prebuilt or supported by every Capoworks release.
 
 ## CAN
 

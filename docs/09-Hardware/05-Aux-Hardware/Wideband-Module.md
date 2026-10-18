@@ -1,6 +1,8 @@
 # Wideband Oxygen Sensor Configuration Guide
 
-This guide explains how to set up and configure a wideband oxygen sensor with a FOME wideband controller.
+This guide explains how to set up and configure a wideband oxygen sensor with a compatible wideband
+controller. Verify the controller's firmware and CAN configuration against the Capoworks firmware
+release used by your board before use.
 
 ## Overview
 

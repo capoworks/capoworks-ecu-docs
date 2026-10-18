@@ -1,6 +1,6 @@
 # Data Logging Settings
 
-FOME ECUs and TunerStudio both have powerful and useful data logging abilities to aid with tuning. The TS logging allows high fidelity logs to be taken with a laptop connected directly to the ECU and on-board logging records to an SD card inside the ECU for later analysis.
+Capoworks ECU and TunerStudio both have powerful and useful data logging abilities to aid with tuning. The TS logging allows high fidelity logs to be taken with a laptop connected directly to the ECU and on-board logging records to an SD card inside the ECU for later analysis.
 
 ## Basic Data TunderStudio logging settings
 

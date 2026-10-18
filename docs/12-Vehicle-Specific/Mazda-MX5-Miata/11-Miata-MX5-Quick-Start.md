@@ -78,7 +78,7 @@ The BMM ECUs for this vehicle include a KIA TPS and adapter. The KIA TPS will pl
 |Ground|Black/Green|
 |5V Reference|Red|
 
-The next step is to wire up the IAT sensor and to add a jumper wire to the AFM connector as per the wiring diagram below. Any IAT sensor with two wires can be used although a GM IAT sensor is recommended as FOME already has a configuration for it. As the IAT is a resistance-based sensor, the orientation of the wires does not matter.
+The next step is to wire up the IAT sensor and to add a jumper wire to the AFM connector as per the wiring diagram below. Any IAT sensor with two wires can be used although a GM IAT sensor is recommended because Capoworks ECU already has a configuration for it. As the IAT is a resistance-based sensor, the orientation of the wires does not matter.
 
 ![image](Miata-MX5-Quick-Start-Images/NA6IAT2.png)
 
@@ -90,7 +90,7 @@ Now that the MAP line and wideband are connected to the ECU, the remaining wirin
 
 Make sure that you have downloaded the latest version of TunerStudio (TS) from [EFI Analytic's site](<https://www.tunerstudio.com/index.php/tuner-studio>). Although the base version of the software is free, it is strongly recommended to buy a license for the additional features including auto-tuning and the ability to customize the default dashboard.
 
-Begin the setup by plugging the ECU into the laptop and opening TS. Create a new project and click _detect_ under firmware. Select the COM port corresponding to the FOME ECU in the device list. If the COM port cannot be found or the firmware cannot be automatically detected, click _Other/Browse_ and load the .ini file for the ECU which can either be downloaded or found within the ZIP file on the USB device which appears when the ECU is plugged into the computer.
+Begin the setup by plugging the ECU into the laptop and opening TS. Create a new project and click _detect_ under firmware. Select the COM port corresponding to the Capoworks ECU in the device list. If the COM port cannot be found or the firmware cannot be automatically detected, click _Other/Browse_ and load the matching `.ini` file from the same Capoworks firmware bundle.
 
 ![image](Miata-MX5-Quick-Start-Images/newproject.png)
 

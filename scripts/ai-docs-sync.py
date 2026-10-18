@@ -1552,6 +1552,18 @@ Rules:
 - Document the Capoworks ECU fork. Attribute fork-specific changes and additions
   to Capoworks ECU. Do not claim that upstream FOME supports those additions
   unless supplied upstream evidence demonstrates it.
+- Use Capoworks ECU for product, functional, user-interface, page-title, and
+  navigation prose. Do not call the system or a Capoworks distribution FOME.
+- FOME is permitted only in credits, attribution, archived/source references,
+  and literal technical identifiers. Preserve upstream source URLs, source
+  filenames, commands, executable names, configuration keys, displayed values,
+  and other technical literals exactly when they remain technically required.
+- Never rebrand FOME-branded or third-party hardware as Capoworks-produced.
+  Retain actual product/model names, producer identities, design/source URLs,
+  and compatibility qualifications.
+- Preserve copyright, authorship, licenses, quoted text, archived artwork, and
+  evidence of provenance. Match firmware definitions to the stated board and
+  release, and do not imply that upstream binaries are compatible with a fork.
 - Preserve the existing English language.
 - Cover every supplied commit exactly once, in the supplied order.
 - Mark update only when user-facing documentation needs a change. Include one

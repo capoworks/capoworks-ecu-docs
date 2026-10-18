@@ -2,7 +2,9 @@
 
 ![alt](./../universal112.webp)
 
-This is our Wire-In open-source ECU base board compatible with Polygonus and Atlas ECU brain modules. It uses the Molex 112-pin connector. Inteded for custom wiring harnesses or OEM harnesses where you will cut and replace the original connector.
+This is the wire-in open-source Universal 112 ECU base board design, compatible with Polygonus and
+Atlas ECU brain modules. It uses the Molex 112-pin connector and is intended for custom wiring
+harnesses or OEM harnesses where you will cut and replace the original connector.
 
 ## Features
 
@@ -27,9 +29,9 @@ This is our Wire-In open-source ECU base board compatible with Polygonus and Atl
 - 8 ignition "dumb coil" IGBT drivers (IGN1-8, shared function with logic outputs, independent output pins)
 - Stepper motor driver for stepper idle (LS9/10 outputs unavailable if used)
 
-### Github 
+### Design Source
 
-- [Github - Universal 112](https://github.com/FOME-Tech/Polygonus-Universal-112)
+- [Universal 112 design source - FOME-Tech repository](https://github.com/FOME-Tech/Polygonus-Universal-112)
 
 ### Connector 
 
@@ -38,7 +40,7 @@ This is our Wire-In open-source ECU base board compatible with Polygonus and Atl
 
 ### Case 
 
-- [Univeral 112 Case V1.0 by OrchardPerformance - Github](https://github.com/FOME-Tech/Polygonus-Universal-112/tree/main/CAD)
+- [Universal 112 Case V1.0 design source by OrchardPerformance - Github](https://github.com/FOME-Tech/Polygonus-Universal-112/tree/main/CAD)
 - [FOME Polygonus-Universal-112 Case by MW - Printables](https://www.printables.com/model/1798637-fome-polygonus-universal-112-case)
 
 ### Buy

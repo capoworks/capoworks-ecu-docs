@@ -1,6 +1,6 @@
 # Ignition Types
 
-Vehicles can have an array of coil configurations. FOME supports the four most common.
+Vehicles can have an array of coil configurations. Capoworks ECU supports the four most common.
 
 ## Individual coils   
 

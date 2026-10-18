@@ -1,22 +1,28 @@
 # Updating the firmware
 
 Updating the firmware is easy to do, however it is important to do it correctly to prevent errors or board
-misconfiguration.  A guide to downloading FOME firmware and setting up TunerStudio can be found
+misconfiguration.  A guide to downloading Capoworks firmware and setting up TunerStudio can be found
 [on this page](../HT-Set-Up).
 
 Updating firmware involves a process sometimes called "flashing" or even "programming" the ECU.  Generally, these all
-refer to the same thing: taking the compiled FOME firmware and loading it into the non-volatile flash memory on the ECU.
+refer to the same thing: taking the compiled Capoworks firmware and loading it into the non-volatile flash memory on the ECU.
 
-## Updating the firmware with FOME console
+Before flashing, confirm that the release or CI artifact names your board target and that its bundle
+contains the matching TunerStudio `.ini`. Use only a compatible board target from the same Capoworks
+build.
 
-After confirming the firmware to flash to the ECU, software to do so must be used.  FOME provides a utility, the **FOME
-console**, which is capable of flashing firmware to supported ECUs and is the recommended way to update FOME firmware.
-The FOME console is included with each firmware release, and bundles can be downloaded from [the release
-page](https://github.com/FOME-Tech/fome-fw/releases).
+## Updating the firmware with ECU Console
 
-After extracting the bundle contents, navigate to the 'drivers/' directory and install the drivers. After, navigate to the `console/` directory and run the FOME console program (e.g.
-`fome_console.exe` if using Windows).  After first confirming **TunerStudio is not running**, connect the ECU to the
-computer.  FOME console will automatically detect the board and present similar to the display below.
+After confirming the firmware to flash to the ECU, software to do so must be used. Capoworks
+distributions include **ECU Console**, which can flash firmware to supported ECUs and is the
+recommended way to update the firmware. Obtain active releases and CI artifacts from the
+[Capoworks firmware repository](https://github.com/capoworks/capoworks-ecu), its
+[releases](https://github.com/capoworks/capoworks-ecu/releases), and its
+[Actions](https://github.com/capoworks/capoworks-ecu/actions). Banners or release notes identify
+which artifacts are current.
+
+After extracting the bundle contents, navigate to the `drivers/` directory and install the drivers. After, navigate to the `console/` directory and run ECU Console. Inherited distributions may retain the original executable name, for example `fome_console.exe` on Windows. After first confirming **TunerStudio is not running**, connect the ECU to the
+computer. ECU Console will automatically detect the board and present a display similar to the one below.
 
 ![image](Updating-FW/fomeconsole.png)
 
@@ -32,9 +38,9 @@ first forcing the board into bootloader or Device Firmware Update (DFU) mode, do
 
 ## Updating firmware via manual bootloader/DFU mode
 
-In the event of a firmware update/flash failure, or some other firmware corruption issue, such that FOME console nor
+In the event of a firmware update/flash failure, or some other firmware corruption issue, such that ECU Console nor
 TunerStudio recognize the ECU when connected, the board needs to be first forced into bootloader mode before updating.
-In these situations, the FOME console cannot communicate with the firmware and so is unable to configure it into
+In these situations, ECU Console cannot communicate with the firmware and so is unable to configure it into
 bootloader mode for updating.
 
 To enter bootloader mode, on the ECU you will need to access buttons or pins on the main board to force the processor
@@ -43,7 +49,7 @@ power-up.  Others might use a set of pins or pads that need shorted to force thi
 button or short the pins with the ECU disconnected from the computer, then simultaneously connect the ECU into the
 computer.  Once connected, the button can be released or the short removed.
 
-When a board has been successfully booted into bootloader/DFU mode, the FOME console will recognize this and display the
+When a board has been successfully booted into bootloader/DFU mode, ECU Console will recognize this and display the
 manual DFU update selection.
 
 ![image](Updating-FW/mandfu.png)

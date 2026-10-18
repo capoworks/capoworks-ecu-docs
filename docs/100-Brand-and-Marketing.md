@@ -1,19 +1,19 @@
-# Brand & Marketing Resources
+# Capoworks Brand and Marketing Resources
 
-Here, you can find assets related to our project's branding, trademarks, and marketing materials. While our project is open source and inclusive, we encourage users to respect our brand identity.
+These resources identify Capoworks ECU in documentation, releases, and community material. Use the
+official mark without altering its proportions or presenting a third-party product as
+Capoworks-produced.
 
-<!-- ## Trademark Usage Agreement -->
+## Official Logo
 
-<!-- TODO -->
+![Capoworks official logo](/img/capoworks-logo.png)
 
-## Assets
+## Color Palette
 
-### Logo
+| Color | Hex |
+| --- | --- |
+| Capoworks teal | `#004f59` |
+| Black | `#0b0b0b` |
+| Ivory | `#fcf9ed` |
 
-![FOME Logo](/assets/logo-small.jpg)
-
-[Download LogoFiles.zip](pathname:///assets/LogoFiles.zip)
-
-### Font
-
-[Download Comfortaa.zip](pathname:///assets/Comfortaa.zip)
+Use teal as the primary accent, black for dark surfaces and text, and ivory for light surfaces.

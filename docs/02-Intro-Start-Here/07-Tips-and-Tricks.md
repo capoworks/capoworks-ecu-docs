@@ -6,7 +6,7 @@ Any change that you make to the tune or ecu should be followed by a power cycle 
 
 ## Always Have a Main Relay
 
-The main relay is an essential component of the FOME ECU system. It is responsible for delivering power to the ECU when the key is turned on. Without the main relay, the ECU would not receive any power and would not be able to function properly.
+The main relay is an essential component of the Capoworks ECU system. It is responsible for delivering power to the ECU when the key is turned on. Without the main relay, the ECU would not receive any power and would not be able to function properly.
 
 ### Why Use a Main Relay?
 

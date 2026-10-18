@@ -3,9 +3,9 @@
 This repository contains the source for the
 [Capoworks ECU documentation](https://capoworks.github.io/capoworks-ecu-docs/).
 
-The site is an independent fork that uses the FOME Wiki as its initial documentation source. It is
-not affiliated with or endorsed by FOME. See [ATTRIBUTION.md](ATTRIBUTION.md) for source, authorship,
-history, and license information.
+The site adapts documentation from the FOME Wiki as one of its initial sources. Source,
+authorship, history, and license details are preserved in [ATTRIBUTION.md](ATTRIBUTION.md) and the
+[Credits and Sources](docs/99-Useful-Information/Credits-and-Sources.md) page.
 
 ## Development
 
@@ -66,8 +66,12 @@ https://capoworks.github.io/capoworks-ecu-docs/r/fuel -> https://capoworks.githu
 The [Capoworks firmware repository](https://github.com/capoworks/capoworks-ecu) is the source for
 Capoworks firmware. This documentation repository does not bundle firmware.
 
-Some inherited pages may still link to upstream FOME firmware releases. Firmware `.ini` help links
-may still open the upstream FOME wiki; those links need a future update in the firmware repository.
+Use the Capoworks repository's
+[releases](https://github.com/capoworks/capoworks-ecu/releases) and
+[Actions](https://github.com/capoworks/capoworks-ecu/actions) to find active artifacts. Match the
+firmware binary, board target, and TunerStudio `.ini` definition from the same build. Some
+Capoworks bundles retain inherited technical filenames such as `fome.bin` and
+`fome_console.exe`; those names are not evidence that an upstream binary is compatible.
 
 ## Attribution
 

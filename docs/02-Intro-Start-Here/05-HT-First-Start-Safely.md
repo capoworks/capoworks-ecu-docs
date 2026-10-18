@@ -24,7 +24,7 @@
 
 ## 3. Connect TunerStudio to Your ECU
 
-- Bring Your Dashboard to Life: Connect your FOME ECU to TunerStudio. Once connected, the dashboard should display sensor inputs and output values like ignition timing and dwell.
+- Bring Your Dashboard to Life: Connect your Capoworks ECU to TunerStudio. Once connected, the dashboard should display sensor inputs and output values like ignition timing and dwell.
 - Verify Sensor Readings:
   - Coolant Temperature (CLT): Should match the ambient temperature initially.
   - Intake Air Temperature (IAT): Similar to CLT, depending on engine setup.
@@ -88,5 +88,6 @@
 ## Final Notes
 
 - If the engine does not start after several attempts, revisit your sensor calibration and outputs in TunerStudio.
-- Engage with the FOME community forums for troubleshooting support.
+- Consult the Capoworks project, your board producer, and the upstream source material linked from
+  [Credits and Sources](/credits-and-sources) for troubleshooting support.
 - **CONGRATULATIONS**

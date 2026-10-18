@@ -1,31 +1,202 @@
 /**
- * Any CSS included here will be global. The classic template
- * bundles Infima by default. Infima is a CSS framework designed to
- * work well for content-centric websites.
+ * Global Capoworks theme tokens, based on the ivory, black, and petrol-teal
+ * colors in the official logo.
  */
 
-/* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #434be7;
-  --ifm-color-primary-dark: #29784c;
-  --ifm-color-primary-darker: #277148;
-  --ifm-color-primary-darkest: #205d3b;
-  --ifm-color-primary-light: #33925d;
-  --ifm-color-primary-lighter: #359962;
-  --ifm-color-primary-lightest: #3cad6e;
+  /* Source-pixel anchors: #fefaf0 ivory, #000000 black, #02464f petrol teal. */
+  --capo-canvas: #fefaf0;
+  --capo-surface: #fffdf7;
+  --capo-surface-muted: #f4eddf;
+  --capo-ink: #0b0b0b;
+  --capo-muted: #4f5553;
+  --capo-teal: #004f59;
+  --capo-teal-strong: #073c43;
+  --capo-teal-wash: #e7efed;
+  --capo-border: #d9d0bf;
+  --capo-on-accent: #fefaf0;
+  --capo-focus: #007b89;
+  --capo-code-surface: #10272b;
+  --capo-code-text: #fefaf0;
+  --capo-footer-bg: #0b1d20;
+
+  --ifm-color-primary: var(--capo-teal);
+  --ifm-color-primary-dark: #00434c;
+  --ifm-color-primary-darker: #003a42;
+  --ifm-color-primary-darkest: #003138;
+  --ifm-color-primary-light: #005d68;
+  --ifm-color-primary-lighter: #006a76;
+  --ifm-color-primary-lightest: #007985;
+  --ifm-color-primary-contrast-background: var(--capo-teal-wash);
+  --ifm-color-primary-contrast-foreground: var(--capo-teal-strong);
+  --ifm-color-primary-high-contrast: var(--capo-teal-strong);
+
+  --ifm-background-color: var(--capo-canvas);
+  --ifm-background-surface-color: var(--capo-surface);
+  --ifm-font-color-base: var(--capo-ink);
+  --ifm-heading-color: var(--capo-teal-strong);
+  --ifm-link-color: var(--capo-teal);
+  --ifm-link-hover-color: var(--capo-teal-strong);
+  --ifm-button-color: var(--capo-on-accent);
+  --ifm-navbar-background-color: var(--capo-surface);
+  --ifm-navbar-link-color: var(--capo-ink);
+  --ifm-navbar-link-hover-color: var(--capo-teal);
+  --ifm-navbar-shadow: none;
+  --ifm-menu-color: var(--capo-ink);
+  --ifm-menu-color-active: var(--capo-teal-strong);
+  --ifm-menu-color-background-active: var(--capo-teal-wash);
+  --ifm-menu-color-background-hover: var(--capo-surface-muted);
+  --ifm-toc-link-color: var(--capo-muted);
+  --ifm-breadcrumb-color-active: var(--capo-teal-strong);
+  --ifm-code-background: var(--capo-surface-muted);
+  --ifm-code-color: var(--capo-teal-strong);
+  --ifm-pre-background: var(--capo-code-surface);
+  --ifm-pre-color: var(--capo-code-text);
+  --ifm-blockquote-border-color: var(--capo-teal);
+  --ifm-blockquote-color: var(--capo-muted);
+  --ifm-table-border-color: var(--capo-border);
+  --ifm-table-stripe-background: var(--capo-surface-muted);
+  --ifm-color-emphasis-200: var(--capo-border);
+  --ifm-hr-border-color: var(--capo-border);
+  --ifm-footer-background-color: var(--capo-footer-bg);
+  --ifm-footer-color: var(--capo-code-text);
+  --ifm-footer-link-color: #9edde2;
+  --ifm-footer-link-hover-color: var(--capo-surface);
+  --ifm-footer-title-color: var(--capo-code-text);
+
+  --search-local-highlight-color: var(--capo-teal);
+  --search-local-hit-color: var(--capo-ink);
+  --search-local-hit-background: var(--capo-surface);
+  --search-local-modal-background: var(--capo-surface);
   --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  --docusaurus-highlighted-code-line-bg: rgba(0, 79, 89, 0.14);
   --ifm-font-size-base: 17px;
 }
 
-/* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme="dark"] {
-  --ifm-color-primary: #666ded;
-  --ifm-color-primary-dark: #21af90;
-  --ifm-color-primary-darker: #1fa588;
-  --ifm-color-primary-darkest: #1a8870;
-  --ifm-color-primary-light: #29d5b0;
-  --ifm-color-primary-lighter: #32d8b4;
-  --ifm-color-primary-lightest: #4fddbf;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --capo-canvas: #071315;
+  --capo-surface: #0d2023;
+  --capo-surface-muted: #122b2f;
+  --capo-ink: #fdf9ee;
+  --capo-muted: #bbc8c6;
+  --capo-teal: #79d8df;
+  --capo-teal-strong: #a4e8ed;
+  --capo-teal-wash: #142e31;
+  --capo-border: #29464a;
+  --capo-on-accent: #071315;
+  --capo-focus: #a4e8ed;
+  --capo-code-surface: #0a1b1e;
+  --capo-code-text: #fdf9ee;
+  --capo-footer-bg: #050e10;
+
+  --ifm-color-primary: #70d6dd;
+  --ifm-color-primary-dark: #56c8d1;
+  --ifm-color-primary-darker: #43bbc5;
+  --ifm-color-primary-darkest: #32abb6;
+  --ifm-color-primary-light: #8adfe4;
+  --ifm-color-primary-lighter: #9fe6ea;
+  --ifm-color-primary-lightest: #b7edf0;
+  --ifm-color-primary-contrast-background: #102b2f;
+  --ifm-color-primary-contrast-foreground: var(--capo-teal-strong);
+  --ifm-color-primary-high-contrast: var(--capo-ink);
+
+  --ifm-background-color: var(--capo-canvas);
+  --ifm-background-surface-color: var(--capo-surface);
+  --ifm-font-color-base: var(--capo-ink);
+  --ifm-heading-color: var(--capo-teal-strong);
+  --ifm-link-color: var(--capo-teal);
+  --ifm-link-hover-color: #b7edf0;
+  --ifm-button-color: var(--capo-on-accent);
+  --ifm-navbar-background-color: var(--capo-canvas);
+  --ifm-navbar-link-color: var(--capo-ink);
+  --ifm-navbar-link-hover-color: var(--capo-teal);
+  --ifm-menu-color: var(--capo-ink);
+  --ifm-menu-color-active: var(--capo-teal);
+  --ifm-menu-color-background-active: var(--capo-teal-wash);
+  --ifm-menu-color-background-hover: var(--capo-surface-muted);
+  --ifm-toc-link-color: var(--capo-muted);
+  --ifm-breadcrumb-color-active: var(--capo-teal);
+  --ifm-code-background: var(--capo-surface-muted);
+  --ifm-code-color: var(--capo-teal-strong);
+  --ifm-pre-background: var(--capo-code-surface);
+  --ifm-pre-color: var(--capo-code-text);
+  --ifm-blockquote-border-color: var(--capo-teal);
+  --ifm-blockquote-color: var(--capo-muted);
+  --ifm-table-border-color: var(--capo-border);
+  --ifm-table-stripe-background: var(--capo-surface-muted);
+  --ifm-color-emphasis-200: var(--capo-border);
+  --ifm-hr-border-color: var(--capo-border);
+  --ifm-footer-background-color: var(--capo-footer-bg);
+  --ifm-footer-color: var(--capo-code-text);
+  --ifm-footer-link-color: var(--capo-teal);
+  --ifm-footer-link-hover-color: var(--capo-teal-strong);
+  --ifm-footer-title-color: var(--capo-code-text);
+
+  --search-local-highlight-color: var(--capo-teal);
+  --search-local-hit-color: var(--capo-ink);
+  --search-local-hit-background: var(--capo-surface);
+  --search-local-modal-background: var(--capo-surface);
+  --docusaurus-highlighted-code-line-bg: rgba(121, 216, 223, 0.16);
+}
+
+.navbar {
+  border-bottom: 1px solid var(--capo-border);
+}
+
+.navbar__link--active {
+  color: var(--capo-teal);
+}
+
+.navbar__search-input {
+  background-color: var(--capo-surface);
+  border: 1px solid var(--capo-border);
+  color: var(--ifm-font-color-base);
+}
+
+.navbar__search-input::placeholder {
+  color: var(--capo-muted);
+  opacity: 1;
+}
+
+.navbar__search-input:focus {
+  border-color: var(--capo-focus);
+  box-shadow: 0 0 0 2px var(--capo-teal-wash);
+  outline: 2px solid transparent;
+}
+
+.footer--dark {
+  --ifm-footer-background-color: var(--capo-footer-bg);
+  --ifm-footer-color: var(--capo-code-text);
+  --ifm-footer-link-color: #9edde2;
+  --ifm-footer-link-hover-color: var(--capo-surface);
+  --ifm-footer-title-color: var(--capo-code-text);
+}
+
+[data-theme="dark"] .footer--dark {
+  --ifm-footer-link-color: var(--capo-teal);
+  --ifm-footer-link-hover-color: var(--capo-teal-strong);
+}
+
+.theme-code-block {
+  --prism-background-color: var(--capo-code-surface);
+  --prism-color: var(--capo-code-text);
+  border: 1px solid var(--capo-border);
+  box-shadow: none;
+}
+
+:not(pre) > code {
+  border: 1px solid var(--capo-border);
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+summary:focus-visible {
+  outline: 3px solid var(--capo-focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--capo-teal);
+  color: var(--capo-on-accent);
 }

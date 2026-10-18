@@ -1,6 +1,6 @@
 # Universal 112 Pinout
 
-This is the FOME Universal 112 v1.2 Pinout.
+This is the Universal 112 v1.2 pinout documented for use with Capoworks ECU.
 It uses the Molex CMC 112-Pin Connector.
 Based off 2026-03-03 Schematic
 

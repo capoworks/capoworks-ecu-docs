@@ -1,3 +1,3 @@
-# FOME low-z injector driver  
+# Low-Z Injector Driver
 
-Details on the low impedance injector driver board, its wiring and function 
+Details on the low impedance injector driver board, its wiring and function.

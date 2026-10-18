@@ -2,17 +2,17 @@
 
 ## Choosing a Knock Sensor and Basic Setup
 
-Knock sensors are, essentially, microphones.  Some have a built in attenuation to mechanically/acoustically filter around a certain frequency (most older sensors, i.e. Gen3 GM V8) and most newer ones are "flat" response (i.e. most "donut" Bosch).  As the processing power available on the OEM ECUs improved, there was a trend towards doing filtering in software and using flat-response sensors.  Using a knock sensor from a newer (2010+) vehicle is probably a good idea because newer sensors are more likely to be flat-response.  The algorithms in FOME are designed for flat-response sensors.
+Knock sensors are, essentially, microphones.  Some have a built in attenuation to mechanically/acoustically filter around a certain frequency (most older sensors, i.e. Gen3 GM V8) and most newer ones are "flat" response (i.e. most "donut" Bosch).  As the processing power available on the OEM ECUs improved, there was a trend towards doing filtering in software and using flat-response sensors.  Using a knock sensor from a newer (2010+) vehicle is probably a good idea because newer sensors are more likely to be flat-response.  The algorithms in Capoworks ECU are designed for flat-response sensors.
 
-Knock sensors are going to register noise from the engine.  FOME tries to separate this noise from knock from cylinder pressure by looking for specific frequencies determined by physics. It is impossible for knock sensors to not also pick up other noise.  Solid engine mounts can drive knock sensing systems batshit.  Tires and poor alignments can show up in knock sensor data, especially with solid mounts.  Bearings in idler pulleys can show up as engine RPM or harmonic-of-RPM noise.  Anything that transmits vibration into the engine will compete with the noise from combustion knock that you are trying to sniff out.  Also, electrical interference can contaminate the signal from knock sensors.  Most often, this comes from poor grounding or proximity of knock sensor wiring to sources of electrical noise like alternators and ignition coils or wires.  Shielded wires to knock sensors can help alleviate this.
+Knock sensors are going to register noise from the engine.  Capoworks ECU tries to separate this noise from knock from cylinder pressure by looking for specific frequencies determined by physics. It is impossible for knock sensors to not also pick up other noise.  Solid engine mounts can drive knock sensing systems batshit.  Tires and poor alignments can show up in knock sensor data, especially with solid mounts.  Bearings in idler pulleys can show up as engine RPM or harmonic-of-RPM noise.  Anything that transmits vibration into the engine will compete with the noise from combustion knock that you are trying to sniff out.  Also, electrical interference can contaminate the signal from knock sensors.  Most often, this comes from poor grounding or proximity of knock sensor wiring to sources of electrical noise like alternators and ignition coils or wires.  Shielded wires to knock sensors can help alleviate this.
 
 Knock sensor placement can also have a huge role.  Many newer engines have multiple knock sensors for this reason.  You may need to try different mounting locations.  If you know that the engine you are dealing with is known for having problems on a particular cylinder, you may want to place the knock sensor closer to that cylinder.
 
-Bottom line: to get the most out of FOME's knock control, setup and configuration for the individual setup is needed.
+Bottom line: to get the most out of Capoworks ECU knock control, setup and configuration for the individual setup is needed.
 
 ## Knock Frequency (vs Cylinder Diameter)
 
-As mentioned above, knock sensing operates about a determined frequency.  FOME provides two calibrations to configure this frequency:
+As mentioned above, knock sensing operates about a determined frequency.  Capoworks ECU provides two calibrations to configure this frequency:
 
 1. indirectly, via given cylinder bore diameter
 2. directly, via explicit knock frequency
@@ -30,7 +30,7 @@ Only one method should be used; if an explicit knock frequency is provided, any 
 7. Set up the Max Knock Retard table to define maximum allowable ignition timing retardation.
 
 :::warning
-The following steps assumes your ECU is running a recent release of FOME (i.e. 2312 or newer)
+The following steps assume your ECU is running a compatible recent Capoworks firmware release.
 :::
 
 1. __Enable the knock sensor__, and calculate the estimated knock filter frequency (kHz). For now, configure the first setting “cylinder bore” as 0.00mm.

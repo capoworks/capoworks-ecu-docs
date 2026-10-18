@@ -4,7 +4,13 @@ Product description and purchase link: [BMM KaN Multi Fit CAN Gauge](https://www
 
 ![image](Pictures/Kan2.png)
 
-The KaN gauge is a multi function, multi fit gauge designed exclusively for Fome ECUs. The gauge has generic mounting options to fit any car and specific mounting solutions to fit into multiple locations on a Miata including the oil pressure gauge hole, an air conditioning vent or into a standard 52mm gauge pod. Data is sent to the gauge via CAN bus communication wires coming from the ECU and the layout of the gauge can be configured wirelessly using its standalone WiFi network.
+The KaN gauge is a multi-function, multi-fit third-party gauge documented for compatible ECU
+installations. Confirm with the producer that the gauge protocol and any selected profile are
+compatible with your board, Capoworks firmware, and definition. The gauge has generic mounting
+options to fit many cars and specific mounting solutions for several locations on a Miata, including
+the oil pressure gauge hole, an air conditioning vent, or a standard 52mm gauge pod. Data is sent to
+the gauge over CAN bus from the ECU, and the layout can be configured over its standalone WiFi
+network.
 
 ## Wiring
 
