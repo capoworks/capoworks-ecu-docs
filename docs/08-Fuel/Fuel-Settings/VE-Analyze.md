@@ -5,9 +5,10 @@ channel, and a closed-loop fuel-correction channel to adjust a selected fuel
 table. The final Capoworks ECU template gives Speed Density, Alpha-N, and MAF
 Air Charge their own analysis definitions and filters.
 
-This page describes the generated INI and firmware behavior at Capoworks commit
-`8f4fcfb4`. It does not claim that the default filters make every log valid or
-that the result is suitable for an engine without other checks.
+This page describes the TunerStudio configuration template and firmware
+behavior inspected at Capoworks commit `8f4fcfb4`. It does not claim that the
+default filters make every log valid or that the result is suitable for an
+engine without other checks.
 
 ## Which table is analyzed
 
@@ -46,7 +47,9 @@ A fallback may still produce usable fuel, but the fuel status is `Degraded`.
 Those samples are not healthy model evidence, so they are excluded from VE
 Analyze even when injection continues. Inspect `Air blend: admission state`,
 `Air blend: fault`, and `Air blend: flags` when the selected map does not
-become available.
+become available. These are the shortened labels used by the template's
+[`GaugeConfigurations`](#published-status-and-recovery-channels); the raw field
+and full output-description mapping appears below.
 
 ## Blended SD + Alpha-N qualification
 
@@ -172,12 +175,19 @@ remain unchanged:
 and the time since any fuel or spark cut. A new cut resets it to zero. The
 reported value is clamped to the range `0` through `655.35 s`.
 
-The combined state is also available through:
+The combined state is also available through the following fields. The
+dashboard gauge labels are shortened in the template, while the datalog/output
+descriptions use fuller names.
 
-- `Air blend: admission state`
-- `Air blend: fault`
-- `Air blend: model flags`
-- `Air blend: qualified VE Analyze endpoint`
+| Raw field | TunerStudio dashboard gauge label | Datalog/output description |
+| --- | --- | --- |
+| `blendedStatus` | `Air blend: admission state` | `Air blend: injection admission state` |
+| `blendedFault` | `Air blend: fault` | `Air blend: model fault` |
+| `blendedFlags` | `Air blend: flags` | `Air blend: model flags` |
+
+The qualification channel is `blendedVeAnalyzeEndpoint`, labeled
+`Air blend: qualified VE Analyze endpoint` in the dashboard and
+`Air blend: qualified analyze endpoint` in the output description.
 
 The runtime test coverage includes cranking and disabled-wall-model telemetry,
 cut-recovery reset and saturation, healthy and degraded admission, permanent
