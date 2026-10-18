@@ -583,7 +583,7 @@ class PrepareCursorAndFailureTests(TempDocs):
             state,
             context,
             result,
-            model="deepseek-chat",
+            model="deepseek-flash",
             usage={"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
         )
         self.assertEqual(next_state["cursor_commit"], SHA_TWO)
@@ -693,13 +693,39 @@ class SourceSafetyTests(unittest.TestCase):
                 timeout=10,
             )
 
+    def test_clone_uses_blobless_partial_clone(self) -> None:
+        def handler(args: list[str], cwd: object, maximum: int) -> object:
+            self.assertIn("--filter=blob:none", args)
+            self.assertNotIn("--depth", args)
+            return sync.CommandResult(stdout=b"", stderr=b"")
+
+        with tempfile.TemporaryDirectory() as temporary:
+            runner = ScriptedRunner(handler)
+            source = sync.SourceRepository(
+                runner,
+                pathlib.Path(temporary),
+                sync.Limits(),
+                source_url="public",
+            )
+            source.clone()
+        self.assertEqual(len(runner.calls), 1)
+
 
 class ModelTransportTests(unittest.TestCase):
-    def response(self, content: object, *, model: str = "deepseek-chat") -> tuple:
+    def response(
+        self,
+        content: object,
+        *,
+        model: str = "deepseek-flash",
+        finish_reason: str | None = "stop",
+    ) -> tuple:
+        choice: dict[str, object] = {"message": {"content": json.dumps(content)}}
+        if finish_reason is not None:
+            choice["finish_reason"] = finish_reason
         return api_json(
             {
                 "model": model,
-                "choices": [{"message": {"content": json.dumps(content)}}],
+                "choices": [choice],
                 "usage": {
                     "prompt_tokens": 20,
                     "completion_tokens": 10,
@@ -717,17 +743,18 @@ class ModelTransportTests(unittest.TestCase):
         }
         transport = FakeTransport([self.response(model_payload)])
         settings = sync.AISettings(
-            model="deepseek-chat", max_tokens=500, timeout_seconds=10, retries=1
+            model="deepseek-flash", max_tokens=500, timeout_seconds=10, retries=1
         )
         client = sync.DeepSeekClient(transport, "secret", settings)
         result = client.generate({"range": {"head_inclusive": SHA_ONE}})
         request = transport.requests[0]
         body = json.loads(request["body"])
-        self.assertEqual(body["model"], "deepseek-chat")
+        self.assertEqual(body["model"], "deepseek-flash")
         self.assertEqual(body["response_format"], {"type": "json_object"})
         self.assertEqual(body["max_tokens"], 500)
+        self.assertEqual(body["thinking"], {"type": "disabled"})
         self.assertEqual(result.usage["total_tokens"], 30)
-        self.assertEqual(result.model, "deepseek-chat")
+        self.assertEqual(result.model, "deepseek-flash")
 
     def test_transient_network_failure_is_retried(self) -> None:
         model_payload = {
@@ -749,7 +776,7 @@ class ModelTransportTests(unittest.TestCase):
             transport,
             "secret",
             sync.AISettings(
-                model="deepseek-chat", max_tokens=500, timeout_seconds=10, retries=2
+                model="deepseek-flash", max_tokens=500, timeout_seconds=10, retries=2
             ),
             sleep=waits.append,
         )
@@ -759,11 +786,56 @@ class ModelTransportTests(unittest.TestCase):
 
     def test_missing_usage_is_rejected(self) -> None:
         malformed = {
-            "model": "deepseek-chat",
-            "choices": [{"message": {"content": "{}"}}],
+            "model": "deepseek-flash",
+            "choices": [{"finish_reason": "stop", "message": {"content": "{}"}}],
         }
         with self.assertRaisesRegex(sync.ApiFailure, "actual token usage"):
             sync.parse_model_response(malformed)
+
+    def test_length_finish_reason_rejects_valid_json_content(self) -> None:
+        model_payload = {
+            "summary": "No impact.",
+            "decisions": [decision(SHA_ONE, "no-impact")],
+            "files": [],
+        }
+        _, _, data = self.response(model_payload, finish_reason="length")
+        with self.assertRaisesRegex(sync.ApiFailure, "finish_reason.*length"):
+            sync.parse_model_response(json.loads(data))
+
+    def test_missing_finish_reason_is_rejected(self) -> None:
+        model_payload = {
+            "summary": "No impact.",
+            "decisions": [decision(SHA_ONE, "no-impact")],
+            "files": [],
+        }
+        _, _, data = self.response(model_payload, finish_reason=None)
+        with self.assertRaisesRegex(sync.ApiFailure, "missing finish_reason"):
+            sync.parse_model_response(json.loads(data))
+
+
+class BuildPreviewRecoveryTests(unittest.TestCase):
+    def test_dispatch_failure_reports_pull_request_and_manual_command(self) -> None:
+        class FailingGithub:
+            def dispatch_build_preview(self, *args: object, **kwargs: object) -> None:
+                raise sync.ApiFailure("HTTP 500")
+
+        pull = {
+            "number": 17,
+            "html_url": "https://github.com/capoworks/capoworks-ecu-docs/pull/17",
+        }
+        with self.assertRaises(sync.ActionRequired) as raised:
+            sync._dispatch_build_preview_with_recovery(
+                FailingGithub(), pull, SHA_ONE
+            )
+        message = str(raised.exception)
+        self.assertIn(pull["html_url"], message)
+        self.assertIn(
+            "gh workflow run build-preview.yml "
+            "--repo capoworks/capoworks-ecu-docs "
+            f"-f ref={SHA_ONE}",
+            message,
+        )
+        self.assertIn("source range are intact", message)
 
 
 if __name__ == "__main__":

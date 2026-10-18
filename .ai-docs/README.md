@@ -12,7 +12,8 @@ This directory contains the merged cursor state and operating notes for
    Secrets and variables > Actions**. Do not put the key in a file, variable,
    command-line option, log, or pull request.
 2. Optionally add the repository variable `AI_DOCS_MODEL`. It defaults to
-   `deepseek-chat`. The optional bounded variables
+   `deepseek-flash`. The currently supported API choices are
+   `deepseek-flash` and `deepseek-v4-pro`. The optional bounded variables
    `AI_DOCS_MAX_TOKENS`, `AI_DOCS_TIMEOUT_SECONDS`, `AI_DOCS_RETRIES`,
    `AI_DOCS_MAX_CURRENT_FILES`, `AI_DOCS_MAX_WIKI_DOCS`, and
    `AI_DOCS_MAX_OUTPUT_FILES` can only reduce or select within hard-coded
@@ -91,6 +92,10 @@ The PR stores the source range, actual response model, actual token usage, and
 all per-commit evidence in `.ai-docs/state.json` and the PR body. Invalid or
 oversize output rejects the complete change set before writes.
 
+Model requests use JSON mode, an explicit bounded `max_tokens` value, and
+`thinking: {"type": "disabled"}` so the structured result is not consumed by
+the API's default thinking mode.
+
 ## Preview dispatch limitation
 
 GitHub does not start pull-request workflows from a PR opened with
@@ -99,6 +104,23 @@ GitHub does not start pull-request workflows from a PR opened with
 `ref`. The read-only preview workflow must honor that manual `ref`. This
 supplemental dispatch does not create, attach, or satisfy required pull-request
 status checks. Branch protection must not assume otherwise.
+
+The integrated preview workflow validates that `inputs.ref` is a full commit
+SHA and checks out that exact revision. If PR creation succeeds but the
+supplemental dispatch fails, the workflow exits with an Action Required error
+containing the PR URL and exact recovery command. The PR, bot branch, and
+prepared source range remain intact. Retry the preview manually with the SHA
+from that error:
+
+```bash
+gh workflow run build-preview.yml --repo capoworks/capoworks-ecu-docs \
+  -f ref=<40-character-bot-commit-sha>
+```
+
+A later scheduled run sees the open PR and skips as pending; it does not try to
+infer dispatch completion from a workflow run's `head_sha`, because a manual
+dispatch runs from `master` while the build checks out the SHA supplied in
+`inputs.ref`.
 
 Do not repair a stopped lifecycle with a blind branch deletion or cursor edit.
 Inspect the PR and branch, preserve any human work, and only then choose an

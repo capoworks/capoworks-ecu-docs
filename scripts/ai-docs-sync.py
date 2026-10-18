@@ -44,7 +44,7 @@ BOT_BRANCH = "automation/firmware-docs"
 SOURCE_URL = f"https://github.com/{SOURCE_REPOSITORY}.git"
 STATE_PATH = ".ai-docs/state.json"
 AI_ENDPOINT = "https://api.deepseek.com/chat/completions"
-DEFAULT_MODEL = "deepseek-chat"
+DEFAULT_MODEL = "deepseek-flash"
 PR_MARKER = "<!-- ai-docs-sync:v1 -->"
 COMMIT_NAME = "ai-docs-sync[bot]"
 COMMIT_EMAIL = "ai-docs-sync[bot]@users.noreply.github.com"
@@ -490,6 +490,7 @@ class SourceRepository:
                 "clone",
                 "--quiet",
                 "--bare",
+                "--filter=blob:none",
                 "--single-branch",
                 "--branch",
                 SOURCE_BRANCH,
@@ -499,7 +500,7 @@ class SourceRepository:
             ],
             env=_public_git_env(),
             max_output_bytes=65_536,
-            timeout=180,
+            timeout=300,
         )
         self._repo = GitRepository(self.runner, self.repo_path, extra_env=_public_git_env())
         return self._repo
@@ -1398,6 +1399,7 @@ class DeepSeekClient:
             "messages": messages,
             "response_format": {"type": "json_object"},
             "max_tokens": self.settings.max_tokens,
+            "thinking": {"type": "disabled"},
             "stream": False,
             "temperature": 0.1,
         }
@@ -1480,6 +1482,15 @@ def parse_model_response(response: Any) -> ModelResult:
     if not isinstance(choices, list) or len(choices) != 1:
         raise ApiFailure("AI response must contain exactly one choice")
     choice = choices[0]
+    if not isinstance(choice, dict):
+        raise ApiFailure("AI response choice must be an object")
+    finish_reason = choice.get("finish_reason")
+    if finish_reason is None:
+        raise ApiFailure("AI response choice is missing finish_reason")
+    if finish_reason != "stop":
+        raise ApiFailure(
+            f"AI response finish_reason must be 'stop', got {finish_reason!r}"
+        )
     message = choice.get("message") if isinstance(choice, dict) else None
     content = message.get("content") if isinstance(message, dict) else None
     if not isinstance(content, str):
@@ -1985,6 +1996,32 @@ def _pull_request_body(
     return body
 
 
+def _dispatch_build_preview_with_recovery(
+    github: GitHubClient,
+    pull: Mapping[str, Any],
+    commit_sha: str,
+) -> None:
+    number = pull["number"]
+    url = pull.get("html_url")
+    if not isinstance(url, str) or not url:
+        url = f"https://github.com/{TARGET_REPOSITORY}/pull/{number}"
+    try:
+        github.dispatch_build_preview(
+            TARGET_REPOSITORY,
+            workflow="build-preview.yml",
+            ref=TARGET_BRANCH,
+            commit_sha=commit_sha,
+        )
+    except SyncFailure as exc:
+        raise ActionRequired(
+            f"pull request #{number} was created at {url}, but the supplemental "
+            f"build-preview dispatch failed: {exc}. The pull request and prepared "
+            "source range are intact. Retry the supplemental preview manually with:\n"
+            f"gh workflow run build-preview.yml --repo {TARGET_REPOSITORY} "
+            f"-f ref={commit_sha}"
+        ) from exc
+
+
 def _push_git(
     runner: CappedRunner,
     root: pathlib.Path,
@@ -2153,12 +2190,7 @@ def finalize_phase(
         base=TARGET_BRANCH,
     )
     LOG.info("created pull request #%s for commit %s", pull["number"], bot_sha)
-    github.dispatch_build_preview(
-        TARGET_REPOSITORY,
-        workflow="build-preview.yml",
-        ref=TARGET_BRANCH,
-        commit_sha=bot_sha,
-    )
+    _dispatch_build_preview_with_recovery(github, pull, bot_sha)
     LOG.info(
         "dispatched build-preview for %s; this is supplemental and is not a required PR check",
         bot_sha,

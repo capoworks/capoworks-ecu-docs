@@ -74,7 +74,7 @@ jobs:
       - name: Generate and validate structured documentation
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          AI_DOCS_MODEL: ${{ vars.AI_DOCS_MODEL || 'deepseek-chat' }}
+          AI_DOCS_MODEL: ${{ vars.AI_DOCS_MODEL || 'deepseek-flash' }}
           AI_DOCS_MAX_TOKENS: ${{ vars.AI_DOCS_MAX_TOKENS }}
           AI_DOCS_TIMEOUT_SECONDS: ${{ vars.AI_DOCS_TIMEOUT_SECONDS }}
           AI_DOCS_RETRIES: ${{ vars.AI_DOCS_RETRIES }}
