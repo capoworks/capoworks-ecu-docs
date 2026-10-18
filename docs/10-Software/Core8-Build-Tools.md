@@ -117,7 +117,7 @@ overwrite the connected Core8 and accept the hardware operation.
 Before calling the programmer, the helper:
 
 - requires the BIN, ELF and INI to exist and verifies their signatures;
-- uses the `STM32_PROGRAMMER_CLI` environment variable when set and rejects an invalid value,
+- uses the `STM32_PROGRAMMER_CLI` environment variable when set and rejects a missing path or command name; the specified CLI must also be runnable,
   otherwise searches `PATH` and then `misc/install/STM32_Programmer_CLI/bin`;
 - requires exactly one DFU device, with a detected port and serial number;
 - requires the Core8 device ID `0x0413`;
