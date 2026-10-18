@@ -14,15 +14,21 @@ The below settings are utilized to prevent the closed loop idle air strategy fro
 
 #### TPS Threshold
 
-The TPS value must be below this % before the idle state can be entered. When using an Electronic Throttle Body (ETB) this references the Accelerator Pedal Position sensor instead.
+The TPS value must be at or below this % before the idle state can be entered. When using an Electronic Throttle Body (ETB) this references the Accelerator Pedal Position sensor instead.
 
 #### RPM upper limit
 
-The engine speed must be at or below the _idle target RPM_ plus this value before the idle state can be entered. For example, if the _idle target RPM_ is 750 RPM and this value is set to 200, the engine speed must be at or below 950 RPM before closed loop idle can be entered.
+The engine speed must enter below the _idle target RPM_ plus this value. It must
+later exceed 1.5 times that offset above target to leave the idle phase. This
+hysteresis prevents the controller from toggling repeatedly near one threshold.
+For example, an entry offset of 200 RPM gives an exit offset of 300 RPM.
 
-#### RPM deadzone
+#### RPM hysteresis
 
-When the engine speed is within this many RPM of the target idle RPM, the closed loop idle algorithm is disabled. This is to prevent unwanted oscillation around the target.
+The separate **RPM deadzone** control from older documentation is not present
+in the current idle-settings INI. Current phase detection uses the entry and
+exit thresholds described above; there is no active user-entered deadzone
+field to tune.
 
 #### Max vehicle speed
 
@@ -50,6 +56,11 @@ Added to the _open loop base position_ when the fans are activated. May compensa
 
 #### Extra idle air if throttle pressed
 
+Adds a tapered amount of open-loop idle air as throttle or accelerator-pedal
+position rises. The adder is zero at closed throttle and reaches the configured
+value at the **TPS threshold**. It is part of the open-loop position, not a
+separate closed-loop gain.
+
 ### Closed Loop Idle
 
 The closed loop idle air strategy can utilize all three terms (Proportional, Integral, Derivative) to provide accurate control of the IACV or ETB position and achieve a stable target idle. The 3 terms are calculated, added up and then limited by the _Min_ or _Max_ values to arrive at the final _Idle: Closed Loop_ output. The error (difference between the _Idle Target RPM_ and actual RPM) is written on the variable _idleStatus_Error_.
@@ -70,19 +81,19 @@ For example, a consistent error of 100 RPM with an I-factor gain of 0.01 would r
 
 #### derivativeFilterLoss
 
+This is a legacy field, not a current setting. It is absent from the pinned
+FOME configuration, generated INI, and active idle controller. The current
+common PID has no `derivativeFilterLoss` input, so there is no replacement
+filter-loss control in this firmware. Use **D-factor** for the air controller
+or **Derivative gain** for the ignition-timing controller and verify the result
+in the corresponding D-term log channel.
+
 #### antiwindupFreq
 
-Used to limit the Integral term (iTerm) windup when the closed loop idle air strategy output is being limited by the min/max duty cycle limit. Once the Integral term has been calculated and limited if appropriate (_iTerm Min_, _iTerm Max_), if the output of the closed loop idle air PID controller exceeds the overall PID _Min_ or _Max_ settings, the Integral term is further limited to prevent integral windup. As long as the output of the closed loop idle air strategy exceeds the limits set by _Min_ or _Max_, the I term is continuously modified.
-
-`iTerm += dTime(sec) * antiwindupFreq * (ClosedLoopLimitedOutput - ClosedLoopOutput)`
-
-:::info
-
-_dTime_ is the delta time since the closed loop idle air PID controller last ran.
-
-:::
-
-Keep in mind that the Integral term is updated every time the closed loop idle air PID control strategy runs and will continue to be modified based on the error and _I-factor_ gain. Additionally, if _ClosedLoopLimitedOutput_ equals _ClosedLoopOutput_, antiwindupFreq has no effect.
+This is also a legacy field and has no active control in the current INI or
+runtime. Use **iTerm Min** and **iTerm Max** to bound the stored integral term.
+The common PID implementation additionally limits integration relative to its
+configured output range, but there is no `antiwindupFreq` setting to tune.
 
 #### D-factor
 
@@ -94,11 +105,24 @@ Sets the minimum and maximum duty cycle modifier that can be commanded by the cl
 
 #### iTerm Min, iTerm Max
 
-Sets the minimum and maximum duty cycle modifier for the _I-factor_ specifically.
+Sets the minimum and maximum duty-cycle modifier retained by the closed-loop
+air controller's integral term. These limits are applied after each integration
+step. Use them to bound stored integral authority, then check
+`idleStatus_iTerm` during sustained high and low RPM errors.
 
 #### PID Extra for low RPM
 
+Legacy only. This field was removed from the configuration and runtime; it has
+no active effect and no current UI control. It previously amplified error when
+RPM was below target. Do not document or tune it as part of the current idle
+strategy.
+
 #### Use IAC PID Multiplier Table
+
+Legacy only. The multiplier table and its load/RPM axes were removed along with
+the runtime multiplication step. They are absent from the current generated
+INI, so there is no active table to enable. Use open-loop position, PID gains,
+and the remaining RPM/TPS tapers for calibration.
 
 ### Extra Idle Features
 
@@ -106,13 +130,13 @@ Sets the minimum and maximum duty cycle modifier for the _I-factor_ specifically
 
 #### Use idle ignition table
 
-Setting this to __true__ activates a separate ignition timing table (2D) for idle conditions; this can help idle stability by using ignition retard and advance either side of the desired idle speed. __false__ disables the timing table.
+Setting this to **true** activates a separate ignition timing table (2D) for idle conditions; this can help idle stability by using ignition retard and advance either side of the desired idle speed. **false** disables the timing table.
 
 #### Use idle VE table
 
-Setting this to __true__ activates a separate fuel table (3D) for idle, which allows fine tuning of the idle fuelling. __false__ disables the VE table.
+Setting this to **true** activates a separate fuel table (3D) for idle, which allows fine tuning of the idle fuelling. **false** disables the VE table.
 
-See [the Idle VE Table page](../Idle-VE-Table) for more detail about idle-specific VE settings.
+See [the Idle VE Table page](/Basic-Features/Idle-Control/Idle-VE-Table) for more detail about idle-specific VE settings.
 
 #### Override idle VE table load axis
 
@@ -150,7 +174,7 @@ Found under _Idle > Closed-loop idle timing_.
 
 ### Enable closed loop idle ignition timing
 
-__True__ enables the closed loop idle ignition timing loop strategy, __false__ disables it.
+**True** enables the closed loop idle ignition timing loop strategy, **false** disables it.
 
 ### Proportional gain
 
@@ -158,13 +182,20 @@ Unity gain (1.0000) results in 1 deg CKA for every 1 RPM of error between actual
 
 ### Derivative gain
 
+Scales correction from RPM rate of change. The current controller supplies the
+measured RPM rate to the derivative term; it does not calculate a hidden
+derivative inside the generic PID. A positive rate therefore reduces timing
+correction and a negative rate increases it, subject to the adjustment limits.
+
 ### Min Adjustment, Max Adjustment
 
 Limits the minimum and maximum amount of timing adjustment output by the _closed loop idle ignition timing_ strategy. Keep these values to the minimum required to avoid excessive spark advance or retard at idle speeds.
 
 ## IAC PID Multiplier
 
-Only enabled when _Use IAC PID Multiplier Table_ is set to __true__.
+This table is no longer part of the current FOME configuration or firmware.
+The former **Use IAC PID Multiplier Table** field and **IAC PID multiplier**
+menu entry are not active controls and should not be used as a tuning step.
 
 ## Coasting IAC Position
 
@@ -172,7 +203,7 @@ Found under _Idle > Coasting IAC Position_.
 
 ![image](Idle-Settings/coastingIacPosition.png)
 
-Only enabled when _Use coasting Idle Table_ is set to __true__. 2D Table. When the engine is in the _coasting_ phase, the IAC base position is set to the value defined by this table. This table is not used if the engine is not in the _coasting_ phase and the _open loop base position_ will be used instead.
+Only enabled when _Use coasting Idle Table_ is set to **true**. 2D Table. When the engine is in the _coasting_ phase, the IAC base position is set to the value defined by this table. This table is not used if the engine is not in the _coasting_ phase and the _open loop base position_ will be used instead.
 
 :::note
 Despite the _multiplier_ label in the table, this table sets the IAC position in % duty cycle just like _open loop base position_ - this is not a multiplier applied to the base position.
@@ -180,9 +211,9 @@ Despite the _multiplier_ label in the table, this table sets the IAC position in
 
 ## Idle VE
 
-Only enabled when _Use idle VE table_ is set to __true__. 3D table. Used in place of the regular VE table when idle is active, or during the cranking taper if _Use idle tables for cranking taper_ is set to __true__.
+Only enabled when _Use idle VE table_ is set to **true**. 3D table. Used in place of the regular VE table when idle is active, or during the cranking taper if _Use idle tables for cranking taper_ is set to **true**.
 
-See [the Idle VE Table page](../Idle-VE-Table) for more detail about idle-specific VE settings.
+See [the Idle VE Table page](/Basic-Features/Idle-Control/Idle-VE-Table) for more detail about idle-specific VE settings.
 
 ## Idle Ignition Advance
 
@@ -190,4 +221,11 @@ Found under _Idle > Ignition Advance_.
 
 ![image](Idle-Settings/idleAdvanceAngle.png)
 
-Only enabled when _Use idle ignition table_ is set to __true__. 2D table (curve). The values in this table are used in place of the regular ignition curve when idle is active, or during the cranking taper if _Use idle tables for cranking taper_ is set to __true__. Unlike _Closed-loop Idle Timing_, this table does not react to _Idle target RPM_ and is open loop only.
+Only enabled when _Use idle ignition table_ is set to **true**. 2D table (curve). The values in this table are used in place of the regular ignition curve when idle is active, or during the cranking taper if _Use idle tables for cranking taper_ is set to **true**. Unlike _Closed-loop Idle Timing_, this table does not react to _Idle target RPM_ and is open loop only.
+
+## Sources
+
+- [Idle target, entry, exit, and coasting phase logic](https://github.com/capoworks/capoworks-ecu/blob/bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3/firmware/controllers/actuators/idle_thread.cpp#L25)
+- [Current open-loop and closed-loop idle implementation](https://github.com/capoworks/capoworks-ecu/blob/bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3/firmware/controllers/actuators/idle_thread.cpp#L150)
+- [Current PID schema without the removed legacy fields](https://github.com/capoworks/capoworks-ecu/blob/bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3/firmware/integration/fome_config.txt#L247)
+- [Current closed-loop idle and idle-timing controls](https://github.com/capoworks/capoworks-ecu/blob/bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3/firmware/tunerstudio/tunerstudio.template.ini#L3926)
