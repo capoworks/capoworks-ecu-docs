@@ -4,6 +4,6 @@ The priming pulse essentially "primes" the intake before the car starts by spray
 
 ## Flood clear and priming
 
-The priming pulse is skipped when flood clear is enabled and the driver throttle intent is strictly greater than 90%. It is also skipped whenever the engine is not stopped. These [flood clear](/Basic-Features/Cranking-Control/Flood-Clear) conditions use the same driver throttle intent signal as the runtime fuel cut, so holding the accelerator down to clear a flooded engine also prevents the priming pulse from adding more fuel.
+The priming pulse is skipped when flood clear is enabled and the driver throttle intent is strictly greater than 90%. It is also skipped whenever the engine is not stopped. The [flood clear](/Basic-Features/Cranking-Control/Flood-Clear) request uses the same driver throttle intent signal as the runtime fuel cut, so holding the accelerator down to clear a flooded engine also prevents the priming pulse from adding more fuel.
 
 If `DriverThrottleIntent` is unavailable, the firmware treats it as 0 for this check. The missing signal therefore does not meet the flood-clear condition, but it does not guarantee that priming will occur because the engine-state and other priming conditions still apply.

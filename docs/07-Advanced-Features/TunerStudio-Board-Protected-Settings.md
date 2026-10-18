@@ -5,7 +5,7 @@ Some settings are fixed by your ECU board. The firmware restores these values af
 ## What you will see
 
 - Fixed settings are read-only and their controls are disabled in every dialog that shows them, including pinout and feature dialogs.
-- Settings covered by these protection rules use TunerStudio controller priority. When you load a tune, TunerStudio keeps the connected ECU's value instead of the value from the file.
+- Protected settings retain the connected ECU's values when a tune is loaded.
 - Free pins and settings that are not board-fixed remain editable as usual.
 
 ## Tune import and revision-dependent settings
