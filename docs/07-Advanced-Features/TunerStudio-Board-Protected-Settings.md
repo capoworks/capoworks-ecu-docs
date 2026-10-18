@@ -5,15 +5,15 @@ Some settings are fixed by your ECU board. The firmware restores these values af
 ## What you will see
 
 - Fixed settings are read-only and their controls are disabled in every dialog that shows them, including pinout and feature dialogs.
-- When you load a tune, TunerStudio keeps the ECU's values for protected settings instead of the values from the file.
+- Settings covered by these protection rules use TunerStudio controller priority. When you load a tune, TunerStudio keeps the connected ECU's value instead of the value from the file.
 - Free pins and settings that are not board-fixed remain editable as usual.
 
-## Revision-dependent settings
+## Tune import and revision-dependent settings
 
-Some settings are fixed only on certain hardware revisions of a board. For these, the control is disabled only on the revisions where the value is fixed. On a revision where the setting is free, configure it through its dialog after importing a tune.
+Some settings are fixed only on certain hardware revisions of a board. On revisions where such a setting is free, TunerStudio still keeps the connected ECU's value when importing a tune because the protection rule uses controller priority on all revisions. The value from the imported tune is not applied to that field.
 
-TunerStudio cannot identify the board revision while offline, so connect to the ECU before configuring these settings.
+After importing a tune, connect to the ECU and configure a free revision-dependent setting through its dialog. TunerStudio cannot identify the board revision while offline, so the control's availability may depend on the connection and the connected board revision.
 
 ## Notes
 
-These protections do not change configuration offsets or the communication protocol. If a setting appears greyed out, it is enforced by your board and cannot be changed from TunerStudio.
+These protections do not change configuration offsets or the communication protocol. A fixed setting cannot be edited from TunerStudio. For a revision-dependent setting, whether it can be edited depends on the connected hardware and revision. Some UI controls can be disabled for other reasons, so a greyed-out control alone does not necessarily mean that the board has fixed the setting.

@@ -10,13 +10,13 @@ The sensor transmits a repeating three-symbol pulse-width frame on one digital l
 
 In TunerStudio, open **Sensors > Oil pressure** and assign **Hella OPS+T input** to the connected digital input pin. Leaving the pin unassigned disables the driver.
 
-The driver registers the standard oil pressure and oil temperature channels only when those channels do not already have providers. This allows mixed configurations and prevents OPS+T from replacing an existing analog or digital sensor. If both channels already have providers, the driver does not claim the input.
+The driver evaluates the standard oil pressure and oil temperature channels independently. It registers each channel only when that channel has no existing provider, and any existing analog or digital provider retains its channel. If one channel already has a provider, OPS+T claims only the other channel; if both already have providers, it claims neither.
 
 ## Behavior
 
 - Oil pressure is reported as gauge pressure: the current barometric pressure is subtracted and the result is clamped to zero. If baro is unavailable, 101.325 kPa is used.
-- Both channels time out after 500 ms without a valid frame.
-- The sensor's diagnosis symbol can report pressure, temperature, or sensor-hardware faults. Inconsistent readings are reported through the standard oil pressure and oil temperature DTCs.
+- Both channels owned by the OPS+T driver time out after 500 ms without a valid frame. Faults and timeouts from OPS+T affect only those owned channels; a channel owned by another provider is unaffected.
+- The sensor's diagnosis symbol can report pressure, temperature, or sensor-hardware faults. A pressure diagnosis affects the pressure channel, a temperature diagnosis affects the temperature channel, and a hardware diagnosis affects both owned channels. Where supported, the corresponding standard DTC is P0521 for oil pressure or P0196 for oil temperature.
 
 ## Validation status
 
