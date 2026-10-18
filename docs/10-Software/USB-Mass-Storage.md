@@ -42,7 +42,7 @@ The relevant settings are compiled into the firmware:
 
 | Setting | Effect |
 | --- | --- |
-| `EFI_USB_MSD` | Enables USB mass storage when USB serial is also enabled. It defaults to `EFI_FILE_LOGGING`, preserving existing builds that did not opt in explicitly. |
+| `EFI_USB_MSD` | Enables USB mass storage when USB serial is also enabled. On STM32F4, `EFI_FILE_LOGGING` is the default, and boards can override it. |
 | `EFI_FILE_LOGGING` | Compiles SD-card logging, the SD driver and the SD-card LUN. It remains independent of an INI-only mass-storage configuration. |
 | `EFI_EMBED_INI_MSD` | Embeds the read-only FAT image used for LUN 0. |
 | `HAL_USE_USB_MSD` | Derived as `EFI_USB_MSD && EFI_USB_SERIAL`; this is not a separate user switch. |
