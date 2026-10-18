@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "batch_head": "c13a8c50e1bbe4bd2712a738340e6015c2689d43",
+  "previous_cursor_commit": "d50ee53a7b34f5d3f3d6d4613f2d2a3c4a672d83",
+  "cursor_commit": "c13a8c50e1bbe4bd2712a738340e6015c2689d43",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "95bf7b8b6e2c8e3fa91345fff0cf32c679981d5e",
+      "head_inclusive": "d50ee53a7b34f5d3f3d6d4613f2d2a3c4a672d83",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for physical dwell guard per output owner. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); no new user setting or workflow requires a guide. The ledger limits the integration merge to the audited original.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "1b47a2845290fde63fd2c6106810e7629585aa31",
+        "decision": "no-impact",
+        "rationale": "Bounds each actual HIGH pulse with an output-owned safety deadline; it corrects safety behavior without adding a user-facing option or workflow.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Every continuous ignition pulse is bounded by an independent 1.5x nominal dwell guard owned by the physical output.",
+          "[firmware/controllers/system/efi_gpio.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/system/efi_gpio.cpp): The output guard starts at the actual HIGH edge and discharges only the matching owner.",
+          "[firmware/controllers/engine_cycle/spark_logic.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/engine_cycle/spark_logic.cpp): Minimum-dwell retries are bounded by the earliest physical output deadline."
+        ]
+      },
+      {
+        "commit": "d50ee53a7b34f5d3f3d6d4613f2d2a3c4a672d83",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #11 adds no impact beyond 1b47a2845290fde63fd2c6106810e7629585aa31; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #36 maps original PR #11 / 1b47a2845290fde63fd2c6106810e7629585aa31 to merge d50ee53a7b34f5d3f3d6d4613f2d2a3c4a672d83; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: d50ee53a7b34f5d3f3d6d4613f2d2a3c4a672d83 has parents 95bf7b8b6e2c8e3fa91345fff0cf32c679981d5e and 1b47a2845290fde63fd2c6106810e7629585aa31",
+          "[firmware/controllers/system/efi_gpio.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/system/efi_gpio.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "d50ee53a7b34f5d3f3d6d4613f2d2a3c4a672d83",
+      "head_inclusive": "c13a8c50e1bbe4bd2712a738340e6015c2689d43",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for configuration flash request serialization. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); no new user setting or workflow requires a guide. The ledger limits the integration merge to the audited original.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "17bedf37d6acbe4bb9bce5e08bb4d2aee5906302",
+        "decision": "no-impact",
+        "rationale": "Serializes saves and reads and defers reentrant writes; it fixes internal storage coordination without exposing a new setting or workflow.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Configuration flash operations are serialized so concurrent saves and reads cannot overwrite each other.",
+          "[firmware/controllers/flash_main.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/flash_main.cpp): Atomic write claiming retains requests that arrive during active I/O and rejects overlapping reads.",
+          "[firmware/controllers/configuration_write_state.h](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/configuration_write_state.h): Explicit write/read ownership state tracks active, deferred and failed requests."
+        ]
+      },
+      {
+        "commit": "c13a8c50e1bbe4bd2712a738340e6015c2689d43",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #12 adds no impact beyond 17bedf37d6acbe4bb9bce5e08bb4d2aee5906302; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #37 maps original PR #12 / 17bedf37d6acbe4bb9bce5e08bb4d2aee5906302 to merge c13a8c50e1bbe4bd2712a738340e6015c2689d43; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: c13a8c50e1bbe4bd2712a738340e6015c2689d43 has parents d50ee53a7b34f5d3f3d6d4613f2d2a3c4a672d83 and 17bedf37d6acbe4bb9bce5e08bb4d2aee5906302",
+          "[firmware/controllers/flash_main.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/flash_main.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  }
+}

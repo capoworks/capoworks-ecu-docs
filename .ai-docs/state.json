@@ -4,7 +4,7 @@
   "source_branch": "master",
   "target_repository": "capoworks/capoworks-ecu-docs",
   "target_branch": "master",
-  "cursor_commit": "be02e3cdaa2c177d05853a41af6dacc9c0766b77",
+  "cursor_commit": "825d7fda5c32b7ec3f755be4897775819e8605d1",
   "initial_backfill": {
     "through_commit": "be02e3cdaa2c177d05853a41af6dacc9c0766b77",
     "commit_count": 5,
@@ -12,83 +12,41 @@
   },
   "last_sync": {
     "range": {
-      "base_exclusive": "6b31ebaec865d7ea856b20a3211c7a0310e29ef2",
-      "head_inclusive": "be02e3cdaa2c177d05853a41af6dacc9c0766b77",
-      "commit_count": 5
+      "base_exclusive": "91b74aedfd7b58da66d95f259c16086c7c3e5093",
+      "head_inclusive": "825d7fda5c32b7ec3f755be4897775819e8605d1",
+      "commit_count": 2
     },
-    "model": "deepseek-flash",
-    "usage": {
-      "prompt_tokens": 274904,
-      "completion_tokens": 2367,
-      "total_tokens": 277271,
-      "prompt_cache_hit_tokens": 0,
-      "prompt_cache_miss_tokens": 274904
-    },
-    "summary": "Audited 5 commits. Three change user-facing behavior (workshop flood clear, Hella OPS+T sensor, board-fixed TunerStudio settings) and need documentation; the Core8 LED pin fix and MC33816 SPI fix are hardware/behavior corrections already covered by the changelog and need no end-user doc change beyond what exists.",
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for VE Analyze strategy filters and recovery state. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); guide target for a separate docs PR: docs/08-Fuel/Fuel-Settings/VE-Analyze.md (not claimed public here). The ledger limits the integration merge to the audited original.",
     "outcome": "update",
     "decisions": [
       {
-        "commit": "e3cefad3d31803e5100df49f846b60a6ecdc7d64",
+        "commit": "8f4fcfb40135fe7e5f15b280f7e05d9863b60f52",
         "decision": "update",
-        "rationale": "Adds a new user-selectable flood-clear mode in TunerStudio Advanced Cranking, changes the flood-clear threshold to 90% driver throttle intent, and makes cranking priming respect driver throttle intent. Users need to know how the two modes behave and when the latch releases.",
+        "rationale": "Gives SD, Alpha-N and MAF independent VE Analyze filters, includes crank/cut/transient/lambda exclusions and publishes recovery telemetry, so tuning behavior and layout 20032 migration need guidance.",
         "evidence": [
-          "firmware/integration/fome_config.txt: new bit isCylinderCleanupLatching,\"Service / Workshop\",\"Roadside\" with help text",
-          "firmware/tunerstudio/tunerstudio.template.ini: field = \"Flood clear mode\", isCylinderCleanupLatching, {isCylinderCleanupEnabled}",
-          "firmware/controllers/limp_manager.cpp: updateCutsFloodClear latch logic, m_floodClearLatched",
-          "firmware/controllers/engine_cycle/prime_injection.cpp: priming now uses SensorType::DriverThrottleIntent",
-          "firmware/integration/fome_config.txt: isCylinderCleanupEnabled help changed to 90% driver throttle intent"
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): VE Analyze applies strategy-specific filters and publishes cranking and cut-recovery telemetry without moving existing channels.",
+          "[firmware/tunerstudio/tunerstudio.template.ini](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/tunerstudio/tunerstudio.template.ini): Each physical model has its own VE Analyze map block, filters and qualified endpoint gating.",
+          "[firmware/console/status_loop.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/console/status_loop.cpp): Fallback fault status feeds VE Analyze admission while injection can remain available.",
+          "[firmware/controllers/algo/engine2.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/algo/engine2.cpp): The final layout 20032 migration notes consolidate the dedicated model, selector, blend, trim and timing changes.",
+          "guide target: docs/08-Fuel/Fuel-Settings/VE-Analyze.md (reviewed path; separate docs PR)"
         ]
       },
       {
-        "commit": "138f00848704ef02ba57c2b1d752defaa9a9b80a",
-        "decision": "update",
-        "rationale": "Adds support for a new combined digital oil pressure/temperature sensor with a new TunerStudio input field, provider-priority rules, DTC behavior, and a documented validation caveat. Users need configuration and behavior guidance.",
-        "evidence": [
-          "firmware/controllers/sensors/hella_opst.md: operator notes for Hella OPS+T 6PR 010 378-207",
-          "firmware/integration/fome_config.txt: new brain_input_pin_e hellaOpsTInput",
-          "firmware/tunerstudio/tunerstudio.template.ini: field = \"Hella OPS+T input\", hellaOpsTInput in oil pressure dialog",
-          "firmware/controllers/sensors/sensor_checker.cpp: UnexpectedCode::Inconsistent mapped for OilPressure/OilTemperature",
-          "firmware/controllers/sensors/hella_opst.cpp: BARO subtraction, 500 ms timeout, provider registration only when channel unclaimed"
-        ]
-      },
-      {
-        "commit": "2a29ea036e0cce0b1eb271a3b94ce9597921a7d2",
+        "commit": "825d7fda5c32b7ec3f755be4897775819e8605d1",
         "decision": "no-impact",
-        "rationale": "Board-level LED pin correction for Core8 v2.3/v2.4. It changes which physical pin drives the critical error LED but introduces no new user setting or workflow; the changelog entry already records it. No end-user documentation change is required.",
+        "rationale": "Integration merge for original PR #30 adds no impact beyond 8f4fcfb40135fe7e5f15b280f7e05d9863b60f52; the supplied ledger verifies the merged tree equals the original feature tree.",
         "evidence": [
-          "firmware/config/boards/core8/board.mk: DDEFS += -DLED_CRITICAL_ERROR_BRAIN_PIN=Gpio::G11",
-          "firmware/config/boards/core8/board_configuration.cpp: comment corrected to PG11",
-          "firmware/CHANGELOG.md: Core8 v2.3/v2.4 critical error LED now uses PG11"
-        ]
-      },
-      {
-        "commit": "40f5c342cbd8bc0a87eae62c77a8b7bf7aed1e99",
-        "decision": "update",
-        "rationale": "Changes TunerStudio behavior users will see: board-fixed settings become read-only/greyed out and are protected during tune import, with conditional (revision-dependent) settings using controllerPriority and requiring a connected ECU. This needs user-facing explanation of what is locked and why.",
-        "evidence": [
-          "firmware/config/boards/tunerstudio-protection.md: documents ts_readonly_ declarations, readOnly vs controllerPriority, import/offline limits",
-          "java_tools/configuration_definition/src/main/java/com/rusefi/newparse/outputs/TsConfigProtection.java: emits readOnly/controllerPriority and rewrites field enable expressions",
-          "firmware/tunerstudio/tunerstudio.template.ini: [ConstantsExtensions] CONFIG_READ_ONLY marker",
-          "firmware/config/boards/*/prepend.txt: many new ts_readonly_* declarations across boards"
-        ]
-      },
-      {
-        "commit": "be02e3cdaa2c177d05853a41af6dacc9c0766b77",
-        "decision": "no-impact",
-        "rationale": "Removes a hard-coded SPI3 assignment so the configured MC33816 SPI bus is honored. This is a bug fix with no new user setting or workflow; the changelog entry already records it and no end-user doc change is needed.",
-        "evidence": [
-          "firmware/hw_layer/mc33816.cpp: removed engineConfiguration->mc33816spiDevice = SPI_DEVICE_3",
-          "firmware/hw_layer/mc33816.cpp: driver = getSpiDevice(engineConfiguration->mc33816spiDevice) now uses configured value",
-          "firmware/CHANGELOG.md: Configured MC33816 SPI selection is now honored"
+          "merged-firmware-prs.json: PR #55 maps original PR #30 / 8f4fcfb40135fe7e5f15b280f7e05d9863b60f52 to merge 825d7fda5c32b7ec3f755be4897775819e8605d1; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 825d7fda5c32b7ec3f755be4897775819e8605d1 has parents 91b74aedfd7b58da66d95f259c16086c7c3e5093 and 8f4fcfb40135fe7e5f15b280f7e05d9863b60f52",
+          "[firmware/tunerstudio/tunerstudio.template.ini](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/tunerstudio/tunerstudio.template.ini): The supplied original feature tree is the only feature delta carried by the integration merge."
         ]
       }
     ],
     "files_changed": [
-      "docs/06-Basic-Features/Cranking-Control/Cranking-Fuel/Priming-Pulse.md",
-      "docs/06-Basic-Features/Cranking-Control/Flood-Clear.md",
-      "docs/04-Sensors-And-Gauges/Oil-Pressure/Hella-OPS-T.md",
-      "docs/07-Advanced-Features/TunerStudio-Board-Protected-Settings.md"
+      "docs/08-Fuel/Fuel-Settings/VE-Analyze.md"
     ],
-    "recorded_at": "2026-10-18T10:54:45.908791+00:00"
+    "recorded_at": "2026-10-18T15:25:09+00:00"
   }
 }

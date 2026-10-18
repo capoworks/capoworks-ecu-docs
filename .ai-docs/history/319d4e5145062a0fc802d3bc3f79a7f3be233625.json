@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "batch_head": "319d4e5145062a0fc802d3bc3f79a7f3be233625",
+  "previous_cursor_commit": "28d56b01d7b3e7136bf15bbad3000be8ef91c84f",
+  "cursor_commit": "319d4e5145062a0fc802d3bc3f79a7f3be233625",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "9e5c2b3ffaf806706debe1b57b565d839b9e381c",
+      "head_inclusive": "28d56b01d7b3e7136bf15bbad3000be8ef91c84f",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for Capoworks pull-request verification CI. Source evidence is pinned at [.github/workflows/capoworks-checks.yaml](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/.github/workflows/capoworks-checks.yaml); no new user setting or workflow requires a guide. The ledger limits the integration merge to the audited original.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "c65ff75a4513b23648c4f0bdfe2f44580c7b261a",
+        "decision": "no-impact",
+        "rationale": "Adds repository verification and artifact-report jobs for maintainers without changing firmware setup or operator workflow.",
+        "evidence": [
+          "[.github/workflows/capoworks-checks.yaml](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/.github/workflows/capoworks-checks.yaml): Unit-test, simulator and Core8/OpenBLT jobs run for master and stacked port branches and preserve reports/artifacts.",
+          "[misc/ci/capoworks-checks.sh](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/misc/ci/capoworks-checks.sh): The CI driver performs an isolated build/test workflow and does not deploy.",
+          "[misc/ci/README.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/misc/ci/README.md): Maintainer documentation describes the checks and their non-deployment scope."
+        ]
+      },
+      {
+        "commit": "28d56b01d7b3e7136bf15bbad3000be8ef91c84f",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #20 adds no impact beyond c65ff75a4513b23648c4f0bdfe2f44580c7b261a; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #46 maps original PR #20 / c65ff75a4513b23648c4f0bdfe2f44580c7b261a to merge 28d56b01d7b3e7136bf15bbad3000be8ef91c84f; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 28d56b01d7b3e7136bf15bbad3000be8ef91c84f has parents 9e5c2b3ffaf806706debe1b57b565d839b9e381c and c65ff75a4513b23648c4f0bdfe2f44580c7b261a",
+          "[.github/workflows/capoworks-checks.yaml](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/.github/workflows/capoworks-checks.yaml): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "28d56b01d7b3e7136bf15bbad3000be8ef91c84f",
+      "head_inclusive": "319d4e5145062a0fc802d3bc3f79a7f3be233625",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for portable Core8 build and explicit DFU tasks. Source evidence is pinned at [.vscode/scripts/README.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/.vscode/scripts/README.md); guide target for a separate docs PR: docs/10-Software/Core8-Build-Tools.md (not claimed public here). The ledger limits the integration merge to the audited original.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "034ec75bc1e9bf7391eeb0050b13038c0f60e3d7",
+        "decision": "update",
+        "rationale": "Adds a portable Core8 build helper and makes flashing an explicit, signature-checked DFU action; users maintaining Core8 firmware need build and upload guidance.",
+        "evidence": [
+          "[.vscode/scripts/README.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/.vscode/scripts/README.md): Documents the default Core8 build task and the non-default explicit USB DFU task.",
+          "[.vscode/scripts/core8_dfu.sh](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/.vscode/scripts/core8_dfu.sh): Bundled ARM binutils and BIN/ELF/INI signature checks gate the explicit programmer call.",
+          "guide target: docs/10-Software/Core8-Build-Tools.md (pending separate docs PR; not claimed public)"
+        ]
+      },
+      {
+        "commit": "319d4e5145062a0fc802d3bc3f79a7f3be233625",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #21 adds no impact beyond 034ec75bc1e9bf7391eeb0050b13038c0f60e3d7; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #47 maps original PR #21 / 034ec75bc1e9bf7391eeb0050b13038c0f60e3d7 to merge 319d4e5145062a0fc802d3bc3f79a7f3be233625; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 319d4e5145062a0fc802d3bc3f79a7f3be233625 has parents 28d56b01d7b3e7136bf15bbad3000be8ef91c84f and 034ec75bc1e9bf7391eeb0050b13038c0f60e3d7",
+          "[.vscode/scripts/core8_dfu.sh](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/.vscode/scripts/core8_dfu.sh): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/10-Software/Core8-Build-Tools.md"
+    ],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  }
+}

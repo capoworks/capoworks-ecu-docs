@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "batch_head": "9e5c2b3ffaf806706debe1b57b565d839b9e381c",
+  "previous_cursor_commit": "9dcf59a0c875cb4774cac5c1d8c4061ea27a19fe",
+  "cursor_commit": "9e5c2b3ffaf806706debe1b57b565d839b9e381c",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "a09e26f9fa4db8213458726ac991dcc41ac0d212",
+      "head_inclusive": "9dcf59a0c875cb4774cac5c1d8c4061ea27a19fe",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for atomic scheduler callback batches. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); no new user setting or workflow requires a guide. The ledger limits the integration merge to the audited original.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "32fda8738fc3bb7c1d5c526700579eba7ea9cc85",
+        "decision": "no-impact",
+        "rationale": "Reserves all records before publishing a callback batch so a full or invalid request cannot partially schedule pulses; it is internal queue behavior.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Scheduler batches atomically reserve paired output transitions and avoid partially scheduled pulses.",
+          "[firmware/controllers/system/timer/event_queue.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/system/timer/event_queue.cpp): Batch admission validates bounds, reserves records and rolls back failed reservations.",
+          "[firmware/controllers/system/timer/scheduler.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/system/timer/scheduler.cpp): Hardware, simulator and test executors share atomic batch admission."
+        ]
+      },
+      {
+        "commit": "9dcf59a0c875cb4774cac5c1d8c4061ea27a19fe",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #19 adds no impact beyond 32fda8738fc3bb7c1d5c526700579eba7ea9cc85; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #44 maps original PR #19 / 32fda8738fc3bb7c1d5c526700579eba7ea9cc85 to merge 9dcf59a0c875cb4774cac5c1d8c4061ea27a19fe; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 9dcf59a0c875cb4774cac5c1d8c4061ea27a19fe has parents a09e26f9fa4db8213458726ac991dcc41ac0d212 and 32fda8738fc3bb7c1d5c526700579eba7ea9cc85",
+          "[firmware/controllers/system/timer/event_queue.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/system/timer/event_queue.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "9dcf59a0c875cb4774cac5c1d8c4061ea27a19fe",
+      "head_inclusive": "9e5c2b3ffaf806706debe1b57b565d839b9e381c",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for flash CRC test padding. Source evidence is pinned at [unit_tests/tests/system/test_flash_write_lifecycle.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/unit_tests/tests/system/test_flash_write_lifecycle.cpp); no new user setting or workflow requires a guide. The ledger limits the integration merge to the audited original.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "b44802638c7e07bcd18789a2c7c90b21dad67711",
+        "decision": "no-impact",
+        "rationale": "Initializes test padding before computing a configuration CRC; this changes only test determinism and has no product behavior or documentation impact.",
+        "evidence": [
+          "[unit_tests/tests/system/test_flash_write_lifecycle.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/unit_tests/tests/system/test_flash_write_lifecycle.cpp): The test initializes configuration padding before CRC computation.",
+          "[unit_tests/tests/tests.mk](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/unit_tests/tests/tests.mk): The configuration flash lifecycle test remains part of the native suite."
+        ]
+      },
+      {
+        "commit": "9e5c2b3ffaf806706debe1b57b565d839b9e381c",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #25 adds no impact beyond b44802638c7e07bcd18789a2c7c90b21dad67711; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #45 maps original PR #25 / b44802638c7e07bcd18789a2c7c90b21dad67711 to merge 9e5c2b3ffaf806706debe1b57b565d839b9e381c; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 9e5c2b3ffaf806706debe1b57b565d839b9e381c has parents 9dcf59a0c875cb4774cac5c1d8c4061ea27a19fe and b44802638c7e07bcd18789a2c7c90b21dad67711",
+          "[unit_tests/tests/system/test_flash_write_lifecycle.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/unit_tests/tests/system/test_flash_write_lifecycle.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  }
+}

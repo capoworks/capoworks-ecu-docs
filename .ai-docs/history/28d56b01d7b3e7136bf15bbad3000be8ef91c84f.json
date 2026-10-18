@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "batch_head": "28d56b01d7b3e7136bf15bbad3000be8ef91c84f",
+  "previous_cursor_commit": "9e5c2b3ffaf806706debe1b57b565d839b9e381c",
+  "cursor_commit": "28d56b01d7b3e7136bf15bbad3000be8ef91c84f",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "9dcf59a0c875cb4774cac5c1d8c4061ea27a19fe",
+      "head_inclusive": "9e5c2b3ffaf806706debe1b57b565d839b9e381c",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for flash CRC test padding. Source evidence is pinned at [unit_tests/tests/system/test_flash_write_lifecycle.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/unit_tests/tests/system/test_flash_write_lifecycle.cpp); no new user setting or workflow requires a guide. The ledger limits the integration merge to the audited original.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "b44802638c7e07bcd18789a2c7c90b21dad67711",
+        "decision": "no-impact",
+        "rationale": "Initializes test padding before computing a configuration CRC; this changes only test determinism and has no product behavior or documentation impact.",
+        "evidence": [
+          "[unit_tests/tests/system/test_flash_write_lifecycle.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/unit_tests/tests/system/test_flash_write_lifecycle.cpp): The test initializes configuration padding before CRC computation.",
+          "[unit_tests/tests/tests.mk](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/unit_tests/tests/tests.mk): The configuration flash lifecycle test remains part of the native suite."
+        ]
+      },
+      {
+        "commit": "9e5c2b3ffaf806706debe1b57b565d839b9e381c",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #25 adds no impact beyond b44802638c7e07bcd18789a2c7c90b21dad67711; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #45 maps original PR #25 / b44802638c7e07bcd18789a2c7c90b21dad67711 to merge 9e5c2b3ffaf806706debe1b57b565d839b9e381c; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 9e5c2b3ffaf806706debe1b57b565d839b9e381c has parents 9dcf59a0c875cb4774cac5c1d8c4061ea27a19fe and b44802638c7e07bcd18789a2c7c90b21dad67711",
+          "[unit_tests/tests/system/test_flash_write_lifecycle.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/unit_tests/tests/system/test_flash_write_lifecycle.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "9e5c2b3ffaf806706debe1b57b565d839b9e381c",
+      "head_inclusive": "28d56b01d7b3e7136bf15bbad3000be8ef91c84f",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for Capoworks pull-request verification CI. Source evidence is pinned at [.github/workflows/capoworks-checks.yaml](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/.github/workflows/capoworks-checks.yaml); no new user setting or workflow requires a guide. The ledger limits the integration merge to the audited original.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "c65ff75a4513b23648c4f0bdfe2f44580c7b261a",
+        "decision": "no-impact",
+        "rationale": "Adds repository verification and artifact-report jobs for maintainers without changing firmware setup or operator workflow.",
+        "evidence": [
+          "[.github/workflows/capoworks-checks.yaml](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/.github/workflows/capoworks-checks.yaml): Unit-test, simulator and Core8/OpenBLT jobs run for master and stacked port branches and preserve reports/artifacts.",
+          "[misc/ci/capoworks-checks.sh](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/misc/ci/capoworks-checks.sh): The CI driver performs an isolated build/test workflow and does not deploy.",
+          "[misc/ci/README.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/misc/ci/README.md): Maintainer documentation describes the checks and their non-deployment scope."
+        ]
+      },
+      {
+        "commit": "28d56b01d7b3e7136bf15bbad3000be8ef91c84f",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #20 adds no impact beyond c65ff75a4513b23648c4f0bdfe2f44580c7b261a; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #46 maps original PR #20 / c65ff75a4513b23648c4f0bdfe2f44580c7b261a to merge 28d56b01d7b3e7136bf15bbad3000be8ef91c84f; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 28d56b01d7b3e7136bf15bbad3000be8ef91c84f has parents 9e5c2b3ffaf806706debe1b57b565d839b9e381c and c65ff75a4513b23648c4f0bdfe2f44580c7b261a",
+          "[.github/workflows/capoworks-checks.yaml](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/.github/workflows/capoworks-checks.yaml): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  }
+}

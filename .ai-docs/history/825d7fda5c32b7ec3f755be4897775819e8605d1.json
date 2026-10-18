@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "batch_head": "825d7fda5c32b7ec3f755be4897775819e8605d1",
+  "previous_cursor_commit": "91b74aedfd7b58da66d95f259c16086c7c3e5093",
+  "cursor_commit": "825d7fda5c32b7ec3f755be4897775819e8605d1",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd",
+      "head_inclusive": "91b74aedfd7b58da66d95f259c16086c7c3e5093",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for per-model cylinder fuel trims. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); guide target for a separate docs PR: docs/08-Fuel/Fuel-Settings/Cylinder-Fuel-Trim.md (not claimed public here). The ledger limits the integration merge to the audited original.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "223895c17f82f9fd07bac9e81414661440ac7475",
+        "decision": "update",
+        "rationale": "Replaces former 4x4 residual trims with separate 16x16 Speed Density and Alpha-N families, advances layout to 20032 and requires manual trim recreation and Core8 memory trade-off guidance.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Separate 16x16 SD and Alpha-N per-cylinder trim families replace the former 4x4 residual maps in layout 20032.",
+          "[firmware/controllers/algo/cylinder_model_fuel_trim.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/algo/cylinder_model_fuel_trim.cpp): Trim factors are derived from captured native coordinates and effective weighted branch masses, then published with the fuel transaction.",
+          "[docs/user/cylinder-model-fuel-trims.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/docs/user/cylinder-model-fuel-trims.md): The source note records the model-family selection, manual migration and Core8 Lua-heap/stack trade-off.",
+          "guide target: docs/08-Fuel/Fuel-Settings/Cylinder-Fuel-Trim.md (reviewed path; separate docs PR)"
+        ]
+      },
+      {
+        "commit": "91b74aedfd7b58da66d95f259c16086c7c3e5093",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #29 adds no impact beyond 223895c17f82f9fd07bac9e81414661440ac7475; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #54 maps original PR #29 / 223895c17f82f9fd07bac9e81414661440ac7475 to merge 91b74aedfd7b58da66d95f259c16086c7c3e5093; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 91b74aedfd7b58da66d95f259c16086c7c3e5093 has parents a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd and 223895c17f82f9fd07bac9e81414661440ac7475",
+          "[firmware/controllers/algo/cylinder_model_fuel_trim.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/algo/cylinder_model_fuel_trim.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/08-Fuel/Fuel-Settings/Cylinder-Fuel-Trim.md"
+    ],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "91b74aedfd7b58da66d95f259c16086c7c3e5093",
+      "head_inclusive": "825d7fda5c32b7ec3f755be4897775819e8605d1",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for VE Analyze strategy filters and recovery state. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); guide target for a separate docs PR: docs/08-Fuel/Fuel-Settings/VE-Analyze.md (not claimed public here). The ledger limits the integration merge to the audited original.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "8f4fcfb40135fe7e5f15b280f7e05d9863b60f52",
+        "decision": "update",
+        "rationale": "Gives SD, Alpha-N and MAF independent VE Analyze filters, includes crank/cut/transient/lambda exclusions and publishes recovery telemetry, so tuning behavior and layout 20032 migration need guidance.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): VE Analyze applies strategy-specific filters and publishes cranking and cut-recovery telemetry without moving existing channels.",
+          "[firmware/tunerstudio/tunerstudio.template.ini](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/tunerstudio/tunerstudio.template.ini): Each physical model has its own VE Analyze map block, filters and qualified endpoint gating.",
+          "[firmware/console/status_loop.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/console/status_loop.cpp): Fallback fault status feeds VE Analyze admission while injection can remain available.",
+          "[firmware/controllers/algo/engine2.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/algo/engine2.cpp): The final layout 20032 migration notes consolidate the dedicated model, selector, blend, trim and timing changes.",
+          "guide target: docs/08-Fuel/Fuel-Settings/VE-Analyze.md (reviewed path; separate docs PR)"
+        ]
+      },
+      {
+        "commit": "825d7fda5c32b7ec3f755be4897775819e8605d1",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #30 adds no impact beyond 8f4fcfb40135fe7e5f15b280f7e05d9863b60f52; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #55 maps original PR #30 / 8f4fcfb40135fe7e5f15b280f7e05d9863b60f52 to merge 825d7fda5c32b7ec3f755be4897775819e8605d1; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 825d7fda5c32b7ec3f755be4897775819e8605d1 has parents 91b74aedfd7b58da66d95f259c16086c7c3e5093 and 8f4fcfb40135fe7e5f15b280f7e05d9863b60f52",
+          "[firmware/tunerstudio/tunerstudio.template.ini](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/tunerstudio/tunerstudio.template.ini): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/08-Fuel/Fuel-Settings/VE-Analyze.md"
+    ],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  }
+}

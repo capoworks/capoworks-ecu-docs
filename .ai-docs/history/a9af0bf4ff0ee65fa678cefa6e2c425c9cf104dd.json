@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "batch_head": "a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd",
+  "previous_cursor_commit": "1bf806b838061c4b00663575ed0ce3e930c6dfc8",
+  "cursor_commit": "a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "21260be2bf5ba5f7afa8df8b0ec193b719e6242b",
+      "head_inclusive": "1bf806b838061c4b00663575ed0ce3e930c6dfc8",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for independent captured consumer load coordinates. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); guide target for a separate docs PR: docs/08-Fuel/Fuel-Settings/Load-Sources.md (not claimed public here). The ledger limits the integration merge to the audited original.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "45298b9020a52059c278d3d0ba16bae89b7e6a7f",
+        "decision": "update",
+        "rationale": "Adds independent full-precision load selectors for fuel, ignition, protection and actuator consumers, with fallback and diagnostic semantics that users must configure correctly.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Independent full-precision load coordinates and per-function selector UI are added for the listed consumers.",
+          "[firmware/controllers/algo/airmass_loads.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/algo/airmass_loads.cpp): Captured consumer coordinates are resolved after fuel publication and invalidated by tune generation changes.",
+          "[firmware/tunerstudio/tunerstudio.template.ini](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/tunerstudio/tunerstudio.template.ini): Per-consumer load-source fields and diagnostic cursors are exposed independently of Fuel strategy.",
+          "guide target: docs/08-Fuel/Fuel-Settings/Load-Sources.md (reviewed path; separate docs PR)"
+        ]
+      },
+      {
+        "commit": "1bf806b838061c4b00663575ed0ce3e930c6dfc8",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #27 adds no impact beyond 45298b9020a52059c278d3d0ba16bae89b7e6a7f; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #52 maps original PR #27 / 45298b9020a52059c278d3d0ba16bae89b7e6a7f to merge 1bf806b838061c4b00663575ed0ce3e930c6dfc8; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 1bf806b838061c4b00663575ed0ce3e930c6dfc8 has parents 21260be2bf5ba5f7afa8df8b0ec193b719e6242b and 45298b9020a52059c278d3d0ba16bae89b7e6a7f",
+          "[firmware/controllers/algo/airmass_loads.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/algo/airmass_loads.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/08-Fuel/Fuel-Settings/Load-Sources.md"
+    ],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "1bf806b838061c4b00663575ed0ce3e930c6dfc8",
+      "head_inclusive": "a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for SD and Alpha-N air-mass blending. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); guide target for a separate docs PR: docs/08-Fuel/Fuel-Algorithms/Blended.md, docs/02-Intro-Start-Here/09-Which-Fuel-Method-For-Me.md (not claimed public here). The ledger limits the integration merge to the audited original.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "eee63c82b531db9bc6fa640c58ad76cf740a2ff0",
+        "decision": "update",
+        "rationale": "Adds an SD + Alpha-N strategy using a TPS or measured-MAP authority table, branch fallback and new diagnostics, with layout 20031 manual transfer and breakpoint re-entry needs.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): Adds an SD + Alpha-N authority table with selectable TPS or measured-MAP axes and manual calibration transfer.",
+          "[firmware/controllers/algo/airmass/blended_airmass.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/algo/airmass/blended_airmass.cpp): The model combines raw branch masses, applies shared corrections once and records branch fallback.",
+          "[firmware/tunerstudio/tunerstudio.template.ini](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/tunerstudio/tunerstudio.template.ini): Fuel strategy includes SD + Alpha-N and exposes the authority Y-axis and blend table.",
+          "guide targets: docs/08-Fuel/Fuel-Algorithms/Blended.md and the SD + Alpha-N selector entry in docs/02-Intro-Start-Here/09-Which-Fuel-Method-For-Me.md (reviewed paths; separate docs PR)"
+        ]
+      },
+      {
+        "commit": "a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #28 adds no impact beyond eee63c82b531db9bc6fa640c58ad76cf740a2ff0; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #53 maps original PR #28 / eee63c82b531db9bc6fa640c58ad76cf740a2ff0 to merge a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd has parents 1bf806b838061c4b00663575ed0ce3e930c6dfc8 and eee63c82b531db9bc6fa640c58ad76cf740a2ff0",
+          "[firmware/controllers/algo/airmass/blended_airmass.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/algo/airmass/blended_airmass.cpp): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/08-Fuel/Fuel-Algorithms/Blended.md",
+      "docs/02-Intro-Start-Here/09-Which-Fuel-Method-For-Me.md"
+    ],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  }
+}
