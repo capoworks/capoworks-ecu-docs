@@ -19,13 +19,17 @@ The final template defines these tables:
 | --- | --- | --- | --- | --- |
 | Speed Density | `VE` | 16 x 16 | Effective MAP in kPa | VE in percent |
 | Alpha-N | `Alpha-N filling` | 16 x 16 | TPS in percent | Cylinder filling in percent at the configured reference pressure |
-| MAF Air Charge | `MAF Trim` | 8 x 8 | MAF load in percent | Air-mass correction in percent |
+| MAF Air Charge | `MAF Trim` | 8 x 8 | Pre-trim standardized cylinder filling in percent (`100 × cylinder air mass / standard charge`) | Air-mass correction in percent |
 
 The MAF trim table is intentionally not a 16 x 16 VE table in this layout. Its
 primary air mass comes from the MAF sensor; the trim table corrects that
-measured filling. With two configured MAF sensors, the model sums two healthy
-sensors, uses twice one healthy sensor if the other is unavailable, and
-returns no valid model result if neither sensor is usable.
+measured filling. The configuration template places RPM on the X axis and
+`mafTrimLoadBins` on the Y axis. That Y coordinate is the pre-trim standardized
+cylinder filling shown above, calculated from the MAF-derived cylinder air mass
+before the trim cell is applied; it is not MAF sensor output in percent. With
+two configured MAF sensors, the model sums two healthy sensors, uses twice one
+healthy sensor if the other is unavailable, and returns no valid model result
+if neither sensor is usable.
 
 The later per-cylinder model fuel trims are separate from the tables above.
 They have a 16 x 16 Speed Density family using effective MAP and RPM, and a
@@ -40,15 +44,22 @@ displacement and cylinder count, using the `VE` table. Effective MAP is the
 measured MAP when available, optionally estimated from the `MAP Estimate`
 table when measured MAP is unavailable or transient estimation is enabled.
 
-Alpha-N calculates filling from RPM and TPS using `Alpha-N filling`, then
-applies a pressure policy. In standalone Alpha-N mode:
+Alpha-N calculates reference filling from RPM and TPS using `Alpha-N filling`,
+then applies one of two pressure policies. In standalone Alpha-N mode:
 
-- `Standalone Alpha-N: multiply MAP` uses effective MAP divided by
-  `101.325 kPa`.
-- With that option off, the model uses a reference pressure.
-- If `Alpha-N barometric compensation` is enabled, the reference pressure is
-  scaled by ambient BARO divided by
-  `Alpha-N calibration reference pressure`.
+- With `Standalone Alpha-N: multiply MAP` enabled, the reference filling is
+  multiplied by effective MAP divided by `101.325 kPa`. This branch does not
+  apply BARO compensation.
+- With that option disabled, the reference filling uses `101.325 kPa`. If
+  `Alpha-N barometric compensation` is enabled, it is instead multiplied by
+  ambient BARO divided by `Alpha-N calibration reference pressure`; if
+  compensation is disabled, no BARO scaling is applied.
+- An invalid BARO or calibration reference pressure falls back to
+  `101.325 kPa` and marks the model result as degraded.
+
+SD + Alpha-N always uses the pure-reference Alpha-N branch described above,
+including its BARO policy; the standalone MAP-multiplication setting does not
+change that branch.
 
 MAF Air Charge converts measured mass airflow into cylinder air mass and a
 standardized filling coordinate. It applies the `MAF Trim` percentage before
@@ -108,19 +119,30 @@ the tune or failing the current calculation closes new injection admission;
 already accepted output callbacks are allowed to finish. Cranking priming has
 its own gate and remains independent.
 
-The following conditions produce a valid published model result:
+For a physical model, the following conditions apply only to inputs required
+by the active model and its enabled consumers. An input that is neither modeled
+nor selected for a consumer is not required. For example, MAF Air Charge does
+not require MAP or TPS merely because those sensors are configured. A fallback
+can satisfy a requirement only when the model or consumer defines a substitute
+for that same coordinate; a value from a different available input does not
+substitute for an unresolved requirement.
 
 - RPM, displacement and cylinder count are finite and greater than zero.
-- Measured or effective MAP is in the inclusive range `0` to `1000 kPa`.
-- A MAP estimate is in the inclusive range `0` to `600 kPa`.
-- TPS is inside the configured sensor-error tolerance, then normalized to the
-  inclusive range `0` to `100 percent`.
-- Charge temperature is finite and greater than zero kelvin after the selected
-  source or fallback is applied.
-- MAF values are finite and non-negative, and the MAF trim is finite and
-  between `0` and `200 percent`.
-- Active model axes are finite, inside their configured bounds and strictly
-  increasing.
+- When the active model or a selected consumer requires measured or effective
+  MAP, that coordinate is in the inclusive range `0` to `1000 kPa`.
+- When a MAP estimate is used to satisfy a required MAP coordinate, it is in
+  the inclusive range `0` to `600 kPa`.
+- When the active model or a selected consumer requires TPS, it is inside the
+  configured sensor-error tolerance, then normalized to the inclusive range
+  `0` to `100 percent`.
+- When the active model or a selected consumer requires charge temperature, it
+  is finite and greater than zero kelvin after the selected source or fallback
+  is applied.
+- When MAF Air Charge is active, at least one MAF source used by the model is
+  finite and non-negative, and the interpolated MAF trim is finite and between
+  `0` and `200 percent`.
+- Axes used by the active model and selected consumers are finite, inside
+  their configured bounds and strictly increasing.
 - Corrections and the final cylinder air mass are finite and non-negative.
 - Base fuel and cycle fuel are finite and non-negative.
 
@@ -174,14 +196,14 @@ changed, so migration requires observed old values and deliberate re-entry.
 
 ## Source references
 
-This page was checked against Capoworks firmware commit
-[`8f4fcfb4`](https://github.com/capoworks/capoworks-ecu/commit/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52)
-and its generated definition. The dedicated model and fuel-publication work
-originated in commit
+This page was checked against the Capoworks firmware source and TunerStudio
+configuration template at commit
+[`8f4fcfb4`](https://github.com/capoworks/capoworks-ecu/commit/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52).
+The dedicated model and fuel-publication work originated in commit
 [`fef0a82e`](https://github.com/capoworks/capoworks-ecu/commit/fef0a82ef6899b7b09c77ad0c9dd4f8996fe1733),
 with later final-layout changes folded into the pinned revision.
 
-- [Final unreleased `20032` migration notes](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/CHANGELOG.md)
+- [Final unreleased `20032` migration notes](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/CHANGELOG.md?plain=1)
 - [Model table and policy definitions](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/integration/fome_config.txt)
 - [TunerStudio table, menu and settings template](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/tunerstudio/tunerstudio.template.ini)
 - [Speed Density model](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/controllers/algo/airmass/speed_density_airmass.cpp)
@@ -189,4 +211,4 @@ with later final-layout changes folded into the pinned revision.
 - [MAF model](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/controllers/algo/airmass/maf_airmass.cpp)
 - [Captured inputs, corrections and load resolution](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/controllers/algo/airmass/airmass.cpp)
 - [Fuel publication and admission](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/controllers/algo/fuel_math.cpp)
-- [Cylinder-model fuel-trim and migration notes](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/docs/user/cylinder-model-fuel-trims.md)
+- [Cylinder-model fuel-trim and migration notes](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/docs/user/cylinder-model-fuel-trims.md?plain=1)
