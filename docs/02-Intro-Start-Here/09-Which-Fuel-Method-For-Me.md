@@ -10,4 +10,6 @@ An over-simplified way to quickly choose is this
 
 - [MAF Air Charge](/Fuel/Fuel-Algorithms/MAF). The underdog in the tuning scene. But by far one of the most precise ways of calculating fueling for an engine. Requires a MAF sensor installed on the Intake tubing (or Turbo Inlet on turbo cars) and known calibration curve (MAF Transfer Function) for said sensor.
 
+- [SD + Alpha-N](/Fuel/Fuel-Algorithms/Blended) combines Speed Density and Alpha-N cylinder-air-mass calculations. An authority table selects the Alpha-N contribution from 0% to 100% using either TPS or strictly valid measured MAP. Both branch calibrations and a usable MAP source for Speed Density are required.
+
 - [LUA](/Fuel/Fuel-Algorithms/Lua) - If you feel brave enough to control the fueling through ECU Console using LUA, this is the option to do so.

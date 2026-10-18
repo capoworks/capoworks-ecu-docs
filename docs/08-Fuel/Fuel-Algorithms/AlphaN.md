@@ -1,65 +1,62 @@
-
 # Alpha-N Strategy
 
-## Introduction
+Alpha-N in Capoworks ECU calculates cylinder air mass from RPM, throttle
+position (TPS), air temperature and a dedicated Alpha-N filling table. It is
+useful where TPS is a more reliable load indication than MAP, such as some
+individual-throttle-body or high-overlap-camshaft installations.
 
-Alpha-N is a fuel strategy that implies calculating engine load using the TPS (Throttle Position Sensor). Initially it was a fallback mode built into BMW engine management units, used only if the MAF (Mass Air-Flow) sensor had a failure or was missing. Nowadays, it can be a suitable method for estimating load and tuning engines with certain setups, and even better if combined with other strategies we will discuss further.
+## How Alpha-N works
 
-## How does it work?
+Select **Fuel strategy > Alpha-N** in **Base Engine > Base Engine Settings**.
+Open **Fuel > Alpha-N filling** to tune the 16x16 TPS/RPM table.
 
-![VETABLEAFR](AlphaN/VETABLEAFR.png)
+The table value is Alpha-N cylinder filling at the configured reference
+pressure and selected air temperature. It is not a Speed Density VE percentage
+and it is not a fuel pulse width. The firmware combines that filling with
+engine displacement and temperature to calculate cylinder air mass before the
+normal fuel corrections are applied.
 
-In essence, this fueling method is quite similar to Speed Density, you're equally presented with both a VE table and a target AFR table. Where X axis means RPM, Y Axis means Load and the cell value means VE (or target AFR on said table). The main difference is that the Y Axis will represent **Throttle Position** instead of MAP (Manifold Air Pressure). 
+TPS and RPM breakpoints must be finite, non-negative and strictly increasing.
+The TPS axis must remain within `0` to `100`, and the RPM axis must end at or
+below `18000` RPM. Duplicate adjacent breakpoints are invalid. The supplied
+table values are initialization data, not a validated calibration.
 
-## Why should I use this instead of Speed Density or MAF Air Charge?
+## Air-mass policies
 
-Speed Density works best on engines where vacuum is relatively linear when compared to the load the engine is facing. This is almost always the case on naturally aspirated engines with stock to mild aftermarket camshafts. And a single throttle body manifold with a plenum.
+Use **Fuel > Air mass model settings** to choose the temperature and pressure
+behavior:
 
-On heavily modified N/A engines, specifically ones fitted with really long duration camshafts, a big throttle body or **ITBs (Individual Throttle Bodies)** specially, you will find that the MAP sensor readings are non linear and mid to high throttle openings can make them jump to almost atmospheric pressure. Which can lead to scenarios where you set your fueling and AFRs right at a certain vacuum-rpm only to find out later that under that same group of cells its richer or leaner than what you desired. Engine load changed and therefore the airmass entering the engine, but the vacuum at the intake runners/plenum/vacuum block didn't change as much. 
+- **Air temperature source** selects **Tcharge** or **IAT**.
+- **Standalone Alpha-N: multiply MAP** makes standalone Alpha-N use effective
+  MAP as the pressure in its cylinder-air-mass calculation instead of the
+  reference pressure. Configure a usable measured MAP source or, when enabled,
+  the MAP estimate policy.
+- **Alpha-N barometric compensation** corrects the pressure calculation with
+  measured BARO relative to the calibration reference. Its **Alpha-N
+  calibration reference pressure** must match the pressure used when the
+  filling table was produced.
 
-In these cases, actually the most suitable strategy is actually using MAF Air Charge. But for this method to work, you require an enclosed intake manifold with a common plenum and intake tubing with the MAF sensor in  place measuring **all** the air entering the engine through the intake. But, What if you plan on running open trumpets/velocity stacks on those ITBS? 
+If the separate idle VE table is enabled, configure **Idle VE load source** for
+the idle overlay. The choices are model default, measured MAP, TPS, or
+effective MAP. For model default, Alpha-N uses TPS.
 
-That's when Alpha-N comes handy.
+## Combining Alpha-N with Speed Density
 
-## Any downsides? 
+Use **Fuel strategy > SD + Alpha-N** when both models should contribute. Its
+authority table mixes their calculated cylinder air masses: `0%` uses Speed
+Density only and `100%` uses Alpha-N only. The authority table can be indexed
+by TPS or by strictly valid measured MAP.
 
-While estimating load based on TPS can be useful for mid-high loads. Idle and events where the throttle isn't pressed aren't taken into consideration in alpha N, and will need to get compensated in other ways. _See, blend tables._
+The separate **VE blend tables** do not select between SD and Alpha-N and do
+not perform this air-mass blend. See
+[SD + Alpha-N Air Mass Blending](/Fuel/Fuel-Algorithms/Blended) for the current
+menu, policies, fallback behavior, diagnostics and manual tune-transfer
+requirements.
 
-## How do I set it up?
+## Firmware and tune compatibility
 
-  1. On your Tuner Studio project, go to Base Engine Settings.
-  
-     ![EngineSettings](AlphaN/EngineSettings.png)
-  
-  2. Under fuel strtegy, select Alpha-N.
-  
-     ![FuelStrategy](AlphaN/FuelStrategy.png)
-
-  3. Now, **all** the tables where you have Load as a Y axis, will correspond to Throttle Position, except for manually set Y-Axis overrides on specific tables.
-    _As of right now (Feb. 2025 Firmware), certain tables will erraticaly show "load kpa" as its unit on tunerstudio but they will be based on Throttle Position_ 
-  4. Scale your tables accordingly. Starting from 0% TPS to 100% TPS. Keep in mind that low throttle openings will have the most air diference, compared to high throttle oppenings. Ideally will need more resolution at the lower values, and less resolution at higher TPS values.
-    
-     ![TABLE](AlphaN/TABLE.png)
-
-  5. If your cranking fuel amount is set to table instead of fixed, take it into consideration. Prefferably by switching to fixed fueling.  Or alternatively, compensating in the CLT Cranking Multiplier for the Engine Off cell position difference in values (Top Left on MAP vs Bottom Left on TPS), **keep in mind** choosing the latter method will cause fuel to be multiplied **EXPONENTIALLY** if you happen to press the throttle whle cranking the engine.
-  6. Finally, check that your cell values make sense and you're set up to start tuning!
-
-## Bonus: Using blend Tables to combine Alpha N + MAP (Hybrid Approach)
-
-This basically gives you the best of both worlds. MAP corrections for events where throttle isn't pressed (idle changes, Cooling Fan On, A/C, heavy alternator electrical load), deceleration  or  low throttle openings where you feel like MAP can help to correct fueling. And TPS for everything else. 
-
-1. In the fuel menu, go to VE Blend Tables > VE Blend 1 Bias
-
-   ![Blend1](AlphaN/Blend1.png)
-
-2. Select a blend paramter. (In this example we want the blend table to be active at all times, so i'll choose Coolant Temp, and give it a 100% blend bias on all cells.
-3. Select MAP as your Y-axis override. (As the name says, this will make the Y-Axis on the blend table correspond to MAP sensor values)
-  
-   ![Override](AlphaN/Override.png)
-   
-4. Go to blend table 1, and set all cells to 0. This is so that it doesnt make any changes to the _current VE. 
-   
-    ![CurrentVE](AlphaN/CurrentVE.png)
-    
-5. Scale it accordingly and tune as you see fit. (Turn on the A/C and add fuel as you see fit, slowly let off the clutch and add fuel if it leans out, go into overrun/coassting and remove fuel if needed.)
-6. Profit.
+Use the matching generated TunerStudio INI for the installed Capoworks
+firmware. The current air-mass layout uses flash data version `20032`; older
+binary tunes are not migrated automatically. Back up the old tune, transfer
+values manually with the matching generated INI, and recreate former 4x4
+cylinder fuel trims in the appropriate SD or Alpha-N 16x16 model family.
