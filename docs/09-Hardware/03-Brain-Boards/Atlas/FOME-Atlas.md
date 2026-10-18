@@ -31,4 +31,4 @@ compatible open-source ECU firmware. Confirm the board and firmware target befor
 
 ## Where to Buy
 
-Producer and product source: [🇺🇲 HappyCactusGarage](https://happycactusgarage.com/products/fome-atlas-ecu-brain-module)
+Where to buy / seller: [🇺🇲 HappyCactusGarage](https://happycactusgarage.com/products/fome-atlas-ecu-brain-module)

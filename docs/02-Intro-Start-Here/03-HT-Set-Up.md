@@ -6,18 +6,20 @@ This guide covers preparing compatible hardware for a first start with Capoworks
 <!-- import assets  -->
 import TunerStudio1 from './Set-up-images/TunerStudio.png'
 
-## Download and install the latest stable firmware release
+## Get firmware for your board
 
-Download a firmware release or CI artifact from the
-[Capoworks firmware repository](https://github.com/capoworks/capoworks-ecu), using its
-[releases](https://github.com/capoworks/capoworks-ecu/releases) and
-[Actions](https://github.com/capoworks/capoworks-ecu/actions) as the authoritative sources for
-available builds. Use the firmware binary, board target, and `.ini` definition that match your exact
-hardware. Do not assume that an upstream or differently branded binary is compatible.
+There is currently no published stable Capoworks firmware release on GitHub. Obtain an artifact for
+your exact board target from the
+[Capoworks firmware repository's Actions](https://github.com/capoworks/capoworks-ecu/actions) when
+one is available, or build the firmware from source using the repository instructions. Check the
+repository's [releases](https://github.com/capoworks/capoworks-ecu/releases) page for any
+subsequently published stable release. Use the firmware binary, board target, and `.ini` definition
+that match your exact hardware. Do not assume that an upstream or differently branded binary is
+compatible.
 
-ECU Console is bundled with each matching firmware release. See [how to update the
-firmware](../HT-Updating-The-Firmware) and the [ECU Console
-reference](../../Software/FOME-Console).
+Some builds may also supply ECU Console. If your build includes it, use the console supplied with
+that matching build. See [how to update the firmware](../HT-Updating-The-Firmware) and the [ECU
+Console reference](../../Software/FOME-Console).
 
 :::tip Board and definition compatibility
 

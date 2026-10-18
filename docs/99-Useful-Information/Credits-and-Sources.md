@@ -42,7 +42,7 @@ the license text.
 
 Creator attribution, copyright notices, commit history, and any file-specific notice take
 precedence for the material to which they apply. See
-[ATTRIBUTION.md](https://github.com/capoworks/capoworks-ecu-docs/blob/master/ATTRIBUTION.md) for the
+[ATTRIBUTION.md](https://github.com/capoworks/capoworks-ecu-docs/blob/master/ATTRIBUTION.md?plain=1) for the
 preserved contributor and repository attribution.
 
 ## Archived Material and Technical Names

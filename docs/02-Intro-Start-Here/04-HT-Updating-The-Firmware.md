@@ -7,22 +7,27 @@ misconfiguration.  A guide to downloading Capoworks firmware and setting up Tune
 Updating firmware involves a process sometimes called "flashing" or even "programming" the ECU.  Generally, these all
 refer to the same thing: taking the compiled Capoworks firmware and loading it into the non-volatile flash memory on the ECU.
 
-Before flashing, confirm that the release or CI artifact names your board target and that its bundle
-contains the matching TunerStudio `.ini`. Use only a compatible board target from the same Capoworks
-build.
+Before flashing, confirm that the build names your exact board target and supplies a matching
+TunerStudio `.ini`. Use only a compatible board target from the same Capoworks build.
 
-## Updating the firmware with ECU Console
+## Updating the firmware with ECU Console (if supplied)
 
-After confirming the firmware to flash to the ECU, software to do so must be used. Capoworks
-distributions include **ECU Console**, which can flash firmware to supported ECUs and is the
-recommended way to update the firmware. Obtain active releases and CI artifacts from the
-[Capoworks firmware repository](https://github.com/capoworks/capoworks-ecu), its
-[releases](https://github.com/capoworks/capoworks-ecu/releases), and its
-[Actions](https://github.com/capoworks/capoworks-ecu/actions). Banners or release notes identify
-which artifacts are current.
+There is currently no published stable Capoworks firmware release on GitHub. Obtain an artifact for
+your exact board target from the current
+[Capoworks Actions](https://github.com/capoworks/capoworks-ecu/actions) when one is available, or
+build from source using the repository instructions. Do not assume that an upstream or differently
+branded binary is compatible.
 
-After extracting the bundle contents, navigate to the `drivers/` directory and install the drivers. After, navigate to the `console/` directory and run ECU Console. Inherited distributions may retain the original executable name, for example `fome_console.exe` on Windows. After first confirming **TunerStudio is not running**, connect the ECU to the
-computer. ECU Console will automatically detect the board and present a display similar to the one below.
+Some builds may also supply **ECU Console**, which can flash firmware to supported ECUs. If your
+build includes ECU Console, use the console supplied with that matching build. See the
+[Capoworks firmware repository](https://github.com/capoworks/capoworks-ecu) and its
+[releases](https://github.com/capoworks/capoworks-ecu/releases) for further information.
+
+If your build supplies ECU Console, extract that build's contents, navigate to the `drivers/`
+directory, and install the drivers. Then navigate to the `console/` directory and run the supplied
+console. Inherited builds may retain the original executable name, for example `fome_console.exe` on
+Windows. After first confirming **TunerStudio is not running**, connect the ECU to the computer. ECU
+Console will automatically detect the board and present a display similar to the one below.
 
 ![image](Updating-FW/fomeconsole.png)
 

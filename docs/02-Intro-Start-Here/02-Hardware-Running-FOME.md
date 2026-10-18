@@ -26,9 +26,9 @@ This is Ideal for Custom Wiring Harnesses, complex engine swaps,  or peope willi
 
 ### Plug-And-Play
 
-<img src={fomePNP} alt="Plug-and-play ECU hardware" style={{width:'100%', height:'auto', aspectRatio: '14/9', objectFit:'cover', objectPosition:'0 45%'}} />
+<img src={fomePNP} alt="Archived upstream PnP example" style={{width:'100%', height:'auto', aspectRatio: '14/9', objectFit:'cover', objectPosition:'0 45%'}} />
 
-[Plug-and-play example image](Hardware-Running-FOME-imgs/Miata-FOME.png)
+[Archived upstream PnP example](Hardware-Running-FOME-imgs/Miata-FOME.png)
 _Offered and Supported by Third Parties._  Often Fully assembled solutions unless stated otherwise. Either Brain + Baseboard or Custom All-in-One boards with OEM connector for several makes and models. Some of them include housing/enclosure. And others are meant to replace the OEM ECU PCB inside of the original ECU case.
 
 - Mazda:

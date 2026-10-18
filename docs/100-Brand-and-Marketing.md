@@ -14,6 +14,6 @@ Capoworks-produced.
 | --- | --- |
 | Capoworks teal | `#004f59` |
 | Black | `#0b0b0b` |
-| Ivory | `#fcf9ed` |
+| Ivory | `#fefaf0` |
 
 Use teal as the primary accent, black for dark surfaces and text, and ivory for light surfaces.
