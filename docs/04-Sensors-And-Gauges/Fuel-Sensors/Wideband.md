@@ -44,8 +44,22 @@ In the case that DFCO is triggered (turning off the injectors) and the WBO is re
 
 Alternatively, oil getting into the exhaust can also register rich on the WBO which may indicate issues in the engine or turbo.
 
-### WBO Shuts Down from Excessively Hot Exhaust Gasses
+### WBO Heater or Sensor Overheat Shutdown
 
-The WBO heater can only raise the temperature of the sensor, in the case that the exhaust gas temperature is too hot, the WBO controller may shut down the wideband to prevent damage. Typically, the WBO controller is programmed to shut down if the WBO temperature sensor reads more than 100°C above target. In this event, the _WBO x:Fault Code_ parameter in the ECU logs should register a fault code of 4.
+The internal controller estimates sensor-element temperature from the sensor internal
+resistance (ESR); it is not an EGT probe. In closed-loop heater operation, if that estimate remains more
+than 100°C above the target for 0.5 seconds, the controller sets `StatusSensorOverheat`, reports
+fault code 4 through _WBO x:Fault Code_, and stops the heater. The complementary underheat check
+uses the same timing rule.
 
-If this occurs, the vehicle may be running either too lean or too rich. Slightly lean or rich can increase EGTs however very lean or rich can decrease EGTs. EGT management is a fine balance best discussed seperately as
+Treat fault 4 as a sensor/heater control condition. Check the installed sensor type, heater supply,
+heater control, sensor wiring and the controller's reported temperature and ESR before attributing
+the shutdown to combustion temperature or AFR. The shutdown is not direct EGT measurement and
+does not by itself uniquely identify a lean or rich mixture. Use a separate EGT measurement and
+the full lambda/heater log when investigating exhaust temperature.
+
+## Source references
+
+- [Overheat and underheat closed-loop thresholds and shutdown](https://github.com/mck1117/wideband/blob/ca2adce4aaea1deee66e459cc8949296763a0ad0/firmware/heater_control.cpp#L133-L155)
+- [Sensor temperature inferred from internal resistance](https://github.com/mck1117/wideband/blob/ca2adce4aaea1deee66e459cc8949296763a0ad0/firmware/sampling.cpp#L63-L79)
+- [Fault-code enumeration, including SensorOverheat = 4](https://github.com/mck1117/wideband/blob/ca2adce4aaea1deee66e459cc8949296763a0ad0/for_rusefi/wideband_can.h#L46-L57)
