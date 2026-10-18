@@ -1549,6 +1549,10 @@ Return exactly one JSON object with this schema and no markdown fences:
 }
 
 Rules:
+- Document the Capoworks ECU fork. Attribute fork-specific changes and additions
+  to Capoworks ECU. Do not claim that upstream FOME supports those additions
+  unless supplied upstream evidence demonstrates it.
+- Preserve the existing English language.
 - Cover every supplied commit exactly once, in the supplied order.
 - Mark update only when user-facing documentation needs a change. Include one
   specific evidence item or more for every decision.
