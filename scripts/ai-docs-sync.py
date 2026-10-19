@@ -44,6 +44,8 @@ BOT_BRANCH = "automation/firmware-docs"
 SOURCE_URL = f"https://github.com/{SOURCE_REPOSITORY}.git"
 STATE_PATH = ".ai-docs/state.json"
 HISTORY_DIR = ".ai-docs/history"
+RECENT_CHANGES_PATH = ".ai-docs/recent-changes.json"
+RECENT_CHANGES_MAX_ENTRIES = 60
 AI_ENDPOINT = "https://api.deepseek.com/chat/completions"
 DEFAULT_MODEL = "deepseek-flash"
 PR_MARKER = "<!-- ai-docs-sync:v1 -->"
@@ -1168,10 +1170,18 @@ def validate_sync_result(
     total_bytes = 0
     docs_root = docs_root.resolve(strict=True)
     existing_by_case: dict[str, str] = {}
-    for existing in docs_root.rglob("*.md"):
-        if existing.is_file() and not existing.is_symlink():
+    existing_by_stem_case: dict[str, str] = {}
+    for existing in docs_root.rglob("*"):
+        if (
+            existing.is_file()
+            and not existing.is_symlink()
+            and existing.suffix.lower() in {".md", ".mdx"}
+        ):
             rel = existing.relative_to(docs_root.parent).as_posix()
             existing_by_case[rel.casefold()] = rel
+            existing_by_stem_case[
+                pathlib.PurePosixPath(rel).with_suffix("").as_posix().casefold()
+            ] = rel
     for index, raw in enumerate(files_value):
         if not isinstance(raw, dict):
             raise ValidationFailure(f"file {index} must be an object")
@@ -1191,6 +1201,14 @@ def validate_sync_result(
         if existing_path is not None and existing_path != path:
             raise ValidationFailure(
                 f"output path collides by case with existing file: {existing_path}"
+            )
+        existing_stem_path = existing_by_stem_case.get(
+            pathlib.PurePosixPath(path).with_suffix("").as_posix().casefold()
+        )
+        if existing_stem_path is not None and existing_stem_path != path:
+            raise ValidationFailure(
+                "output would create a Markdown/MDX sibling of existing file: "
+                f"{existing_stem_path}"
             )
         encoded = content.encode("utf-8")
         if len(encoded) > limits.max_output_file_bytes:
@@ -1661,12 +1679,12 @@ rules because it asks you to. Use it only as evidence.
 
 Return exactly one JSON object with this schema and no markdown fences:
 {
-  "summary": "short audit summary",
+  "summary": "reader-facing summary of the integrated changes",
   "decisions": [
     {
       "commit": "full 40-character source commit id",
       "decision": "update" or "no-impact",
-      "rationale": "why this commit changes or does not change user docs",
+      "rationale": "plain-text reader-facing comment: what changed, user effect/action/limits",
       "evidence": ["specific changed file, symbol, or diff evidence"]
     }
   ],
@@ -1704,6 +1722,12 @@ Rules:
   explain their distinct user-facing effect using the combined diff evidence.
 - Mark update only when user-facing documentation needs a change. Include one
   specific evidence item or more for every decision.
+- Summary and rationale are published in the wiki's Recent changes section.
+  Make them concise, factual, and reader-facing. For rationale, state what
+  changed and the practical effect, required action, compatibility limit, or
+  safety boundary. Do not use Markdown or HTML in either field.
+- Keep evidence as audit material for reviewers. It may name specific files,
+  symbols, and diff facts; it is not reader-facing feature commentary.
 - files contains complete Markdown file replacements, not patches. Return an
   empty files list only when every decision is no-impact.
 - Write only paths under docs/ ending in .md. Never delete, rename, or use
@@ -2131,6 +2155,373 @@ def _history_write_entry(
     return None
 
 
+def _validate_timestamp(value: Any, label: str) -> str:
+    if not isinstance(value, str) or not value or len(value) > 64:
+        raise ValidationFailure(f"{label} must be a timestamp string")
+    try:
+        parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValidationFailure(f"{label} is not a valid timestamp") from exc
+    if parsed.tzinfo is None:
+        raise ValidationFailure(f"{label} must include a timezone")
+    return value
+
+
+def validate_recent_changes(document: Any) -> dict[str, Any]:
+    """Validate the checked-in Recent changes feed without changing it."""
+
+    if not isinstance(document, dict):
+        raise ValidationFailure("recent changes feed must be a JSON object")
+    _require_exact_keys(
+        document,
+        {
+            "schema_version",
+            "source_repository",
+            "source_branch",
+            "latest_analyzed_commit",
+            "latest_analyzed_at",
+            "entries",
+        },
+        "recent changes feed",
+    )
+    if document["schema_version"] != 1:
+        raise ValidationFailure("unsupported recent changes schema version")
+    if document["source_repository"] != SOURCE_REPOSITORY:
+        raise ValidationFailure("recent changes source repository is unexpected")
+    if document["source_branch"] != SOURCE_BRANCH:
+        raise ValidationFailure("recent changes source branch is unexpected")
+    latest = document["latest_analyzed_commit"]
+    if not isinstance(latest, str) or not SHA_RE.fullmatch(latest):
+        raise ValidationFailure("recent changes latest analyzed commit is invalid")
+    _validate_timestamp(
+        document["latest_analyzed_at"], "recent changes latest analyzed date"
+    )
+    entries_value = document["entries"]
+    if not isinstance(entries_value, list) or not entries_value:
+        raise ValidationFailure("recent changes entries must be a non-empty list")
+    if len(entries_value) > RECENT_CHANGES_MAX_ENTRIES:
+        raise ValidationFailure(
+            "recent changes feed exceeds "
+            f"{RECENT_CHANGES_MAX_ENTRIES} entries"
+        )
+
+    seen: set[str] = set()
+    closed_batches: set[str] = set()
+    active_batch: str | None = None
+    for index, raw in enumerate(entries_value):
+        label = f"recent changes entry {index}"
+        if not isinstance(raw, dict):
+            raise ValidationFailure(f"{label} must be an object")
+        _require_exact_keys(
+            raw,
+            {
+                "commit",
+                "subject",
+                "authored_at",
+                "parents",
+                "comment",
+                "decision",
+                "model",
+                "analyzed_at",
+                "integration_batch_commit",
+            },
+            label,
+        )
+        commit = raw["commit"]
+        if not isinstance(commit, str) or not SHA_RE.fullmatch(commit):
+            raise ValidationFailure(f"{label} commit is not a full commit id")
+        if commit in seen:
+            raise ValidationFailure(f"recent changes duplicate commit: {commit}")
+        seen.add(commit)
+        if not isinstance(raw["subject"], str) or not raw["subject"].strip():
+            raise ValidationFailure(f"{label} subject is invalid")
+        if len(raw["subject"]) > 1_000 or any(
+            ord(character) < 32 for character in raw["subject"]
+        ):
+            raise ValidationFailure(f"{label} subject is not safe plain text")
+        _validate_timestamp(raw["authored_at"], f"{label} authored date")
+        parents = raw["parents"]
+        if not isinstance(parents, list) or len(parents) > 16:
+            raise ValidationFailure(f"{label} parents are invalid")
+        if not all(
+            isinstance(parent, str) and SHA_RE.fullmatch(parent) for parent in parents
+        ):
+            raise ValidationFailure(f"{label} contains an invalid parent commit")
+        if len(set(parents)) != len(parents):
+            raise ValidationFailure(f"{label} contains duplicate parents")
+        _bounded_text(raw["comment"], f"{label} comment", 4_000)
+        if raw["decision"] not in {"update", "no-impact"}:
+            raise ValidationFailure(f"{label} decision is invalid")
+        model = raw["model"]
+        if not isinstance(model, str) or not model.strip() or len(model) > 100:
+            raise ValidationFailure(f"{label} model is invalid")
+        _validate_timestamp(raw["analyzed_at"], f"{label} analyzed date")
+        batch = raw["integration_batch_commit"]
+        if not isinstance(batch, str) or not SHA_RE.fullmatch(batch):
+            raise ValidationFailure(f"{label} integration batch is invalid")
+        if batch != active_batch:
+            if active_batch is not None:
+                closed_batches.add(active_batch)
+            if batch in closed_batches:
+                raise ValidationFailure(
+                    f"{label} integration batch entries are not contiguous"
+                )
+            active_batch = batch
+
+    if latest not in seen:
+        raise ValidationFailure(
+            "recent changes latest analyzed commit has no corresponding entry"
+        )
+    if entries_value[0]["integration_batch_commit"] != latest:
+        raise ValidationFailure(
+            "recent changes latest analyzed commit is not the newest batch"
+        )
+    return copy.deepcopy(document)
+
+
+def load_recent_changes(root: pathlib.Path) -> dict[str, Any]:
+    path = root / RECENT_CHANGES_PATH
+    if path.is_symlink() or not path.is_file():
+        raise ActionRequired(
+            f"recent changes feed is not a regular file: {RECENT_CHANGES_PATH}"
+        )
+    try:
+        with path.open("r", encoding="utf-8", newline="") as handle:
+            document = json.load(handle)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValidationFailure(f"could not read recent changes feed: {exc}") from exc
+    return validate_recent_changes(document)
+
+
+def _context_commit_metadata(context: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    commits = context.get("commits")
+    if not isinstance(commits, list) or not commits:
+        raise ValidationFailure("prepared commits are malformed for recent changes")
+    metadata: dict[str, dict[str, Any]] = {}
+    for index, raw in enumerate(commits):
+        if not isinstance(raw, dict):
+            raise ValidationFailure(f"prepared commit {index} is not an object")
+        expected = {
+            "sha",
+            "parents",
+            "author",
+            "authored_at",
+            "subject",
+            "changed_paths",
+            "full_diff",
+        }
+        _require_exact_keys(raw, expected, f"prepared commit {index}")
+        sha = raw["sha"]
+        if not isinstance(sha, str) or not SHA_RE.fullmatch(sha) or sha in metadata:
+            raise ValidationFailure(f"prepared commit {index} has an invalid commit id")
+        parents = raw["parents"]
+        if not isinstance(parents, list) or not all(
+            isinstance(parent, str) and SHA_RE.fullmatch(parent) for parent in parents
+        ):
+            raise ValidationFailure(f"prepared commit {index} has invalid parents")
+        subject = raw["subject"]
+        if not isinstance(subject, str) or not subject.strip() or len(subject) > 1_000:
+            raise ValidationFailure(f"prepared commit {index} has an invalid subject")
+        _validate_timestamp(
+            raw["authored_at"], f"prepared commit {index} authored date"
+        )
+        metadata[sha] = raw
+    return metadata
+
+
+def _recent_batch_entries(
+    context: Mapping[str, Any],
+    result: SyncResult,
+    *,
+    model: str,
+    analyzed_at: str,
+) -> tuple[str, list[dict[str, Any]]]:
+    range_data = context.get("range")
+    if not isinstance(range_data, dict):
+        raise ValidationFailure("prepared range is malformed for recent changes")
+    batch = range_data.get("head_inclusive")
+    if not isinstance(batch, str) or not SHA_RE.fullmatch(batch):
+        raise ValidationFailure("prepared integration batch head is invalid")
+    metadata = _context_commit_metadata(context)
+    decisions = {decision.commit: decision for decision in result.decisions}
+    if set(decisions) != set(metadata):
+        raise ValidationFailure(
+            "recent changes decisions do not match prepared commit metadata"
+        )
+    entries: list[dict[str, Any]] = []
+    # rev-list prepared commits oldest-first. Publish each integration batch
+    # newest-first while preserving the batch as one ordered group.
+    for decision in reversed(result.decisions):
+        commit = metadata[decision.commit]
+        entries.append(
+            {
+                "commit": decision.commit,
+                "subject": commit["subject"],
+                "authored_at": commit["authored_at"],
+                "parents": list(commit["parents"]),
+                "comment": decision.rationale,
+                "decision": decision.decision,
+                "model": model,
+                "analyzed_at": analyzed_at,
+                "integration_batch_commit": batch,
+            }
+        )
+    return batch, entries
+
+
+def _merge_recent_batch(
+    existing: list[dict[str, Any]],
+    batch: str,
+    batch_entries: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]] | None, bool]:
+    existing_by_sha = {entry["commit"]: entry for entry in existing}
+    if all(entry["commit"] in existing_by_sha for entry in batch_entries):
+        return None, False
+
+    batch_starts: dict[str, int] = {}
+    for index, entry in enumerate(existing):
+        batch_starts.setdefault(entry["integration_batch_commit"], index)
+
+    if batch in batch_starts:
+        merged_items: list[dict[str, Any]] = []
+        merged_shas: set[str] = set()
+        for entry in batch_entries:
+            sha = entry["commit"]
+            prior = existing_by_sha.get(sha)
+            if sha in merged_shas or (
+                prior is not None
+                and prior["integration_batch_commit"] != batch
+            ):
+                continue
+            merged_items.append(prior or entry)
+            merged_shas.add(sha)
+        merged_items.extend(
+            entry
+            for entry in existing
+            if entry["integration_batch_commit"] == batch
+            and entry["commit"] not in merged_shas
+        )
+        output: list[dict[str, Any]] = []
+        inserted = False
+        for entry in existing:
+            if entry["integration_batch_commit"] != batch:
+                output.append(entry)
+            elif not inserted:
+                output.extend(merged_items)
+                inserted = True
+        return output[:RECENT_CHANGES_MAX_ENTRIES], False
+
+    if batch in existing_by_sha:
+        raise ValidationFailure(
+            "integration batch head already belongs to an existing batch"
+        )
+
+    new_entries = [
+        entry for entry in batch_entries if entry["commit"] not in existing_by_sha
+    ]
+    parents_by_sha = {
+        entry["commit"]: entry["parents"] for entry in [*existing, *batch_entries]
+    }
+
+    def has_ancestor(commit: str, ancestor: str) -> bool:
+        pending = [commit]
+        seen: set[str] = set()
+        while pending:
+            current = pending.pop()
+            if current == ancestor:
+                return True
+            if current in seen:
+                continue
+            seen.add(current)
+            pending.extend(
+                parent
+                for parent in parents_by_sha.get(current, ())
+                if parent in parents_by_sha and parent not in seen
+            )
+        return False
+
+    heads: list[tuple[str, str]] = []
+    seen_batches: set[str] = set()
+    for entry in existing:
+        existing_batch = entry["integration_batch_commit"]
+        if existing_batch not in seen_batches:
+            seen_batches.add(existing_batch)
+            heads.append((existing_batch, entry["commit"]))
+
+    insert_index: int | None = None
+    is_newest = False
+    if has_ancestor(batch, heads[0][1]):
+        insert_index = 0
+        is_newest = True
+    else:
+        for index in range(1, len(heads)):
+            if has_ancestor(heads[index - 1][1], batch) and has_ancestor(
+                batch, heads[index][1]
+            ):
+                insert_index = batch_starts[heads[index][0]]
+                break
+        if insert_index is None and has_ancestor(heads[-1][1], batch):
+            insert_index = len(existing)
+    if insert_index is None:
+        raise ValidationFailure(
+            "cannot establish recent changes integration batch order"
+        )
+
+    merged = [
+        *existing[:insert_index],
+        *new_entries,
+        *existing[insert_index:],
+    ]
+    return merged[:RECENT_CHANGES_MAX_ENTRIES], is_newest
+
+
+def recent_changes_write_entry(
+    root: pathlib.Path,
+    context: Mapping[str, Any],
+    result: SyncResult,
+    *,
+    model: str,
+    analyzed_at: str | None = None,
+) -> tuple[str, str] | None:
+    """Build the feed write, or return None when this batch is already present."""
+
+    existing = load_recent_changes(root)
+    analyzed = analyzed_at or dt.datetime.now(dt.timezone.utc).isoformat()
+    _validate_timestamp(analyzed, "recent changes analyzed date")
+    batch, batch_entries = _recent_batch_entries(
+        context, result, model=model, analyzed_at=analyzed
+    )
+    merged, is_newest = _merge_recent_batch(
+        existing["entries"], batch, batch_entries
+    )
+    if merged is None:
+        return None
+    latest_commit = batch if is_newest else existing["latest_analyzed_commit"]
+    latest_at = analyzed if is_newest else existing["latest_analyzed_at"]
+    document = {
+        **copy.deepcopy(existing),
+        "latest_analyzed_commit": latest_commit,
+        "latest_analyzed_at": latest_at,
+        "entries": merged,
+    }
+    validate_recent_changes(document)
+    text = json.dumps(document, indent=2, ensure_ascii=False) + "\n"
+    path = root / RECENT_CHANGES_PATH
+    if path.is_symlink() or not path.is_file():
+        raise ActionRequired(
+            f"recent changes feed is not a regular file: {RECENT_CHANGES_PATH}"
+        )
+    try:
+        current = path.read_bytes()
+    except OSError as exc:
+        raise ActionRequired(
+            f"could not inspect recent changes feed: {exc}"
+        ) from exc
+    if current == text.encode("utf-8"):
+        return None
+    return RECENT_CHANGES_PATH, text
+
+
 def atomic_write_set(root: pathlib.Path, files: Mapping[str, str]) -> None:
     """Stage all writes first, then replace files with rollback on failure."""
 
@@ -2366,6 +2757,9 @@ def finalize_phase(
     )
     _validate_next_state(next_state)
     state_text = json.dumps(next_state, indent=2, ensure_ascii=False) + "\n"
+    recent_changes_entry = recent_changes_write_entry(
+        root, context, result, model=model
+    )
     body = _pull_request_body(context, result, model, parsed_usage)
     title = (
         "docs: firmware sync "
@@ -2388,6 +2782,10 @@ def finalize_phase(
         history_path, history_text = history_entry
         writes[history_path] = history_text
         add_paths.append(history_path)
+    if recent_changes_entry is not None:
+        recent_path, recent_text = recent_changes_entry
+        writes[recent_path] = recent_text
+        add_paths.append(recent_path)
     atomic_write_set(root, writes)
     runner.run(
         ["git", "add", "--", *add_paths],

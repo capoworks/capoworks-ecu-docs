@@ -42,7 +42,11 @@
   },
   "overrides": [
     {
-      "includes": [".ai-docs/state.json", ".ai-docs/history/**/*.json"],
+      "includes": [
+        ".ai-docs/state.json",
+        ".ai-docs/history/**/*.json",
+        ".ai-docs/recent-changes.json"
+      ],
       "formatter": { "enabled": false }
     }
   ],
