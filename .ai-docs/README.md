@@ -133,6 +133,26 @@ the new batch audit and cursor transition. An existing equal history file is
 reused without rewriting it. An existing file with different bytes stops the
 run for inspection; history files are append-only.
 
+Finalization also updates the bounded `.ai-docs/recent-changes.json` feed in
+the same atomic write set, Git staging, and bot commit. The feed is fixed to
+`capoworks/capoworks-ecu`, records the latest analyzed source head, and retains
+at most 60 unique commits in newest-integration-first order. Each entry contains
+source metadata, the reader-facing AI rationale, its update/no-impact decision,
+the actual response model, and analysis time. No-impact and state-only batches
+therefore publish an audit entry even when no Markdown guide changes. Existing
+feed metadata is strictly validated before any cursor write; an already-seeded
+integration batch is left byte-identical so a bootstrap can cover source commits
+beyond the automatic cursor without replaying or advancing that cursor.
+
+The homepage and `/recent-changes/` page render this committed JSON statically
+through `src/components/RecentChanges.tsx`; there is no browser fetch. React
+renders source subjects and AI comments as text, and commit links are built only
+from validated full SHAs. The homepage root document and the Recent changes page
+are MDX because they import this trusted component. The sync writer remains
+limited to `.md` files and rejects new Markdown paths that would collide with an
+existing MDX sibling, so future AI documentation proposals cannot replace the
+component-backed pages.
+
 Model requests use JSON mode, an explicit bounded `max_tokens` value, and
 `thinking: {"type": "disabled"}` so the structured result is not consumed by
 the API's default thinking mode.

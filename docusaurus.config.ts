@@ -142,6 +142,11 @@ const config: Config = {
       hideOnScroll: true,
       items: [
         {
+          to: '/recent-changes/',
+          label: 'Recent changes',
+          position: 'right',
+        },
+        {
           href: 'https://github.com/capoworks/capoworks-ecu-docs',
           label: 'GitHub',
           position: 'right',

@@ -1,0 +1,333 @@
+{
+  "schema_version": 1,
+  "source_repository": "capoworks/capoworks-ecu",
+  "source_branch": "master",
+  "latest_analyzed_commit": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3",
+  "latest_analyzed_at": "2026-10-19T22:10:00+00:00",
+  "entries": [
+    {
+      "commit": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3",
+      "subject": "Merge pull request #56 from capoworks/docs/capoworks-readme",
+      "authored_at": "2026-10-18T20:26:22+02:00",
+      "parents": [
+        "825d7fda5c32b7ec3f755be4897775819e8605d1",
+        "f20dedfca3a31d5b1552f2a3d967c0a9dd434d65"
+      ],
+      "comment": "This integration merge carries the README documentation update from f20dedfca3a31d5b1552f2a3d967c0a9dd434d65. It adds no separate firmware behavior or merge-resolution change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3"
+    },
+    {
+      "commit": "f20dedfca3a31d5b1552f2a3d967c0a9dd434d65",
+      "subject": "docs: replace inherited README with Capoworks ECU overview",
+      "authored_at": "2026-10-18T20:25:40+02:00",
+      "parents": [
+        "825d7fda5c32b7ec3f755be4897775819e8605d1"
+      ],
+      "comment": "The firmware repository README was rewritten as a Capoworks ECU overview. This changes project documentation only; it does not change engine behavior, TunerStudio settings, tune compatibility, or firmware operation.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3"
+    },
+    {
+      "commit": "825d7fda5c32b7ec3f755be4897775819e8605d1",
+      "subject": "Merge pull request #55 from capoworks/align/pr-30",
+      "authored_at": "2026-10-18T16:59:43+02:00",
+      "parents": [
+        "91b74aedfd7b58da66d95f259c16086c7c3e5093",
+        "8f4fcfb40135fe7e5f15b280f7e05d9863b60f52"
+      ],
+      "comment": "This integration merge carries the VE Analyze update from 8f4fcfb40135fe7e5f15b280f7e05d9863b60f52. It adds no separate firmware behavior or merge-resolution change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "825d7fda5c32b7ec3f755be4897775819e8605d1"
+    },
+    {
+      "commit": "8f4fcfb40135fe7e5f15b280f7e05d9863b60f52",
+      "subject": "feat(tuning): scope VE Analyze filters and publish recovery state",
+      "authored_at": "2026-10-18T00:10:03+02:00",
+      "parents": [
+        "223895c17f82f9fd07bac9e81414661440ac7475"
+      ],
+      "comment": "VE Analyze now applies strategy-specific crank, transient, cut-recovery, launch/anti-lag and lambda filters to Speed Density, Alpha-N and MAF maps, and publishes cranking and cut-recovery state. Review the VE Analyze guide before relying on a filter; qualified SD + Alpha-N endpoints remain a gated special case.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "825d7fda5c32b7ec3f755be4897775819e8605d1"
+    },
+    {
+      "commit": "91b74aedfd7b58da66d95f259c16086c7c3e5093",
+      "subject": "Merge pull request #54 from capoworks/align/pr-29",
+      "authored_at": "2026-10-18T16:59:34+02:00",
+      "parents": [
+        "a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd",
+        "223895c17f82f9fd07bac9e81414661440ac7475"
+      ],
+      "comment": "This integration merge carries the per-cylinder model trim update from 223895c17f82f9fd07bac9e81414661440ac7475. It adds no separate firmware behavior or merge-resolution change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "91b74aedfd7b58da66d95f259c16086c7c3e5093"
+    },
+    {
+      "commit": "223895c17f82f9fd07bac9e81414661440ac7475",
+      "subject": "feat(fuel): trim cylinders by captured SD and Alpha-N branch masses",
+      "authored_at": "2026-10-18T00:03:23+02:00",
+      "parents": [
+        "eee63c82b531db9bc6fa640c58ad76cf740a2ff0"
+      ],
+      "comment": "Cylinder fuel trims now have separate 16 by 16 Speed Density (MAP/RPM) and Alpha-N (TPS/RPM) tables with neutral defaults. Layout 20032 resets older binary tunes, so back up the old tune and transfer former 4 by 4 trim values manually; Core8 also trades Lua heap space for the larger tables.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "91b74aedfd7b58da66d95f259c16086c7c3e5093"
+    },
+    {
+      "commit": "a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd",
+      "subject": "Merge pull request #53 from capoworks/align/pr-28",
+      "authored_at": "2026-10-18T16:59:25+02:00",
+      "parents": [
+        "1bf806b838061c4b00663575ed0ce3e930c6dfc8",
+        "eee63c82b531db9bc6fa640c58ad76cf740a2ff0"
+      ],
+      "comment": "This integration merge carries the SD + Alpha-N blend update from eee63c82b531db9bc6fa640c58ad76cf740a2ff0. It adds no separate firmware behavior or merge-resolution change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd"
+    },
+    {
+      "commit": "eee63c82b531db9bc6fa640c58ad76cf740a2ff0",
+      "subject": "feat(airmass): blend captured SD and Alpha-N masses with TPS or MAP authority",
+      "authored_at": "2026-10-17T23:56:19+02:00",
+      "parents": [
+        "45298b9020a52059c278d3d0ba16bae89b7e6a7f"
+      ],
+      "comment": "A new SD + Alpha-N fuel strategy can blend the two branch air-mass calculations through a TPS or measured-MAP authority table. The selectors do not change either branch calibration, and branch health, fallback and diagnostics determine when a blended result is available.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd"
+    },
+    {
+      "commit": "1bf806b838061c4b00663575ed0ce3e930c6dfc8",
+      "subject": "Merge pull request #52 from capoworks/align/pr-27",
+      "authored_at": "2026-10-18T16:59:17+02:00",
+      "parents": [
+        "21260be2bf5ba5f7afa8df8b0ec193b719e6242b",
+        "45298b9020a52059c278d3d0ba16bae89b7e6a7f"
+      ],
+      "comment": "This integration merge carries the independent load-coordinate update from 45298b9020a52059c278d3d0ba16bae89b7e6a7f. It adds no separate firmware behavior or merge-resolution change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "1bf806b838061c4b00663575ed0ce3e930c6dfc8"
+    },
+    {
+      "commit": "45298b9020a52059c278d3d0ba16bae89b7e6a7f",
+      "subject": "feat(airmass): give control functions independent captured load coordinates",
+      "authored_at": "2026-10-17T22:47:38+02:00",
+      "parents": [
+        "ea47b68b374a863051e7f0ef62a068a068b138d7"
+      ],
+      "comment": "Independent captured load selectors let individual fuel, ignition and actuator consumers choose measured MAP, effective MAP, TPS, accelerator pedal or cylinder filling. These selectors do not change the fuel strategy; check the coordinate and units for each consumer, especially when MAP is estimated.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "1bf806b838061c4b00663575ed0ce3e930c6dfc8"
+    },
+    {
+      "commit": "21260be2bf5ba5f7afa8df8b0ec193b719e6242b",
+      "subject": "Merge pull request #51 from capoworks/align/pr-26",
+      "authored_at": "2026-10-18T16:59:08+02:00",
+      "parents": [
+        "77ce47cc2527050c3130c2ddc010b3b49b460f8f",
+        "ea47b68b374a863051e7f0ef62a068a068b138d7"
+      ],
+      "comment": "This integration merge carries the time-budget dwell-planning update from ea47b68b374a863051e7f0ef62a068a068b138d7. It adds no separate firmware behavior or merge-resolution change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "21260be2bf5ba5f7afa8df8b0ec193b719e6242b"
+    },
+    {
+      "commit": "ea47b68b374a863051e7f0ef62a068a068b138d7",
+      "subject": "feat(ignition): plan dwell with a causal time budget",
+      "authored_at": "2026-10-17T22:33:31+02:00",
+      "parents": [
+        "69f7973f5da52a1d5e6b37a848cc7a88205ac01f"
+      ],
+      "comment": "Experimental time-budget dwell planning can retarget individual-coil ignition events within causal timing and physical dwell limits on supported synchronized triggers. It is opt-in, Legacy remains the default and fallback, and the behavior requires timing and dwell validation on the intended hardware.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "21260be2bf5ba5f7afa8df8b0ec193b719e6242b"
+    },
+    {
+      "commit": "77ce47cc2527050c3130c2ddc010b3b49b460f8f",
+      "subject": "Merge pull request #50 from capoworks/align/pr-24",
+      "authored_at": "2026-10-18T16:58:58+02:00",
+      "parents": [
+        "809de8f8ec49b1442e9e5fa8f7fe73005da8be74",
+        "69f7973f5da52a1d5e6b37a848cc7a88205ac01f"
+      ],
+      "comment": "This integration merge carries the cycle-profile ignition update from 69f7973f5da52a1d5e6b37a848cc7a88205ac01f. It adds no separate firmware behavior or merge-resolution change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "77ce47cc2527050c3130c2ddc010b3b49b460f8f"
+    },
+    {
+      "commit": "69f7973f5da52a1d5e6b37a848cc7a88205ac01f",
+      "subject": "feat(ignition): add optional cycle-profile angle conversion",
+      "authored_at": "2026-10-17T22:05:11+02:00",
+      "parents": [
+        "09886f0b28a6e7544becb1fd2221da5527a1e673"
+      ],
+      "comment": "Experimental cycle-profile timing converts ignition charge and firing angles using recent tooth history on supported missing-tooth wheels with full cam synchronization. It is opt-in and falls back to RPM-based conversion outside a valid profile; RPM and injection scheduling are unchanged.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "77ce47cc2527050c3130c2ddc010b3b49b460f8f"
+    },
+    {
+      "commit": "809de8f8ec49b1442e9e5fa8f7fe73005da8be74",
+      "subject": "Merge pull request #49 from capoworks/align/pr-23",
+      "authored_at": "2026-10-18T16:58:50+02:00",
+      "parents": [
+        "ed3e5c7f9f365826eae8551d3e873cefe53ea8a6",
+        "09886f0b28a6e7544becb1fd2221da5527a1e673"
+      ],
+      "comment": "This integration merge carries the rolling-cycle idle feedback update from 09886f0b28a6e7544becb1fd2221da5527a1e673. It adds no separate firmware behavior or merge-resolution change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "809de8f8ec49b1442e9e5fa8f7fe73005da8be74"
+    },
+    {
+      "commit": "09886f0b28a6e7544becb1fd2221da5527a1e673",
+      "subject": "feat(idle): add optional rolling-cycle RPM feedback",
+      "authored_at": "2026-10-17T21:44:50+02:00",
+      "parents": [
+        "fef0a82ef6899b7b09c77ad0c9dd4f8996fe1733"
+      ],
+      "comment": "Closed-loop idle air and idle ignition can opt into a full-engine-cycle RPM estimate instead of instantaneous RPM. History must refill after synchronization or trigger changes, fallback behavior differs between the air and timing controllers, and idle PID gains may need retuning.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "809de8f8ec49b1442e9e5fa8f7fe73005da8be74"
+    },
+    {
+      "commit": "ed3e5c7f9f365826eae8551d3e873cefe53ea8a6",
+      "subject": "Merge pull request #48 from capoworks/align/pr-22",
+      "authored_at": "2026-10-18T16:58:41+02:00",
+      "parents": [
+        "319d4e5145062a0fc802d3bc3f79a7f3be233625",
+        "fef0a82ef6899b7b09c77ad0c9dd4f8996fe1733"
+      ],
+      "comment": "This integration merge carries the air-mass calibration and atomic fuel publication update from fef0a82ef6899b7b09c77ad0c9dd4f8996fe1733. It adds no separate firmware behavior or merge-resolution change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "ed3e5c7f9f365826eae8551d3e873cefe53ea8a6"
+    },
+    {
+      "commit": "fef0a82ef6899b7b09c77ad0c9dd4f8996fe1733",
+      "subject": "feat(airmass): separate model calibration and publish fuel atomically",
+      "authored_at": "2026-10-17T20:10:32+02:00",
+      "parents": [
+        "034ec75bc1e9bf7391eeb0050b13038c0f60e3d7"
+      ],
+      "comment": "Air-mass model calibration is separated from the fuel, ignition and actuator consumers that share calculated load, and per-cylinder fuel results publish atomically. Layout 20032 requires manual tune transfer; back up older tunes and use the matching generated TunerStudio INI.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "ed3e5c7f9f365826eae8551d3e873cefe53ea8a6"
+    },
+    {
+      "commit": "319d4e5145062a0fc802d3bc3f79a7f3be233625",
+      "subject": "Merge pull request #47 from capoworks/align/pr-21",
+      "authored_at": "2026-10-18T16:58:33+02:00",
+      "parents": [
+        "28d56b01d7b3e7136bf15bbad3000be8ef91c84f",
+        "034ec75bc1e9bf7391eeb0050b13038c0f60e3d7"
+      ],
+      "comment": "This integration merge carries the Core8 build-tool update from 034ec75bc1e9bf7391eeb0050b13038c0f60e3d7. It adds no separate firmware behavior or merge-resolution change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "319d4e5145062a0fc802d3bc3f79a7f3be233625"
+    },
+    {
+      "commit": "034ec75bc1e9bf7391eeb0050b13038c0f60e3d7",
+      "subject": "tools: add portable Core8 build and explicit DFU tasks",
+      "authored_at": "2026-10-17T21:03:55+02:00",
+      "parents": [
+        "c65ff75a4513b23648c4f0bdfe2f44580c7b261a"
+      ],
+      "comment": "Core8 builds now use a portable helper with bundled ARM artifact checks and a separate signature-checked DFU action. Builders should use Linux or WSL and follow the Core8 tool prerequisites; flashing remains an explicit choice rather than part of the default build task.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "319d4e5145062a0fc802d3bc3f79a7f3be233625"
+    },
+    {
+      "commit": "28d56b01d7b3e7136bf15bbad3000be8ef91c84f",
+      "subject": "Merge pull request #46 from capoworks/align/pr-20",
+      "authored_at": "2026-10-18T16:58:24+02:00",
+      "parents": [
+        "9e5c2b3ffaf806706debe1b57b565d839b9e381c",
+        "c65ff75a4513b23648c4f0bdfe2f44580c7b261a"
+      ],
+      "comment": "This integration merge carries the Capoworks CI update from c65ff75a4513b23648c4f0bdfe2f44580c7b261a. It adds no separate firmware behavior or merge-resolution change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "28d56b01d7b3e7136bf15bbad3000be8ef91c84f"
+    },
+    {
+      "commit": "c65ff75a4513b23648c4f0bdfe2f44580c7b261a",
+      "subject": "ci: verify Capoworks pull requests and publish build reports",
+      "authored_at": "2026-10-17T20:58:09+02:00",
+      "parents": [
+        "b44802638c7e07bcd18789a2c7c90b21dad67711"
+      ],
+      "comment": "This adds Capoworks pull-request CI checks and build reports, with small test and interface adjustments needed by that workflow. It changes contributor validation rather than a documented end-user engine setting or procedure.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "28d56b01d7b3e7136bf15bbad3000be8ef91c84f"
+    },
+    {
+      "commit": "9e5c2b3ffaf806706debe1b57b565d839b9e381c",
+      "subject": "Merge pull request #45 from capoworks/align/pr-25",
+      "authored_at": "2026-10-18T16:58:11+02:00",
+      "parents": [
+        "9dcf59a0c875cb4774cac5c1d8c4061ea27a19fe",
+        "b44802638c7e07bcd18789a2c7c90b21dad67711"
+      ],
+      "comment": "This integration merge carries the flash-test correction from b44802638c7e07bcd18789a2c7c90b21dad67711. It adds no separate firmware behavior or merge-resolution change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "9e5c2b3ffaf806706debe1b57b565d839b9e381c"
+    },
+    {
+      "commit": "b44802638c7e07bcd18789a2c7c90b21dad67711",
+      "subject": "test(flash): initialize padding before computing configuration CRC",
+      "authored_at": "2026-10-17T22:31:49+02:00",
+      "parents": [
+        "32fda8738fc3bb7c1d5c526700579eba7ea9cc85"
+      ],
+      "comment": "Initializes test padding before calculating a configuration CRC. This is test-only coverage and does not change firmware behavior, tune layout or a user procedure.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-19T22:10:00+00:00",
+      "integration_batch_commit": "9e5c2b3ffaf806706debe1b57b565d839b9e381c"
+    }
+  ]
+}

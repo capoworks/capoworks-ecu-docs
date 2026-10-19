@@ -51,6 +51,91 @@ def payload(
     }
 
 
+def recent_entry(
+    sha: str,
+    batch: str,
+    *,
+    parents: tuple[str, ...] = (),
+    subject: str = "Firmware change",
+    authored_at: str = "2026-10-18T10:00:00+00:00",
+    comment: str = "Describes a firmware change.",
+    decision_value: str = "update",
+) -> dict[str, object]:
+    return {
+        "commit": sha,
+        "subject": subject,
+        "authored_at": authored_at,
+        "parents": list(parents),
+        "comment": comment,
+        "decision": decision_value,
+        "model": "deepseek-flash",
+        "analyzed_at": "2026-10-20T10:00:00+00:00",
+        "integration_batch_commit": batch,
+    }
+
+
+def recent_document(entries: list[dict[str, object]]) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "source_repository": sync.SOURCE_REPOSITORY,
+        "source_branch": sync.SOURCE_BRANCH,
+        "latest_analyzed_commit": entries[0]["commit"],
+        "latest_analyzed_at": "2026-10-20T10:00:00+00:00",
+        "entries": entries,
+    }
+
+
+def prepared_context(commits: list[dict[str, object]]) -> dict[str, object]:
+    return {
+        "range": {
+            "base_exclusive": "a" * 40,
+            "head_inclusive": commits[-1]["sha"],
+            "commit_count": len(commits),
+        },
+        "commits": commits,
+    }
+
+
+def prepared_commit(
+    sha: str,
+    *,
+    parents: tuple[str, ...] = ("a" * 40,),
+    subject: str = "Firmware change",
+    authored_at: str = "2026-10-18T10:00:00+00:00",
+) -> dict[str, object]:
+    return {
+        "sha": sha,
+        "parents": list(parents),
+        "author": "Sync Test",
+        "authored_at": authored_at,
+        "subject": subject,
+        "changed_paths": ["firmware/example.cpp"],
+        "full_diff": "Example diff",
+    }
+
+
+def recent_result(
+    decisions: list[tuple[str, str]],
+    *,
+    comments: dict[str, str] | None = None,
+) -> object:
+    return sync.SyncResult(
+        summary="Reader-facing integration summary.",
+        decisions=tuple(
+            sync.SyncDecision(
+                commit=sha,
+                decision=value,
+                rationale=(comments or {}).get(
+                    sha, "The integration changes documented firmware behavior."
+                ),
+                evidence=(f"firmware/{sha[:8]}.cpp is the audit evidence",),
+            )
+            for sha, value in decisions
+        ),
+        files=(),
+    )
+
+
 class TempDocs(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
@@ -205,6 +290,18 @@ class PathMarkdownAndFrontmatterTests(TempDocs):
         with self.assertRaisesRegex(sync.ValidationFailure, "collides by case"):
             sync.validate_sync_result(
                 payload([{"path": "docs/existing.md", "content": "# Existing\n"}]),
+                [SHA_ONE],
+                self.docs,
+                self.limits,
+            )
+
+        (self.docs / "Protected.mdx").write_text(
+            "import Component from './Component';\n\n<Component />\n",
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(sync.ValidationFailure, "Markdown/MDX sibling"):
+            sync.validate_sync_result(
+                payload([{"path": "docs/Protected.md", "content": "# Protected\n"}]),
                 [SHA_ONE],
                 self.docs,
                 self.limits,
@@ -855,6 +952,314 @@ class HistoryRetentionTests(TempDocs):
         with self.assertRaisesRegex(sync.ActionRequired, "append-only"):
             sync._history_write_entry(self.root, state, next_state)
         self.assertEqual(history_path.read_bytes(), conflict)
+
+
+class RecentChangesTests(TempDocs):
+    def write_feed(self, document: dict[str, object]) -> bytes:
+        path = self.root / sync.RECENT_CHANGES_PATH
+        path.write_text(
+            json.dumps(document, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        return path.read_bytes()
+
+    def test_append_is_newest_integration_first_idempotent_and_capped(self) -> None:
+        seed_sha = f"{100:040x}"
+        seed_entries = [
+            recent_entry(f"{index + 100:040x}", seed_sha) for index in range(59)
+        ]
+        self.write_feed(recent_document(seed_entries))
+
+        child = f"{2:040x}"
+        merge = f"{3:040x}"
+        context = prepared_context(
+            [
+                prepared_commit(
+                    child,
+                    subject="feat: exact child subject",
+                    authored_at="2026-10-18T11:02:03+02:00",
+                ),
+                prepared_commit(
+                    merge,
+                    parents=("b" * 40, child),
+                    subject="Merge exact integration subject",
+                    authored_at="2026-10-18T12:04:05+02:00",
+                ),
+            ]
+        )
+        result = recent_result([(child, "update"), (merge, "no-impact")])
+
+        entry = sync.recent_changes_write_entry(
+            self.root,
+            context,
+            result,
+            model="deepseek-flash",
+            analyzed_at="2026-10-20T11:12:13+00:00",
+        )
+        self.assertIsNotNone(entry)
+        assert entry is not None
+        path, text = entry
+        self.assertEqual(path, sync.RECENT_CHANGES_PATH)
+        document = json.loads(text)
+        self.assertEqual(len(document["entries"]), sync.RECENT_CHANGES_MAX_ENTRIES)
+        self.assertEqual(document["latest_analyzed_commit"], merge)
+        self.assertEqual(
+            [item["commit"] for item in document["entries"][:2]], [merge, child]
+        )
+        self.assertEqual(document["entries"][0]["subject"], "Merge exact integration subject")
+        self.assertEqual(document["entries"][1]["subject"], "feat: exact child subject")
+        self.assertEqual(document["entries"][1]["authored_at"], "2026-10-18T11:02:03+02:00")
+        self.assertEqual(document["entries"][0]["parents"], ["b" * 40, child])
+
+        feed_path = self.root / path
+        feed_path.write_text(text, encoding="utf-8")
+        before = feed_path.read_bytes()
+        self.assertIsNone(
+            sync.recent_changes_write_entry(
+                self.root,
+                context,
+                result,
+                model="deepseek-flash",
+                analyzed_at="2026-10-21T00:00:00+00:00",
+            )
+        )
+        self.assertEqual(feed_path.read_bytes(), before)
+
+    def test_hostile_text_remains_plain_data(self) -> None:
+        commit = f"{4:040x}"
+        hostile = '<img src=x onerror="alert(1)"> [x](javascript:alert(2))'
+        self.write_feed(
+            recent_document([recent_entry(f"{6:040x}", f"{6:040x}")])
+        )
+        entry = sync.recent_changes_write_entry(
+            self.root,
+            prepared_context([prepared_commit(commit)]),
+            recent_result(
+                [(commit, "no-impact")],
+                comments={commit: hostile},
+            ),
+            model="deepseek-flash",
+            analyzed_at="2026-10-20T11:12:13+00:00",
+        )
+        self.assertIsNotNone(entry)
+        assert entry is not None
+        document = json.loads(entry[1])
+        self.assertEqual(document["entries"][0]["comment"], hostile)
+        self.assertIsInstance(document["entries"][0]["comment"], str)
+        self.assertEqual(
+            document["entries"][0]["integration_batch_commit"], commit
+        )
+
+    def test_partially_seeded_batch_is_deduplicated_in_batch_order(self) -> None:
+        child = f"{11:040x}"
+        merge = f"{12:040x}"
+        self.write_feed(
+            recent_document(
+                [
+                    recent_entry(
+                        merge,
+                        merge,
+                        parents=("a" * 40, child),
+                        subject="Merge already seeded",
+                        decision_value="no-impact",
+                    )
+                ]
+            )
+        )
+        context = prepared_context(
+            [
+                prepared_commit(child, subject="New child entry"),
+                prepared_commit(
+                    merge,
+                    parents=("a" * 40, child),
+                    subject="Merge already seeded",
+                ),
+            ]
+        )
+        entry = sync.recent_changes_write_entry(
+            self.root,
+            context,
+            recent_result([(child, "update"), (merge, "no-impact")]),
+            model="deepseek-flash",
+            analyzed_at="2026-10-20T11:12:13+00:00",
+        )
+        self.assertIsNotNone(entry)
+        assert entry is not None
+        entries = json.loads(entry[1])["entries"]
+        self.assertEqual([item["commit"] for item in entries], [merge, child])
+        self.assertEqual(entries[0]["subject"], "Merge already seeded")
+
+    def test_duplicate_sha_and_invalid_metadata_are_rejected(self) -> None:
+        entry = recent_entry(SHA_ONE, SHA_TWO)
+        duplicate = recent_document([entry, copy.deepcopy(entry)])
+        with self.assertRaisesRegex(sync.ValidationFailure, "duplicate commit"):
+            sync.validate_recent_changes(duplicate)
+
+        invalid_date = recent_document([recent_entry(SHA_ONE, SHA_TWO)])
+        invalid_date["entries"][0]["authored_at"] = "not a date"
+        with self.assertRaisesRegex(sync.ValidationFailure, "authored date"):
+            sync.validate_recent_changes(invalid_date)
+
+        invalid_source = recent_document([recent_entry(SHA_ONE, SHA_TWO)])
+        invalid_source["source_repository"] = "example/wrong"
+        with self.assertRaisesRegex(sync.ValidationFailure, "source repository"):
+            sync.validate_recent_changes(invalid_source)
+
+    def test_no_impact_batch_still_writes_feed(self) -> None:
+        commit = f"{7:040x}"
+        self.write_feed(
+            recent_document([recent_entry(f"{8:040x}", f"{8:040x}")])
+        )
+        entry = sync.recent_changes_write_entry(
+            self.root,
+            prepared_context([prepared_commit(commit)]),
+            recent_result([(commit, "no-impact")]),
+            model="deepseek-flash",
+            analyzed_at="2026-10-20T11:12:13+00:00",
+        )
+        self.assertIsNotNone(entry)
+        assert entry is not None
+        document = json.loads(entry[1])
+        self.assertEqual(document["entries"][0]["decision"], "no-impact")
+        self.assertEqual(document["entries"][0]["commit"], commit)
+
+    def test_user_impact_merge_remains_an_update_entry(self) -> None:
+        merge = f"{9:040x}"
+        parent_a = "a" * 40
+        parent_b = "b" * 40
+        self.write_feed(
+            recent_document([recent_entry(f"{10:040x}", f"{10:040x}")])
+        )
+        entry = sync.recent_changes_write_entry(
+            self.root,
+            prepared_context(
+                [prepared_commit(merge, parents=(parent_a, parent_b))]
+            ),
+            recent_result([(merge, "update")]),
+            model="deepseek-flash",
+            analyzed_at="2026-10-20T11:12:13+00:00",
+        )
+        self.assertIsNotNone(entry)
+        assert entry is not None
+        merge_entry = json.loads(entry[1])["entries"][0]
+        self.assertEqual(merge_entry["decision"], "update")
+        self.assertEqual(merge_entry["parents"], [parent_a, parent_b])
+
+    def test_invalid_existing_feed_fails_before_state_or_history_changes(self) -> None:
+        state_path = self.root / sync.STATE_PATH
+        state_path.write_text('{"authoritative":true}\n', encoding="utf-8")
+        history_path = self.root / sync.HISTORY_DIR / f"{SHA_ONE}.json"
+        history_path.parent.mkdir()
+        history_path.write_text('{"immutable":true}\n', encoding="utf-8")
+        self.write_feed(
+            recent_document([recent_entry(SHA_ONE, SHA_TWO)])
+        )
+        feed_path = self.root / sync.RECENT_CHANGES_PATH
+        broken = json.loads(feed_path.read_text(encoding="utf-8"))
+        broken["entries"][0]["parents"] = ["not-a-sha"]
+        feed_path.write_text(json.dumps(broken), encoding="utf-8")
+        state_before = state_path.read_bytes()
+        history_before = history_path.read_bytes()
+        feed_before = feed_path.read_bytes()
+
+        with self.assertRaisesRegex(sync.ValidationFailure, "invalid parent"):
+            sync.recent_changes_write_entry(
+                self.root,
+                prepared_context([prepared_commit(SHA_THREE)]),
+                recent_result([(SHA_THREE, "no-impact")]),
+                model="deepseek-flash",
+                analyzed_at="2026-10-20T11:12:13+00:00",
+            )
+
+        self.assertEqual(state_path.read_bytes(), state_before)
+        self.assertEqual(history_path.read_bytes(), history_before)
+        self.assertEqual(feed_path.read_bytes(), feed_before)
+
+
+class BootstrapRecentChangesTests(unittest.TestCase):
+    def test_checked_in_feed_matches_source_and_keeps_cursor_and_history(self) -> None:
+        root = MODULE_PATH.parent.parent
+        feed_path = root / sync.RECENT_CHANGES_PATH
+        document = json.loads(feed_path.read_text(encoding="utf-8"))
+        validated = sync.validate_recent_changes(document)
+        self.assertEqual(len(validated["entries"]), 24)
+        self.assertEqual(
+            validated["latest_analyzed_commit"],
+            "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3",
+        )
+
+        by_sha = {entry["commit"]: entry for entry in validated["entries"]}
+        readme = by_sha["f20dedfca3a31d5b1552f2a3d967c0a9dd434d65"]
+        readme_merge = by_sha["bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3"]
+        self.assertEqual(
+            readme["subject"],
+            "docs: replace inherited README with Capoworks ECU overview",
+        )
+        self.assertEqual(readme["authored_at"], "2026-10-18T20:25:40+02:00")
+        self.assertEqual(
+            readme_merge["subject"],
+            "Merge pull request #56 from capoworks/docs/capoworks-readme",
+        )
+        self.assertEqual(
+            readme_merge["authored_at"], "2026-10-18T20:26:22+02:00"
+        )
+        self.assertTrue(
+            all(
+                "not claimed public" not in entry["comment"].lower()
+                for entry in validated["entries"]
+            )
+        )
+
+        state = sync.load_state(root / sync.STATE_PATH)
+        self.assertEqual(
+            state["cursor_commit"],
+            "825d7fda5c32b7ec3f755be4897775819e8605d1",
+        )
+        state_before = (root / sync.STATE_PATH).read_bytes()
+        history_before = {
+            path.name: path.read_bytes()
+            for path in sorted((root / sync.HISTORY_DIR).glob("*.json"))
+        }
+        commits = [
+            {
+                "sha": entry["commit"],
+                "parents": entry["parents"],
+                "author": "Sync Test",
+                "authored_at": entry["authored_at"],
+                "subject": entry["subject"],
+                "changed_paths": [],
+                "full_diff": "",
+            }
+            for entry in (readme, readme_merge)
+        ]
+        result = recent_result(
+            [
+                (readme["commit"], "no-impact"),
+                (readme_merge["commit"], "no-impact"),
+            ]
+        )
+        self.assertIsNone(
+            sync.recent_changes_write_entry(
+                root,
+                {
+                    "range": {
+                        "base_exclusive": state["cursor_commit"],
+                        "head_inclusive": readme_merge["commit"],
+                        "commit_count": 2,
+                    },
+                    "commits": commits,
+                },
+                result,
+                model="deepseek-flash",
+                analyzed_at="2026-10-20T12:00:00+00:00",
+            )
+        )
+        self.assertEqual((root / sync.STATE_PATH).read_bytes(), state_before)
+        history_after = {
+            path.name: path.read_bytes()
+            for path in sorted((root / sync.HISTORY_DIR).glob("*.json"))
+        }
+        self.assertEqual(history_after, history_before)
 
 
 class ScriptedRunner:
