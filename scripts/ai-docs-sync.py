@@ -1720,6 +1720,15 @@ Rules:
   merge decision. A clean merge with no additional user-facing impact beyond its
   children must be marked no-impact. If the merge has conflict-resolution changes,
   explain their distinct user-facing effect using the combined diff evidence.
+- Focus on new functions and on what a driver, tuner, installer, or builder needs
+  to do differently. For every update, explain the practical change, required
+  action, prerequisites, compatibility or migration limits, and safety boundaries.
+- Classify maintainer-only work such as CI, tests, refactors, repository
+  maintenance, integration merges, and internal tooling as no-impact unless it
+  also changes actual user-facing firmware documentation, setup, flashing, tune
+  migration, or a builder workflow.
+- Use only behavior supported by the supplied evidence. Do not invent features or
+  imply that code changes have been validated on an engine or hardware setup.
 - Mark update only when user-facing documentation needs a change. Include one
   specific evidence item or more for every decision.
 - Summary and rationale are published in the wiki's Recent changes section.
