@@ -981,7 +981,7 @@ class RecentChangesTests(TempDocs):
                 ),
                 prepared_commit(
                     merge,
-                    parents=("b" * 40, child),
+                    parents=(seed_sha, child),
                     subject="Merge exact integration subject",
                     authored_at="2026-10-18T12:04:05+02:00",
                 ),
@@ -1009,7 +1009,10 @@ class RecentChangesTests(TempDocs):
         self.assertEqual(document["entries"][0]["subject"], "Merge exact integration subject")
         self.assertEqual(document["entries"][1]["subject"], "feat: exact child subject")
         self.assertEqual(document["entries"][1]["authored_at"], "2026-10-18T11:02:03+02:00")
-        self.assertEqual(document["entries"][0]["parents"], ["b" * 40, child])
+        self.assertEqual(document["entries"][0]["parents"], [seed_sha, child])
+        self.assertEqual(
+            document["latest_analyzed_at"], "2026-10-20T11:12:13+00:00"
+        )
 
         feed_path = self.root / path
         feed_path.write_text(text, encoding="utf-8")
@@ -1027,13 +1030,16 @@ class RecentChangesTests(TempDocs):
 
     def test_hostile_text_remains_plain_data(self) -> None:
         commit = f"{4:040x}"
+        existing_head = f"{6:040x}"
         hostile = '<img src=x onerror="alert(1)"> [x](javascript:alert(2))'
         self.write_feed(
-            recent_document([recent_entry(f"{6:040x}", f"{6:040x}")])
+            recent_document([recent_entry(existing_head, existing_head)])
         )
         entry = sync.recent_changes_write_entry(
             self.root,
-            prepared_context([prepared_commit(commit)]),
+            prepared_context(
+                [prepared_commit(commit, parents=(existing_head,))]
+            ),
             recent_result(
                 [(commit, "no-impact")],
                 comments={commit: hostile},
@@ -1089,6 +1095,190 @@ class RecentChangesTests(TempDocs):
         self.assertEqual([item["commit"] for item in entries], [merge, child])
         self.assertEqual(entries[0]["subject"], "Merge already seeded")
 
+    def test_partial_overlap_keeps_existing_review_metadata_and_order(self) -> None:
+        newer = f"{20:040x}"
+        overlap = f"{21:040x}"
+        incoming_head = f"{22:040x}"
+        root = f"{23:040x}"
+        self.write_feed(
+            recent_document(
+                [
+                    recent_entry(
+                        newer,
+                        newer,
+                        parents=(overlap,),
+                        subject="Newer reviewed commit",
+                    ),
+                    recent_entry(
+                        overlap,
+                        overlap,
+                        parents=(root,),
+                        subject="Existing reviewed overlap",
+                        comment="Keep the original reviewed comment.",
+                    ),
+                ]
+            )
+        )
+        context = prepared_context(
+            [
+                prepared_commit(overlap, parents=(root,)),
+                prepared_commit(incoming_head, parents=(newer,)),
+            ]
+        )
+        entry = sync.recent_changes_write_entry(
+            self.root,
+            context,
+            recent_result(
+                [(overlap, "no-impact"), (incoming_head, "no-impact")],
+                comments={overlap: "Incoming replacement comment."},
+            ),
+            model="deepseek-flash",
+            analyzed_at="2026-10-20T11:12:13+00:00",
+        )
+        self.assertIsNotNone(entry)
+        assert entry is not None
+        document = json.loads(entry[1])
+        self.assertEqual(
+            [item["commit"] for item in document["entries"]],
+            [incoming_head, newer, overlap],
+        )
+        self.assertEqual(document["latest_analyzed_commit"], incoming_head)
+        self.assertEqual(
+            document["entries"][2]["comment"],
+            "Keep the original reviewed comment.",
+        )
+        self.assertEqual(
+            document["entries"][2]["integration_batch_commit"], overlap
+        )
+
+    def test_same_batch_partial_overlap_deduplicates_and_preserves_review(self) -> None:
+        head = f"{30:040x}"
+        child = f"{31:040x}"
+        older = f"{32:040x}"
+        older_batch = f"{33:040x}"
+        self.write_feed(
+            recent_document(
+                [
+                    recent_entry(
+                        head,
+                        head,
+                        parents=(child,),
+                        subject="Reviewed batch head",
+                        comment="Keep the reviewed head comment.",
+                    ),
+                    recent_entry(older, older_batch, parents=(older_batch,)),
+                ]
+            )
+        )
+        context = prepared_context(
+            [
+                prepared_commit(child, parents=(older,)),
+                prepared_commit(head, parents=(child,)),
+            ]
+        )
+        entry = sync.recent_changes_write_entry(
+            self.root,
+            context,
+            recent_result([(child, "update"), (head, "no-impact")]),
+            model="deepseek-flash",
+            analyzed_at="2026-10-20T11:12:13+00:00",
+        )
+        self.assertIsNotNone(entry)
+        assert entry is not None
+        document = json.loads(entry[1])
+        self.assertEqual(
+            [item["commit"] for item in document["entries"]],
+            [head, child, older],
+        )
+        self.assertEqual(document["entries"][0]["comment"], "Keep the reviewed head comment.")
+
+    def test_older_batch_does_not_replace_seeded_head_or_date(self) -> None:
+        seeded_head = f"{40:040x}"
+        older_head = f"{41:040x}"
+        root = f"{42:040x}"
+        self.write_feed(
+            recent_document(
+                [
+                    recent_entry(
+                        seeded_head,
+                        seeded_head,
+                        parents=(older_head,),
+                        subject="Seeded head",
+                    )
+                ]
+            )
+        )
+        entry = sync.recent_changes_write_entry(
+            self.root,
+            prepared_context(
+                [prepared_commit(older_head, parents=(root,))]
+            ),
+            recent_result([(older_head, "no-impact")]),
+            model="deepseek-flash",
+            analyzed_at="2026-10-21T00:00:00+00:00",
+        )
+        self.assertIsNotNone(entry)
+        assert entry is not None
+        document = json.loads(entry[1])
+        self.assertEqual(
+            [item["commit"] for item in document["entries"]],
+            [seeded_head, older_head],
+        )
+        self.assertEqual(document["latest_analyzed_commit"], seeded_head)
+        self.assertEqual(
+            document["latest_analyzed_at"], "2026-10-20T10:00:00+00:00"
+        )
+
+    def test_exact_batch_replay_leaves_feed_byte_identical(self) -> None:
+        head = f"{50:040x}"
+        child = f"{51:040x}"
+        root = f"{52:040x}"
+        feed_bytes = self.write_feed(
+            recent_document(
+                [
+                    recent_entry(head, head, parents=(child,)),
+                    recent_entry(child, head, parents=(root,)),
+                ]
+            )
+        )
+        result = sync.recent_changes_write_entry(
+            self.root,
+            prepared_context(
+                [
+                    prepared_commit(child, parents=(root,)),
+                    prepared_commit(head, parents=(child,)),
+                ]
+            ),
+            recent_result([(child, "update"), (head, "no-impact")]),
+            model="deepseek-flash",
+            analyzed_at="2026-10-21T00:00:00+00:00",
+        )
+        self.assertIsNone(result)
+        self.assertEqual(
+            (self.root / sync.RECENT_CHANGES_PATH).read_bytes(), feed_bytes
+        )
+
+    def test_unprovable_batch_order_fails_closed(self) -> None:
+        existing_head = f"{60:040x}"
+        incoming = f"{61:040x}"
+        self.write_feed(
+            recent_document([recent_entry(existing_head, existing_head)])
+        )
+        feed_before = (self.root / sync.RECENT_CHANGES_PATH).read_bytes()
+        with self.assertRaisesRegex(
+            sync.ValidationFailure, "cannot establish recent changes integration batch order"
+        ):
+            sync.recent_changes_write_entry(
+                self.root,
+                prepared_context([prepared_commit(incoming)]),
+                recent_result([(incoming, "no-impact")]),
+                model="deepseek-flash",
+                analyzed_at="2026-10-20T11:12:13+00:00",
+            )
+        self.assertEqual(
+            (self.root / sync.RECENT_CHANGES_PATH).read_bytes(), feed_before
+        )
+
     def test_duplicate_sha_and_invalid_metadata_are_rejected(self) -> None:
         entry = recent_entry(SHA_ONE, SHA_TWO)
         duplicate = recent_document([entry, copy.deepcopy(entry)])
@@ -1107,12 +1297,15 @@ class RecentChangesTests(TempDocs):
 
     def test_no_impact_batch_still_writes_feed(self) -> None:
         commit = f"{7:040x}"
+        existing_head = f"{8:040x}"
         self.write_feed(
-            recent_document([recent_entry(f"{8:040x}", f"{8:040x}")])
+            recent_document([recent_entry(existing_head, existing_head)])
         )
         entry = sync.recent_changes_write_entry(
             self.root,
-            prepared_context([prepared_commit(commit)]),
+            prepared_context(
+                [prepared_commit(commit, parents=(existing_head,))]
+            ),
             recent_result([(commit, "no-impact")]),
             model="deepseek-flash",
             analyzed_at="2026-10-20T11:12:13+00:00",
@@ -1125,15 +1318,19 @@ class RecentChangesTests(TempDocs):
 
     def test_user_impact_merge_remains_an_update_entry(self) -> None:
         merge = f"{9:040x}"
-        parent_a = "a" * 40
         parent_b = "b" * 40
+        existing_head = f"{10:040x}"
         self.write_feed(
-            recent_document([recent_entry(f"{10:040x}", f"{10:040x}")])
+            recent_document([recent_entry(existing_head, existing_head)])
         )
         entry = sync.recent_changes_write_entry(
             self.root,
             prepared_context(
-                [prepared_commit(merge, parents=(parent_a, parent_b))]
+                [
+                    prepared_commit(
+                        merge, parents=(existing_head, parent_b)
+                    )
+                ]
             ),
             recent_result([(merge, "update")]),
             model="deepseek-flash",
@@ -1143,7 +1340,7 @@ class RecentChangesTests(TempDocs):
         assert entry is not None
         merge_entry = json.loads(entry[1])["entries"][0]
         self.assertEqual(merge_entry["decision"], "update")
-        self.assertEqual(merge_entry["parents"], [parent_a, parent_b])
+        self.assertEqual(merge_entry["parents"], [existing_head, parent_b])
 
     def test_invalid_existing_feed_fails_before_state_or_history_changes(self) -> None:
         state_path = self.root / sync.STATE_PATH

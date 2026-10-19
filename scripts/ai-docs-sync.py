@@ -2373,34 +2373,106 @@ def _merge_recent_batch(
     existing: list[dict[str, Any]],
     batch: str,
     batch_entries: list[dict[str, Any]],
-) -> list[dict[str, Any]] | None:
+) -> tuple[list[dict[str, Any]] | None, bool]:
     existing_by_sha = {entry["commit"]: entry for entry in existing}
     if all(entry["commit"] in existing_by_sha for entry in batch_entries):
-        return None
+        return None, False
 
-    merged_items: list[dict[str, Any]] = []
-    for entry in batch_entries:
-        merged_items.append(existing_by_sha.get(entry["commit"], entry))
-    merged_batch_shas = {entry["commit"] for entry in batch_entries}
-    merged_items.extend(
-        entry
-        for entry in existing
-        if entry["integration_batch_commit"] == batch
-        and entry["commit"] not in merged_batch_shas
-    )
+    batch_starts: dict[str, int] = {}
+    for index, entry in enumerate(existing):
+        batch_starts.setdefault(entry["integration_batch_commit"], index)
 
-    if not any(entry["integration_batch_commit"] == batch for entry in existing):
-        return [*merged_items, *existing][:RECENT_CHANGES_MAX_ENTRIES]
+    if batch in batch_starts:
+        merged_items: list[dict[str, Any]] = []
+        merged_shas: set[str] = set()
+        for entry in batch_entries:
+            sha = entry["commit"]
+            prior = existing_by_sha.get(sha)
+            if sha in merged_shas or (
+                prior is not None
+                and prior["integration_batch_commit"] != batch
+            ):
+                continue
+            merged_items.append(prior or entry)
+            merged_shas.add(sha)
+        merged_items.extend(
+            entry
+            for entry in existing
+            if entry["integration_batch_commit"] == batch
+            and entry["commit"] not in merged_shas
+        )
+        output: list[dict[str, Any]] = []
+        inserted = False
+        for entry in existing:
+            if entry["integration_batch_commit"] != batch:
+                output.append(entry)
+            elif not inserted:
+                output.extend(merged_items)
+                inserted = True
+        return output[:RECENT_CHANGES_MAX_ENTRIES], False
 
-    output: list[dict[str, Any]] = []
-    inserted = False
+    if batch in existing_by_sha:
+        raise ValidationFailure(
+            "integration batch head already belongs to an existing batch"
+        )
+
+    new_entries = [
+        entry for entry in batch_entries if entry["commit"] not in existing_by_sha
+    ]
+    parents_by_sha = {
+        entry["commit"]: entry["parents"] for entry in [*existing, *batch_entries]
+    }
+
+    def has_ancestor(commit: str, ancestor: str) -> bool:
+        pending = [commit]
+        seen: set[str] = set()
+        while pending:
+            current = pending.pop()
+            if current == ancestor:
+                return True
+            if current in seen:
+                continue
+            seen.add(current)
+            pending.extend(
+                parent
+                for parent in parents_by_sha.get(current, ())
+                if parent in parents_by_sha and parent not in seen
+            )
+        return False
+
+    heads: list[tuple[str, str]] = []
+    seen_batches: set[str] = set()
     for entry in existing:
-        if entry["integration_batch_commit"] != batch:
-            output.append(entry)
-        elif not inserted:
-            output.extend(merged_items)
-            inserted = True
-    return output[:RECENT_CHANGES_MAX_ENTRIES]
+        existing_batch = entry["integration_batch_commit"]
+        if existing_batch not in seen_batches:
+            seen_batches.add(existing_batch)
+            heads.append((existing_batch, entry["commit"]))
+
+    insert_index: int | None = None
+    is_newest = False
+    if has_ancestor(batch, heads[0][1]):
+        insert_index = 0
+        is_newest = True
+    else:
+        for index in range(1, len(heads)):
+            if has_ancestor(heads[index - 1][1], batch) and has_ancestor(
+                batch, heads[index][1]
+            ):
+                insert_index = batch_starts[heads[index][0]]
+                break
+        if insert_index is None and has_ancestor(heads[-1][1], batch):
+            insert_index = len(existing)
+    if insert_index is None:
+        raise ValidationFailure(
+            "cannot establish recent changes integration batch order"
+        )
+
+    merged = [
+        *existing[:insert_index],
+        *new_entries,
+        *existing[insert_index:],
+    ]
+    return merged[:RECENT_CHANGES_MAX_ENTRIES], is_newest
 
 
 def recent_changes_write_entry(
@@ -2419,12 +2491,13 @@ def recent_changes_write_entry(
     batch, batch_entries = _recent_batch_entries(
         context, result, model=model, analyzed_at=analyzed
     )
-    merged = _merge_recent_batch(existing["entries"], batch, batch_entries)
+    merged, is_newest = _merge_recent_batch(
+        existing["entries"], batch, batch_entries
+    )
     if merged is None:
         return None
-    newest_batch = merged[0]["integration_batch_commit"]
-    latest_commit = batch if newest_batch == batch else existing["latest_analyzed_commit"]
-    latest_at = analyzed if newest_batch == batch else existing["latest_analyzed_at"]
+    latest_commit = batch if is_newest else existing["latest_analyzed_commit"]
+    latest_at = analyzed if is_newest else existing["latest_analyzed_at"]
     document = {
         **copy.deepcopy(existing),
         "latest_analyzed_commit": latest_commit,

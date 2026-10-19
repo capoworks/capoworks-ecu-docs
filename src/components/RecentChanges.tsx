@@ -98,8 +98,7 @@ function EntryMeta({ entry }: { entry: ChangeEntry }): ReactNode {
   const guide = GUIDE_LINKS[entry.commit];
   return (
     <div className="capoRecent__entryMeta">
-      <span
-        className={`capoRecent__badge capoRecent__badge--${entry.decision}`}>
+      <span className={`capoRecent__badge capoRecent__badge--${entry.decision}`}>
         {entry.decision === 'update' ? 'Documentation update' : 'Maintenance'}
       </span>
       <span>
@@ -122,40 +121,32 @@ function EntryBody({ entry }: { entry: ChangeEntry }): ReactNode {
       <p>{entry.comment}</p>
       {entry.parents.length > 1 && entry.decision === 'update' ? (
         <p className="capoRecent__mergeNotice">
-          This merge has a separate documented user-facing effect; do not treat
-          it as a clean integration audit.
+          This merge has a separate documented user-facing effect; do not treat it as a clean
+          integration audit.
         </p>
       ) : null}
     </>
   );
 }
 
-export default function RecentChanges({
-  variant = 'full',
-}: RecentChangesProps): ReactNode {
+export default function RecentChanges({ variant = 'full' }: RecentChangesProps): ReactNode {
   const isHome = variant === 'home';
   const entries = isHome
     ? feed.entries.filter((entry) => entry.parents.length <= 1).slice(0, 3)
     : feed.entries;
   const visibleEntries = entries.filter((entry) => SHA_PATTERN.test(entry.commit));
-  const mergeCount = feed.entries.filter(
-    (entry) => entry.parents.length > 1,
-  ).length;
+  const mergeCount = feed.entries.filter((entry) => entry.parents.length > 1).length;
   const nonMergeCount = feed.entries.length - mergeCount;
   const headingId = `recent-changes-${variant}`;
 
   return (
-    <section
-      className={`capoRecent capoRecent--${variant}`}
-      aria-labelledby={headingId}>
+    <section className={`capoRecent capoRecent--${variant}`} aria-labelledby={headingId}>
       <header className="capoRecent__header">
         <div>
           <p className="capoRecent__eyebrow">Firmware development log</p>
-          <h2 id={headingId}>
-            {isHome ? 'Recent changes' : 'Firmware recent changes'}
-          </h2>
+          <h2 id={headingId}>{isHome ? 'Recent changes' : 'Firmware recent changes'}</h2>
         </div>
-        <span className="capoRecent__aiBadge">AI-generated · human-reviewed</span>
+        <span className="capoRecent__aiBadge">AI-generated · reviewed</span>
       </header>
 
       <p className="capoRecent__intro">
@@ -168,26 +159,22 @@ export default function RecentChanges({
         <div>
           <dt>Coverage</dt>
           <dd>
-            {feed.entries.length} commits · {nonMergeCount} changes · {mergeCount}{' '}
-            merge audits
+            {feed.entries.length} commits · {nonMergeCount} changes · {mergeCount} merge audits
           </dd>
         </div>
         <div>
           <dt>Analyzed head</dt>
           <dd>
             {commitLink(feed.latest_analyzed_commit)} ·{' '}
-            <time dateTime={feed.latest_analyzed_at}>
-              {formatDate(feed.latest_analyzed_at)}
-            </time>
+            <time dateTime={feed.latest_analyzed_at}>{formatDate(feed.latest_analyzed_at)}</time>
           </dd>
         </div>
       </dl>
 
       {!isHome ? (
         <p className="capoRecent__notice">
-          Merge audits are collapsed to keep the log readable. A merge marked
-          as a documentation update is expanded because it carries a separate
-          user-facing effect.
+          Merge audits are collapsed to keep the log readable. A merge marked as a documentation
+          update is expanded because it carries a separate user-facing effect.
         </p>
       ) : null}
 
@@ -197,7 +184,8 @@ export default function RecentChanges({
             <details
               className="capoRecent__entry capoRecent__entry--merge"
               key={entry.commit}
-              open={entry.decision === 'update'}>
+              open={entry.decision === 'update'}
+            >
               <summary>
                 <span className="capoRecent__mergeTitle">{entry.subject}</span>
                 <EntryMeta entry={entry} />
@@ -220,9 +208,7 @@ export default function RecentChanges({
           <a href={SOURCE_URL} rel="noreferrer">
             Firmware source
           </a>
-          <a
-            href={`${SOURCE_URL}/commits/${feed.latest_analyzed_commit}`}
-            rel="noreferrer">
+          <a href={`${SOURCE_URL}/commits/${feed.latest_analyzed_commit}`} rel="noreferrer">
             Full change history on GitHub
           </a>
           {isHome ? (
@@ -232,9 +218,9 @@ export default function RecentChanges({
           )}
         </div>
         <p>
-          AI-generated summaries are reviewed before publication. This log is
-          not a firmware release approval and does not certify that a build,
-          configuration or hardware setup has been validated.
+          AI-generated summaries are reviewed before publication. This log is not a firmware release
+          approval and does not certify that a build, configuration or hardware setup has been
+          validated.
         </p>
       </footer>
     </section>

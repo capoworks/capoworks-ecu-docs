@@ -208,9 +208,7 @@ summary:focus-visible {
   border: 1px solid var(--capo-border);
   border-left: 7px solid var(--capo-teal);
   border-radius: 10px;
-  background:
-    linear-gradient(135deg, var(--capo-teal-wash), transparent 38%),
-    var(--capo-surface);
+  background: linear-gradient(135deg, var(--capo-teal-wash), transparent 38%), var(--capo-surface);
   box-shadow: 0 8px 24px rgb(0 79 89 / 10%);
 }
 
