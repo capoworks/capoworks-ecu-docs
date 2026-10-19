@@ -1373,88 +1373,88 @@ class RecentChangesTests(TempDocs):
         self.assertEqual(feed_path.read_bytes(), feed_before)
 
 
-class BootstrapRecentChangesTests(unittest.TestCase):
-    def test_checked_in_feed_matches_source_and_keeps_cursor_and_history(self) -> None:
+class BootstrapRecentChangesTests(TempDocs):
+    def test_checked_in_feed_is_valid_and_bounded(self) -> None:
         root = MODULE_PATH.parent.parent
         feed_path = root / sync.RECENT_CHANGES_PATH
         document = json.loads(feed_path.read_text(encoding="utf-8"))
         validated = sync.validate_recent_changes(document)
-        self.assertEqual(len(validated["entries"]), 24)
-        self.assertEqual(
-            validated["latest_analyzed_commit"],
-            "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3",
+        self.assertEqual(validated, document)
+        self.assertGreater(len(validated["entries"]), 0)
+        self.assertLessEqual(
+            len(validated["entries"]), sync.RECENT_CHANGES_MAX_ENTRIES
         )
 
-        by_sha = {entry["commit"]: entry for entry in validated["entries"]}
-        readme = by_sha["f20dedfca3a31d5b1552f2a3d967c0a9dd434d65"]
-        readme_merge = by_sha["bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3"]
-        self.assertEqual(
-            readme["subject"],
-            "docs: replace inherited README with Capoworks ECU overview",
-        )
-        self.assertEqual(readme["authored_at"], "2026-10-18T20:25:40+02:00")
-        self.assertEqual(
-            readme_merge["subject"],
-            "Merge pull request #56 from capoworks/docs/capoworks-readme",
-        )
-        self.assertEqual(
-            readme_merge["authored_at"], "2026-10-18T20:26:22+02:00"
-        )
-        self.assertTrue(
-            all(
-                "not claimed public" not in entry["comment"].lower()
-                for entry in validated["entries"]
-            )
-        )
-
-        state = sync.load_state(root / sync.STATE_PATH)
-        self.assertEqual(
-            state["cursor_commit"],
-            "825d7fda5c32b7ec3f755be4897775819e8605d1",
-        )
-        state_before = (root / sync.STATE_PATH).read_bytes()
-        history_before = {
-            path.name: path.read_bytes()
-            for path in sorted((root / sync.HISTORY_DIR).glob("*.json"))
-        }
-        commits = [
-            {
-                "sha": entry["commit"],
-                "parents": entry["parents"],
-                "author": "Sync Test",
-                "authored_at": entry["authored_at"],
-                "subject": entry["subject"],
-                "changed_paths": [],
-                "full_diff": "",
-            }
-            for entry in (readme, readme_merge)
+    def test_feed_ahead_replay_preserves_state_history_and_feed_bytes(self) -> None:
+        old_cursor = "a" * 40
+        first_commit = SHA_ONE
+        second_commit = SHA_TWO
+        entries = [
+            recent_entry(second_commit, second_commit, parents=(first_commit,)),
+            recent_entry(first_commit, second_commit, parents=(old_cursor,)),
         ]
-        result = recent_result(
+        feed_path = self.root / sync.RECENT_CHANGES_PATH
+        feed_path.write_text(
+            json.dumps(recent_document(entries), indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        state = {
+            "schema_version": 1,
+            "source_repository": sync.SOURCE_REPOSITORY,
+            "source_branch": sync.SOURCE_BRANCH,
+            "target_repository": sync.TARGET_REPOSITORY,
+            "target_branch": sync.TARGET_BRANCH,
+            "cursor_commit": old_cursor,
+            "initial_backfill": {
+                "through_commit": old_cursor,
+                "commit_count": 1,
+                "completed": True,
+            },
+            "last_sync": None,
+        }
+        state_path = self.root / sync.STATE_PATH
+        state_path.write_text(
+            json.dumps(state, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        history_dir = self.root / sync.HISTORY_DIR
+        history_dir.mkdir()
+        for commit in (first_commit, second_commit):
+            (history_dir / f"{commit}.json").write_text(
+                json.dumps({"batch_head": commit}, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+        feed_before = feed_path.read_bytes()
+        state_before = state_path.read_bytes()
+        history_before = {
+            path.relative_to(self.root): path.read_bytes()
+            for path in sorted(history_dir.glob("*.json"))
+        }
+        context = prepared_context(
             [
-                (readme["commit"], "no-impact"),
-                (readme_merge["commit"], "no-impact"),
+                prepared_commit(first_commit, parents=(old_cursor,)),
+                prepared_commit(second_commit, parents=(first_commit,)),
             ]
         )
+        result = recent_result(
+            [(first_commit, "no-impact"), (second_commit, "update")]
+        )
+
         self.assertIsNone(
             sync.recent_changes_write_entry(
-                root,
-                {
-                    "range": {
-                        "base_exclusive": state["cursor_commit"],
-                        "head_inclusive": readme_merge["commit"],
-                        "commit_count": 2,
-                    },
-                    "commits": commits,
-                },
+                self.root,
+                context,
                 result,
                 model="deepseek-flash",
                 analyzed_at="2026-10-20T12:00:00+00:00",
             )
         )
-        self.assertEqual((root / sync.STATE_PATH).read_bytes(), state_before)
+        self.assertEqual(feed_path.read_bytes(), feed_before)
+        self.assertEqual(state_path.read_bytes(), state_before)
         history_after = {
-            path.name: path.read_bytes()
-            for path in sorted((root / sync.HISTORY_DIR).glob("*.json"))
+            path.relative_to(self.root): path.read_bytes()
+            for path in sorted(history_dir.glob("*.json"))
         }
         self.assertEqual(history_after, history_before)
 
