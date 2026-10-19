@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "batch_head": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3",
+  "previous_cursor_commit": "825d7fda5c32b7ec3f755be4897775819e8605d1",
+  "cursor_commit": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "91b74aedfd7b58da66d95f259c16086c7c3e5093",
+      "head_inclusive": "825d7fda5c32b7ec3f755be4897775819e8605d1",
+      "commit_count": 2
+    },
+    "model": "manual-reviewed/deepseek-flash",
+    "usage": {},
+    "summary": "Human-reviewed manual recovery audit for VE Analyze strategy filters and recovery state. Source evidence is pinned at [firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md); guide target for a separate docs PR: docs/08-Fuel/Fuel-Settings/VE-Analyze.md (not claimed public here). The ledger limits the integration merge to the audited original.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "8f4fcfb40135fe7e5f15b280f7e05d9863b60f52",
+        "decision": "update",
+        "rationale": "Gives SD, Alpha-N and MAF independent VE Analyze filters, includes crank/cut/transient/lambda exclusions and publishes recovery telemetry, so tuning behavior and layout 20032 migration need guidance.",
+        "evidence": [
+          "[firmware/CHANGELOG.md](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/CHANGELOG.md): VE Analyze applies strategy-specific filters and publishes cranking and cut-recovery telemetry without moving existing channels.",
+          "[firmware/tunerstudio/tunerstudio.template.ini](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/tunerstudio/tunerstudio.template.ini): Each physical model has its own VE Analyze map block, filters and qualified endpoint gating.",
+          "[firmware/console/status_loop.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/console/status_loop.cpp): Fallback fault status feeds VE Analyze admission while injection can remain available.",
+          "[firmware/controllers/algo/engine2.cpp](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/controllers/algo/engine2.cpp): The final layout 20032 migration notes consolidate the dedicated model, selector, blend, trim and timing changes.",
+          "guide target: docs/08-Fuel/Fuel-Settings/VE-Analyze.md (reviewed path; separate docs PR)"
+        ]
+      },
+      {
+        "commit": "825d7fda5c32b7ec3f755be4897775819e8605d1",
+        "decision": "no-impact",
+        "rationale": "Integration merge for original PR #30 adds no impact beyond 8f4fcfb40135fe7e5f15b280f7e05d9863b60f52; the supplied ledger verifies the merged tree equals the original feature tree.",
+        "evidence": [
+          "merged-firmware-prs.json: PR #55 maps original PR #30 / 8f4fcfb40135fe7e5f15b280f7e05d9863b60f52 to merge 825d7fda5c32b7ec3f755be4897775819e8605d1; verifiedSingleCommit=true, verifiedSourceTree=true",
+          "firmware-master-audit-range.json: 825d7fda5c32b7ec3f755be4897775819e8605d1 has parents 91b74aedfd7b58da66d95f259c16086c7c3e5093 and 8f4fcfb40135fe7e5f15b280f7e05d9863b60f52",
+          "[firmware/tunerstudio/tunerstudio.template.ini](https://github.com/capoworks/capoworks-ecu/blob/825d7fda5c32b7ec3f755be4897775819e8605d1/firmware/tunerstudio/tunerstudio.template.ini): The supplied original feature tree is the only feature delta carried by the integration merge."
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/08-Fuel/Fuel-Settings/VE-Analyze.md"
+    ],
+    "recorded_at": "2026-10-18T15:25:09+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "825d7fda5c32b7ec3f755be4897775819e8605d1",
+      "head_inclusive": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3",
+      "commit_count": 2
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 35740,
+      "completion_tokens": 514,
+      "total_tokens": 36254,
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 35740
+    },
+    "summary": "Audited 2 commits: a README rewrite introducing the Capoworks ECU overview and its merge. The README is a repository landing page, not a docs/ page; the user-facing wiki already covers the highlighted features (blended fuel, air-mass migration, VE Analyze, Core8 tools, tune format 20032). No docs/ file requires a change.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "f20dedfca3a31d5b1552f2a3d967c0a9dd434d65",
+        "decision": "no-impact",
+        "rationale": "This commit only rewrites the repository root README.md, which is not part of the docs/ wiki tree. Every user-facing claim it introduces (blended Speed Density/Alpha-N authority, 16x16 per-cylinder trims, independent load sources, rolling idle feedback, Legacy/Cycle Profile/Time Budget ignition selectors, tune format 20032 reset behavior, VE Analyze authority restriction, Core8 build tools) is already documented in the existing wiki pages, and the README links to those pages rather than adding new behavior. No docs/ page content becomes inaccurate.",
+        "evidence": [
+          "changed_paths: [\"README.md\"] only",
+          "README.md: \"Current tune format: 20032. Binary tunes from older formats are reset rather than automatically migrated.\" — already covered in docs/08-Fuel/Fuel-Algorithms/Airmass-Models-and-Migration.md",
+          "README.md links to existing pages: Fuel/Fuel-Algorithms/Blended/, Airmass-Models-and-Migration/, Fuel-Settings/VE-Analyze/, Software/Core8-Build-Tools/",
+          "README.md Credits section attributes derivation to FOME-Tech/fome-fw and rusEFI/rusefi with independence disclaimer — consistent with existing docs attribution"
+        ]
+      },
+      {
+        "commit": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3",
+        "decision": "no-impact",
+        "rationale": "Merge commit integrating the README branch. The merge diff shows no conflict-resolution content beyond the child commit's README change, so it adds no distinct user-facing documentation impact.",
+        "evidence": [
+          "Merge parents: 825d7fda5 and f20dedfca",
+          "Merge diff body contains only the commit message; no additional file changes beyond README.md from the child",
+          "changed_paths: [\"README.md\"]"
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-18T19:49:00.834454+00:00"
+  }
+}
