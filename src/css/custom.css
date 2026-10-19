@@ -274,12 +274,22 @@ summary:focus-visible {
   font-size: 1.06rem;
 }
 
+.capoRecent__sectionLabel,
+.capoRecent__secondaryLabel {
+  margin: 1rem 0 0.55rem;
+  color: var(--capo-muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
 .capoRecent__coverage {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 1rem;
-  margin: 1rem 0;
-  padding: 0.8rem 0;
+  margin: 0.8rem 0 0;
+  padding: 0.8rem 0 0;
   border-block: 1px solid var(--capo-border);
 }
 
@@ -300,8 +310,7 @@ summary:focus-visible {
   overflow-wrap: anywhere;
 }
 
-.capoRecent__notice,
-.capoRecent__mergeNotice {
+.capoRecent__notice {
   color: var(--capo-muted);
   font-size: 0.92rem;
 }
@@ -318,9 +327,18 @@ summary:focus-visible {
   background: var(--capo-surface);
 }
 
-.capoRecent h4 {
+.capoRecent__entry--feature {
+  border-left: 4px solid var(--capo-teal);
+}
+
+.capoRecent__entry--secondary {
+  background: var(--capo-surface-muted);
+}
+
+.capoRecent h3 {
   margin: 0 0 0.35rem;
-  font-size: 1rem;
+  font-size: 1.08rem;
+  line-height: 1.3;
   overflow-wrap: anywhere;
 }
 
@@ -347,31 +365,74 @@ summary:focus-visible {
   font-weight: 700;
 }
 
-.capoRecent__entry--merge {
-  padding: 0;
-}
-
-.capoRecent__entry--merge > summary {
-  display: block;
-  padding: 0.8rem 1rem;
-  cursor: pointer;
-  list-style-position: inside;
-}
-
-.capoRecent__mergeTitle {
-  display: block;
-  margin-bottom: 0.35rem;
-  font-weight: 700;
+.capoRecent__sourceSubject {
+  flex-basis: 100%;
+  font-size: 0.75rem;
   overflow-wrap: anywhere;
 }
 
-.capoRecent__mergeBody {
-  padding: 0 1rem 0.8rem;
-  border-top: 1px solid var(--capo-border);
+.capoRecent__mergeIndicator {
+  color: var(--capo-teal);
+  font-weight: 700;
 }
 
-.capoRecent__mergeBody h4 {
-  margin-top: 0.8rem;
+.capoRecent__archiveLink {
+  display: inline-block;
+  margin-top: 0.7rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.capoRecent__secondary,
+.capoRecent__sourceCoverage {
+  margin-top: 1rem;
+  border: 1px solid var(--capo-border);
+  border-radius: 8px;
+  background: var(--capo-surface-muted);
+}
+
+.capoRecent__secondary > summary,
+.capoRecent__sourceCoverage > summary {
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.capoRecent__secondary > summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+}
+
+.capoRecent__secondaryLabel,
+.capoRecent__secondaryTitle {
+  display: block;
+}
+
+.capoRecent__secondaryLabel {
+  margin: 0 0 0.2rem;
+}
+
+.capoRecent__secondaryCount {
+  align-self: center;
+  color: var(--capo-muted);
+  font-size: 0.82rem;
+  font-weight: 400;
+}
+
+.capoRecent__secondaryBody {
+  padding: 0 1rem 1rem;
+}
+
+.capoRecent__sourceCoverage > summary {
+  font-size: 0.88rem;
+}
+
+.capoRecent__sourceCoverage .capoRecent__coverage {
+  margin: 0;
+  padding: 0 1rem 0.8rem;
+  border: 0;
 }
 
 .capoRecent__footer {
