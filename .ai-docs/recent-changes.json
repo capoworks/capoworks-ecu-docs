@@ -2,9 +2,22 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3",
-  "latest_analyzed_at": "2026-10-19T22:22:03+00:00",
+  "latest_analyzed_commit": "48628aefd9b14e32a6af54a3747e2ebccd917828",
+  "latest_analyzed_at": "2026-10-20T02:27:44.053715+00:00",
   "entries": [
+    {
+      "commit": "48628aefd9b14e32a6af54a3747e2ebccd917828",
+      "subject": "docs: link recent changes beside the wiki",
+      "authored_at": "2026-10-20T00:59:49+02:00",
+      "parents": [
+        "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3"
+      ],
+      "comment": "The repository README gained a Recent changes link to the wiki. This is a documentation navigation change only; no firmware, tune format, flashing, or builder workflow is affected, so no wiki page needs updating.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-20T02:27:44.053715+00:00",
+      "integration_batch_commit": "48628aefd9b14e32a6af54a3747e2ebccd917828"
+    },
     {
       "commit": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3",
       "subject": "Merge pull request #56 from capoworks/docs/capoworks-readme",

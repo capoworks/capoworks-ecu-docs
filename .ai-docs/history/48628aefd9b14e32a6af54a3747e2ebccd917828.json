@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "batch_head": "48628aefd9b14e32a6af54a3747e2ebccd917828",
+  "previous_cursor_commit": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3",
+  "cursor_commit": "48628aefd9b14e32a6af54a3747e2ebccd917828",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "825d7fda5c32b7ec3f755be4897775819e8605d1",
+      "head_inclusive": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3",
+      "commit_count": 2
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 35740,
+      "completion_tokens": 514,
+      "total_tokens": 36254,
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 35740
+    },
+    "summary": "Audited 2 commits: a README rewrite introducing the Capoworks ECU overview and its merge. The README is a repository landing page, not a docs/ page; the user-facing wiki already covers the highlighted features (blended fuel, air-mass migration, VE Analyze, Core8 tools, tune format 20032). No docs/ file requires a change.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "f20dedfca3a31d5b1552f2a3d967c0a9dd434d65",
+        "decision": "no-impact",
+        "rationale": "This commit only rewrites the repository root README.md, which is not part of the docs/ wiki tree. Every user-facing claim it introduces (blended Speed Density/Alpha-N authority, 16x16 per-cylinder trims, independent load sources, rolling idle feedback, Legacy/Cycle Profile/Time Budget ignition selectors, tune format 20032 reset behavior, VE Analyze authority restriction, Core8 build tools) is already documented in the existing wiki pages, and the README links to those pages rather than adding new behavior. No docs/ page content becomes inaccurate.",
+        "evidence": [
+          "changed_paths: [\"README.md\"] only",
+          "README.md: \"Current tune format: 20032. Binary tunes from older formats are reset rather than automatically migrated.\" — already covered in docs/08-Fuel/Fuel-Algorithms/Airmass-Models-and-Migration.md",
+          "README.md links to existing pages: Fuel/Fuel-Algorithms/Blended/, Airmass-Models-and-Migration/, Fuel-Settings/VE-Analyze/, Software/Core8-Build-Tools/",
+          "README.md Credits section attributes derivation to FOME-Tech/fome-fw and rusEFI/rusefi with independence disclaimer — consistent with existing docs attribution"
+        ]
+      },
+      {
+        "commit": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3",
+        "decision": "no-impact",
+        "rationale": "Merge commit integrating the README branch. The merge diff shows no conflict-resolution content beyond the child commit's README change, so it adds no distinct user-facing documentation impact.",
+        "evidence": [
+          "Merge parents: 825d7fda5 and f20dedfca",
+          "Merge diff body contains only the commit message; no additional file changes beyond README.md from the child",
+          "changed_paths: [\"README.md\"]"
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-18T19:49:00.834454+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3",
+      "head_inclusive": "48628aefd9b14e32a6af54a3747e2ebccd917828",
+      "commit_count": 1
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 38093,
+      "completion_tokens": 191,
+      "total_tokens": 38284,
+      "prompt_cache_hit_tokens": 0,
+      "prompt_cache_miss_tokens": 38093
+    },
+    "summary": "The Capoworks ECU README now links to the wiki's Recent changes page beside the existing Wiki and Documentation link. No firmware, tune, flashing, or build behavior changed.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "48628aefd9b14e32a6af54a3747e2ebccd917828",
+        "decision": "no-impact",
+        "rationale": "The repository README gained a Recent changes link to the wiki. This is a documentation navigation change only; no firmware, tune format, flashing, or builder workflow is affected, so no wiki page needs updating.",
+        "evidence": [
+          "README.md: link line changed to add [Recent changes](https://capoworks.github.io/capoworks-ecu-docs/recent-changes/) between Wiki and Documentation and Source",
+          "README.md: rest of the file is unchanged apart from line-ending normalization (LF to CRLF)"
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-20T02:27:44.052776+00:00"
+  }
+}
