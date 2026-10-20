@@ -1608,6 +1608,247 @@ class SourceSafetyTests(unittest.TestCase):
                     limits.max_current_file_bytes,
                 )
 
+    def test_measured_35_commit_event_fits_defaults_and_exclusive_boundaries(
+        self,
+    ) -> None:
+        measured_commits = 35
+        measured_diff_bytes = 782_933
+        measured_current_files = 186
+        measured_current_total_bytes = 1_716_653
+        measured_prompt_bytes = 3_019_518
+
+        class MeasuredSourceRepository(sync.SourceRepository):
+            def __init__(
+                self,
+                work_dir: pathlib.Path,
+                limits: sync.Limits,
+                *,
+                commit_count: int = measured_commits,
+                diff_bytes: int = measured_diff_bytes,
+                file_count: int = measured_current_files,
+                file_total_bytes: int = measured_current_total_bytes,
+            ) -> None:
+                super().__init__(
+                    ScriptedRunner(
+                        lambda args, cwd, maximum: self._fake_git(args, maximum)
+                    ),
+                    work_dir,
+                    limits,
+                    source_url="public",
+                )
+                self.base_sha = f"{1000:040x}"
+                self.commit_shas = tuple(
+                    f"{2000 + index:040x}" for index in range(commit_count)
+                )
+                self.source_paths = tuple(
+                    f"firmware/source_{index:03d}.c" for index in range(file_count)
+                )
+
+                def distribute(total: int, count: int) -> tuple[int, ...]:
+                    quotient, remainder = divmod(total, count)
+                    return tuple(
+                        quotient + (1 if index < remainder else 0)
+                        for index in range(count)
+                    )
+
+                self.patch_sizes = distribute(diff_bytes, commit_count)
+                path_sizes = distribute(file_total_bytes, file_count)
+                self.file_sizes = dict(zip(self.source_paths, path_sizes, strict=True))
+
+            def _fake_git(self, args: list[str], maximum: int) -> sync.CommandResult:
+                if args[:2] == ["rev-list", "--count"]:
+                    data = f"{len(self.commit_shas)}\n".encode()
+                elif args[:3] == ["rev-list", "--reverse", "--topo-order"]:
+                    data = ("\n".join(self.commit_shas) + "\n").encode()
+                else:
+                    raise AssertionError(args)
+                if len(data) > maximum:
+                    raise sync.LimitFailure("fake git output exceeded its bound")
+                return sync.CommandResult(stdout=data, stderr=b"")
+
+            def _run_git(self, args: object, max_bytes: int) -> bytes:
+                return self._fake_git(list(args), max_bytes).stdout
+
+            def _commit(self, sha: str) -> sync.SourceCommit:
+                index = self.commit_shas.index(sha)
+                parent = self.base_sha if index == 0 else self.commit_shas[index - 1]
+                return sync.SourceCommit(
+                    sha=sha,
+                    parents=(parent,),
+                    author="Measured Source",
+                    authored_at="2026-10-20T00:00:00+00:00",
+                    subject=f"measured source commit {index + 1}",
+                    changed_paths=self.source_paths,
+                    patch="x" * self.patch_sizes[index],
+                )
+
+            def _tree_paths(self, commit: str) -> tuple[str, ...]:
+                return self.source_paths
+
+            def _file_at_commit(self, commit: str, path: str, max_bytes: int) -> str:
+                size = self.file_sizes[path]
+                if size > max_bytes:
+                    raise sync.LimitFailure(
+                        f"source file {path} is {size} bytes; the limit is {max_bytes}"
+                    )
+                return "x" * size
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            defaults = sync.Limits()
+            self.assertEqual(defaults.max_diff_bytes, 800_000)
+            self.assertEqual(defaults.max_prompt_bytes, 3_500_000)
+            self.assertEqual(defaults.max_current_files, 200)
+            self.assertEqual(defaults.max_current_total_bytes, 2_000_000)
+
+            source = MeasuredSourceRepository(root / "default", defaults)
+            snapshot = source._snapshot_range(
+                source.base_sha,
+                source.commit_shas[-1],
+                source.commit_shas[-1],
+                integration_event=True,
+            )
+            self.assertEqual(len(snapshot.commits), measured_commits)
+            self.assertEqual(
+                sum(len(commit.patch.encode("utf-8")) for commit in snapshot.commits),
+                measured_diff_bytes,
+            )
+            self.assertEqual(len(snapshot.current_files), measured_current_files)
+            self.assertEqual(
+                sum(len(content.encode("utf-8")) for content in snapshot.current_files.values()),
+                measured_current_total_bytes,
+            )
+
+            resources = (
+                (
+                    "diff",
+                    {"diff_bytes": defaults.max_diff_bytes},
+                    {"diff_bytes": defaults.max_diff_bytes + 1},
+                ),
+                (
+                    "files",
+                    {"file_count": defaults.max_current_files},
+                    {"file_count": defaults.max_current_files + 1},
+                ),
+                (
+                    "total",
+                    {"file_total_bytes": defaults.max_current_total_bytes},
+                    {"file_total_bytes": defaults.max_current_total_bytes + 1},
+                ),
+            )
+            for name, exact, plus_one in resources:
+                with self.subTest(resource=name, boundary="exact"):
+                    exact_source = MeasuredSourceRepository(
+                        root / f"exact-{name}", defaults, **exact
+                    )
+                    exact_source._snapshot_range(
+                        exact_source.base_sha,
+                        exact_source.commit_shas[-1],
+                        exact_source.commit_shas[-1],
+                        integration_event=True,
+                    )
+                with self.subTest(resource=name, boundary="plus-one"):
+                    over_source = MeasuredSourceRepository(
+                        root / f"over-{name}", defaults, **plus_one
+                    )
+                    with self.assertRaises(sync.LimitFailure):
+                        over_source._snapshot_range(
+                            over_source.base_sha,
+                            over_source.commit_shas[-1],
+                            over_source.commit_shas[-1],
+                            integration_event=True,
+                        )
+
+            state = {
+                "source_repository": sync.SOURCE_REPOSITORY,
+                "source_branch": sync.SOURCE_BRANCH,
+                "target_repository": sync.TARGET_REPOSITORY,
+                "target_branch": sync.TARGET_BRANCH,
+                "cursor_commit": snapshot.base,
+                "initial_backfill": {
+                    "through_commit": snapshot.head,
+                    "commit_count": len(snapshot.commits),
+                    "completed": True,
+                },
+                "last_sync": None,
+            }
+            context = sync._context_payload(
+                state,
+                snapshot,
+                sync.Lifecycle(action="proceed", remote_sha=None, reason="ready"),
+                snapshot.observed_head,
+            )
+            context["relevant_source_wiki_docs"] = {
+                "docs/measured-context.md": ""
+            }
+            filler_bytes = measured_prompt_bytes - sync.serialized_message_bytes(context)
+            self.assertGreaterEqual(filler_bytes, 0)
+            context["relevant_source_wiki_docs"]["docs/measured-context.md"] = (
+                "x" * filler_bytes
+            )
+            self.assertEqual(
+                sync.serialized_message_bytes(context), measured_prompt_bytes
+            )
+
+            response_payload = {
+                "summary": "No impact.",
+                "decisions": [decision(SHA_ONE, "no-impact")],
+                "files": [],
+            }
+
+            def model_response() -> tuple:
+                return api_json(
+                    {
+                        "model": "deepseek-flash",
+                        "choices": [
+                            {
+                                "message": {
+                                    "content": json.dumps(response_payload)
+                                },
+                                "finish_reason": "stop",
+                            }
+                        ],
+                        "usage": {
+                            "prompt_tokens": 20,
+                            "completion_tokens": 10,
+                            "total_tokens": 30,
+                        },
+                    }
+                )
+
+            transport = FakeTransport([model_response()])
+            default_client = sync.DeepSeekClient(
+                transport,
+                "secret",
+                sync.AISettings(
+                    model="deepseek-flash",
+                    max_tokens=500,
+                    timeout_seconds=10,
+                    retries=1,
+                ),
+            )
+            default_client.generate(context)
+
+            boundary_transport = FakeTransport([model_response()])
+            boundary_client = sync.DeepSeekClient(
+                boundary_transport,
+                "secret",
+                sync.AISettings(
+                    model="deepseek-flash",
+                    max_tokens=500,
+                    timeout_seconds=10,
+                    retries=1,
+                ),
+                max_prompt_bytes=measured_prompt_bytes,
+            )
+            boundary_client.generate(context)
+            context["relevant_source_wiki_docs"]["docs/measured-context.md"] += "x"
+            with self.assertRaisesRegex(
+                sync.LimitFailure, f"maximum is {measured_prompt_bytes}"
+            ):
+                boundary_client.generate(context)
+            self.assertEqual(len(boundary_transport.requests), 1)
+
 
 class RealGitRepository:
     """Small standard-library Git fixture for source-history DAG tests."""
@@ -2117,6 +2358,7 @@ class BuildPreviewRecoveryTests(unittest.TestCase):
 
     def test_serialized_messages_prompt_is_capped_before_dispatch(self) -> None:
         transport = FakeTransport([])
+        default_prompt_limit = sync.Limits().max_prompt_bytes
         client = sync.DeepSeekClient(
             transport,
             "secret",
@@ -2124,10 +2366,10 @@ class BuildPreviewRecoveryTests(unittest.TestCase):
                 model="deepseek-chat", max_tokens=500, timeout_seconds=10, retries=1
             ),
         )
-        messages = [{"role": "user", "content": "x" * 1_500_000}]
+        messages = [{"role": "user", "content": "x" * (default_prompt_limit + 1)}]
         with mock.patch.object(sync, "build_messages", return_value=messages):
             with self.assertRaisesRegex(
-                sync.LimitFailure, "maximum is 1500000"
+                sync.LimitFailure, f"maximum is {default_prompt_limit}"
             ):
                 client.generate({"range": {"head_inclusive": SHA_ONE}})
         self.assertEqual(transport.requests, [])

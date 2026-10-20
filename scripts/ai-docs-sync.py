@@ -206,13 +206,13 @@ class TransientTransportFailure(SyncFailure):
 @dataclasses.dataclass(frozen=True)
 class Limits:
     max_commits: int = 40
-    max_diff_bytes: int = 700_000
-    max_prompt_bytes: int = 1_500_000
+    max_diff_bytes: int = 800_000
+    max_prompt_bytes: int = 3_500_000
     max_command_bytes: int = 2_000_000
     max_source_files: int = 8_000
-    max_current_files: int = 80
+    max_current_files: int = 200
     max_current_file_bytes: int = 300_000
-    max_current_total_bytes: int = 700_000
+    max_current_total_bytes: int = 2_000_000
     max_wiki_docs: int = 14
     max_wiki_file_bytes: int = 128_000
     max_wiki_total_bytes: int = 300_000
@@ -226,7 +226,7 @@ class Limits:
     def from_env(cls) -> "Limits":
         return cls(
             max_current_files=_bounded_env(
-                "AI_DOCS_MAX_CURRENT_FILES", 80, minimum=1, maximum=80
+                "AI_DOCS_MAX_CURRENT_FILES", 200, minimum=1, maximum=200
             ),
             max_wiki_docs=_bounded_env(
                 "AI_DOCS_MAX_WIKI_DOCS", 14, minimum=1, maximum=14
@@ -1521,7 +1521,7 @@ class DeepSeekClient:
         settings: AISettings,
         *,
         endpoint: str = AI_ENDPOINT,
-        max_prompt_bytes: int = 1_500_000,
+        max_prompt_bytes: int = Limits().max_prompt_bytes,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         if not api_key:
