@@ -1,8 +1,12 @@
 name: AI firmware docs sync
 
 on:
+  push:
+    branches: [master]
+    paths:
+      - .ai-docs/state.json
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch:
   repository_dispatch:
     types: [firmware-updated]
@@ -37,15 +41,21 @@ jobs:
         run: >-
           python3 -m unittest discover
           --start-directory scripts
-          --pattern 'test_ai_docs_sync.py'
+          --pattern 'test_ai_docs*.py'
           --verbose
 
   sync:
-    name: Prepare, generate, and open documentation PR
+    name: Prepare, generate, select, and validate publication
     needs: unit-tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: github.repository == 'capoworks/capoworks-ecu-docs'
+    outputs:
+      publish: ${{ steps.select.outputs.publish }}
+      pr_number: ${{ steps.select.outputs.pr_number }}
+      base_sha: ${{ steps.select.outputs.base_sha }}
+      head_sha: ${{ steps.select.outputs.head_sha }}
+      merge_sha: ${{ steps.select.outputs.merge_sha }}
     permissions:
       contents: write
       pull-requests: write
@@ -62,6 +72,11 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.13"
+
+      - name: Recover a missed deploy without remerging
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 -u scripts/ai-docs-publish.py recover
 
       - name: Prepare source range and audit context
         env:
@@ -91,3 +106,96 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           AI_DOCS_WORK_DIR: ${{ runner.temp }}/ai-docs-sync
         run: python3 -u scripts/ai-docs-sync.py finalize
+
+      # Select is read-only even though this job can push. It accepts only the
+      # fixed bot branch and validates the exact GitHub merge-preview tree.
+      - name: Select and validate the pending publication
+        id: select
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          AI_DOCS_WORK_DIR: ${{ runner.temp }}/ai-docs-sync
+        run: python3 -u scripts/ai-docs-publish.py select
+
+  validate-publication:
+    name: Validate exact merge preview
+    needs: sync
+    if: needs.sync.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the exact merge preview without credentials
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.sync.outputs.merge_sha }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install Node.js dependencies
+        run: npm ci
+
+      - name: Lint code, links, and Markdown
+        run: npm run lint
+
+      - name: Run all stdlib documentation tests
+        run: >-
+          python3 -m unittest discover
+          --start-directory scripts
+          --pattern 'test_ai_docs*.py'
+          --verbose
+
+      - name: Build the documentation site
+        run: npm run build
+
+  merge-publication:
+    name: Merge validated publication and dispatch follow-ups
+    needs: [sync, validate-publication]
+    if: >-
+      needs.sync.outputs.publish == 'true' &&
+      needs.validate-publication.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - name: Check out the selected trusted base without persisted credentials
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.sync.outputs.base_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      # REST merge pins the PR head but cannot atomically pin its base.
+      # Post-merge tree check rejects unexpected results; Pages fully validates actual master before public deploy.
+      # GitHub enforces any configured protection.
+      - name: Revalidate, merge, and dispatch deploy and sync
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ needs.sync.outputs.pr_number }}
+          BASE_SHA: ${{ needs.sync.outputs.base_sha }}
+          HEAD_SHA: ${{ needs.sync.outputs.head_sha }}
+          MERGE_SHA: ${{ needs.sync.outputs.merge_sha }}
+        run: >-
+          python3 -u scripts/ai-docs-publish.py merge
+          --pr-number "$PR_NUMBER"
+          --base-sha "$BASE_SHA"
+          --head-sha "$HEAD_SHA"
+          --merge-sha "$MERGE_SHA"
