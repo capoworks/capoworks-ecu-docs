@@ -256,6 +256,61 @@ class PathMarkdownAndFrontmatterTests(TempDocs):
         )
         self.assertEqual(len(result.files), 1)
 
+    def test_inline_code_with_xml_like_tag_is_allowed_byte_for_byte(self) -> None:
+        content = (
+            "`integration/LiveData.yaml` owns live-data usage declarations and "
+            "marks module-specific usages with `module:`. YAML order fixes "
+            "`LDS_<usage>` IDs, so an unselected module keeps its declaration and "
+            "IDs while its fragment and packed output usage disappear.\n"
+        )
+        result = sync.validate_sync_result(
+            payload([{"path": "docs/build-modules.md", "content": content}]),
+            [SHA_ONE],
+            self.docs,
+            self.limits,
+        )
+        self.assertEqual(result.files[0].content, content)
+
+    def test_mdx_syntax_inside_inline_code_is_allowed(self) -> None:
+        content = (
+            "Use `{process.env.SECRET}` literally and keep "
+            "`[click](javascript:alert(1))` as example text.\n\n"
+            "`import Widget from './Widget'`\n"
+        )
+        sync.validate_markdown_body(content, "docs/SafeInlineCode.md")
+
+    def test_double_backtick_span_may_contain_single_backticks(self) -> None:
+        content = "Use ``a ` and <script>alert(1)</script>`` as literal text.\n"
+        sync.validate_markdown_body(content, "docs/SafeInlineCode.md")
+
+    def test_markdown_syntax_after_inline_code_is_still_rejected(self) -> None:
+        unsafe_bodies = [
+            ("`safe` <script>alert(1)</script>\n", "JSX or raw HTML"),
+            ("`safe`<script>alert(1)</script>\n", "JSX or raw HTML"),
+            ("`safe` {process.env.SECRET}\n", "MDX expression"),
+            ("`safe` import Widget from './Widget'\n", "import/export"),
+            ("`safe` [click](javascript:alert(1))\n", "dangerous executable link"),
+        ]
+        for body, error in unsafe_bodies:
+            with self.subTest(body=body):
+                with self.assertRaisesRegex(sync.ValidationFailure, error):
+                    sync.validate_markdown_body(body, "docs/Unsafe.md")
+
+    def test_unclosed_escaped_and_mismatched_backticks_do_not_mask_unsafe_text(
+        self,
+    ) -> None:
+        unsafe_bodies = [
+            "`unclosed <script>alert(1)</script>\n",
+            "``mismatched ` <script>alert(1)</script>\n",
+            "`mismatched`` <script>alert(1)</script>\n",
+            r"\`escaped <script>alert(1)</script>\`" + "\n",
+            r"`safe\`<script>alert(1)</script>" + "\n",
+        ]
+        for body in unsafe_bodies:
+            with self.subTest(body=body):
+                with self.assertRaisesRegex(sync.ValidationFailure, "JSX or raw HTML"):
+                    sync.validate_markdown_body(body, "docs/Unsafe.md")
+
     def test_invalid_and_noncanonical_paths_are_rejected(self) -> None:
         bad_paths = [
             "../docs/Bad.md",

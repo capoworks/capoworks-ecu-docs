@@ -1032,6 +1032,48 @@ def validate_new_frontmatter(content: str) -> None:
             raise ValidationFailure(f"frontmatter value is not safely scalar: {key}")
 
 
+def _mask_inline_code_spans(line: str) -> str:
+    """Mask only same-line code spans with unambiguous matching delimiters."""
+    masked = list(line)
+    cursor = 0
+    while cursor < len(line):
+        if line[cursor] != "`":
+            cursor += 1
+            continue
+        opener_end = cursor
+        while opener_end < len(line) and line[opener_end] == "`":
+            opener_end += 1
+        backslashes = 0
+        before = cursor - 1
+        while before >= 0 and line[before] == "\\":
+            backslashes += 1
+            before -= 1
+        if backslashes % 2:
+            cursor = opener_end
+            continue
+        delimiter_length = opener_end - cursor
+        search_at = opener_end
+        closer_end: int | None = None
+        while search_at < len(line):
+            if line[search_at] != "`":
+                search_at += 1
+                continue
+            run_end = search_at
+            while run_end < len(line) and line[run_end] == "`":
+                run_end += 1
+            if run_end - search_at == delimiter_length:
+                closer_end = run_end
+                break
+            search_at = run_end
+        if closer_end is None:
+            cursor = opener_end
+            continue
+        for index in range(cursor, closer_end):
+            masked[index] = " "
+        cursor = closer_end
+    return "".join(masked)
+
+
 def validate_markdown_body(body: str, path: str) -> None:
     fence_character: str | None = None
     fence_length = 0
@@ -1050,19 +1092,20 @@ def validate_markdown_body(body: str, path: str) -> None:
             continue
         if fence_character is not None:
             continue
-        if MDX_STATEMENT_RE.match(line):
+        residual = _mask_inline_code_spans(line)
+        if MDX_STATEMENT_RE.match(residual):
             raise ValidationFailure(
                 f"{path}:{line_number} contains executable MDX import/export syntax"
             )
-        if XML_TAG_RE.search(line):
+        if XML_TAG_RE.search(residual):
             raise ValidationFailure(
                 f"{path}:{line_number} contains JSX or raw HTML syntax"
             )
-        if "{" in line or "}" in line:
+        if "{" in residual or "}" in residual:
             raise ValidationFailure(
                 f"{path}:{line_number} contains an MDX expression outside a code fence"
             )
-        if DANGEROUS_LINK_RE.search(line):
+        if DANGEROUS_LINK_RE.search(residual):
             raise ValidationFailure(
                 f"{path}:{line_number} contains a dangerous executable link"
             )
