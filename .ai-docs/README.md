@@ -69,17 +69,23 @@ described only when they have their own user-facing effect.
 The sync gathers every full commit diff plus bounded, deterministically selected
 current source files and relevant source/target wiki documents. Inline files
 named `hella_opst.md` and `tunerstudio-protection.md` receive retrieval
-priority. Current source files are hard-capped at 300,000 bytes each and
-700,000 bytes in aggregate, while the prepared context and serialized model
-prompt are hard-capped at 1,500,000 bytes. Oversize, truncated, or partially
-decoded source material fails the run; it is never silently clipped. If the
-chosen integration event exceeds a preparation safety limit, including its
-commit count, diff or file caps, current-payload or wiki caps, or the exact
+priority. The largest measured modularity range, 35 commits, has 782,933 diff
+bytes, 186 current source files totaling 1,716,653 bytes, and an exact
+serialized prompt of 3,019,518 bytes. The defaults accommodate it with explicit
+limits of 40 commits, 800,000 diff bytes, 200 current files totaling 2,000,000
+bytes, a 300,000-byte per-file cap, and a 3,500,000-byte serialized prompt. These
+bounds are finite rather than unlimited. Oversize, truncated, or partially
+decoded source material fails the run; it is never silently clipped.
+
+If the chosen integration event exceeds a preparation safety limit, including
+its commit count, diff or file caps, current-payload or wiki caps, or the exact
 serialized prompt size, the run stops with Action Required. The message names
 the exact event SHA `B` and the original limit violation, and requires a
-manually reviewed pull request for that event. It does not advance the cursor or
-skip the event. During the initial backfill, limit failures retain their normal
-fail-closed behavior instead of this integration-event recovery message.
+manually reviewed pull request for that event. A divergent branch still needs a
+complete single-event audit; the sync does not automatically create checkpoint
+subdivisions. It does not advance the cursor or skip the event. During the
+initial backfill, limit failures retain their normal fail-closed behavior
+instead of this integration-event recovery message.
 
 If source `master` already equals the merged cursor, the run exits without an AI
 request. If there are commits but no user-facing impact, the bot still opens a
