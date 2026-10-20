@@ -2332,6 +2332,354 @@ class ModelTransportTests(unittest.TestCase):
         self.assertEqual(too_small_transport.requests, [])
 
 
+class GenerationRepairTests(TempDocs):
+    def setUp(self) -> None:
+        super().setUp()
+        self.test_limits = sync.Limits()
+        self.work_dir = self.root / "work"
+        self.work_dir.mkdir()
+        self.context = {
+            "range": {
+                "base_exclusive": "a" * 40,
+                "head_inclusive": SHA_ONE,
+                "commit_count": 1,
+            },
+            "commits": [prepared_commit(SHA_ONE)],
+            "prior_state_digest": "prepared-state-digest",
+        }
+        sync.write_json(self.work_dir / "status.json", {"status": "ready"})
+        sync.write_json(self.work_dir / "prepared.json", self.context)
+        self.invalid_payload = payload(
+            [
+                {
+                    "path": "docs/Generated.md",
+                    "content": "# Invalid\n\n<Callout />\n",
+                }
+            ]
+        )
+        self.valid_payload = payload(
+            [
+                {
+                    "path": "docs/Generated.md",
+                    "content": "# Valid\n\nSafe Markdown replacement.\n",
+                }
+            ]
+        )
+
+    def response(
+        self,
+        content: object,
+        *,
+        model: str = "deepseek-flash",
+        prompt_tokens: int = 20,
+        completion_tokens: int = 10,
+        cache_hit_tokens: int | None = 5,
+        cache_miss_tokens: int | None = None,
+    ) -> tuple:
+        usage = {
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": prompt_tokens + completion_tokens,
+        }
+        if cache_hit_tokens is not None:
+            usage["prompt_cache_hit_tokens"] = cache_hit_tokens
+        if cache_miss_tokens is not None:
+            usage["prompt_cache_miss_tokens"] = cache_miss_tokens
+        return api_json(
+            {
+                "model": model,
+                "choices": [
+                    {
+                        "message": {"content": json.dumps(content)},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": usage,
+            }
+        )
+
+    def client(
+        self,
+        transport: FakeTransport,
+        *,
+        max_prompt_bytes: int = sync.Limits().max_prompt_bytes,
+    ) -> sync.DeepSeekClient:
+        return sync.DeepSeekClient(
+            transport,
+            "secret",
+            sync.AISettings(
+                model="deepseek-flash",
+                max_tokens=500,
+                timeout_seconds=10,
+                retries=1,
+            ),
+            max_prompt_bytes=max_prompt_bytes,
+        )
+
+    def generate(self, client: sync.DeepSeekClient, limits: object | None = None) -> int:
+        if limits is None:
+            limits = self.test_limits
+        return sync.generate_phase(
+            root=self.root,
+            work_dir=self.work_dir,
+            ai_client=client,
+            limits=limits,
+        )
+
+    def test_valid_first_result_uses_one_call(self) -> None:
+        transport = FakeTransport([self.response(self.valid_payload)])
+
+        self.assertEqual(self.generate(self.client(transport)), 0)
+
+        self.assertEqual(len(transport.requests), 1)
+        request = json.loads(transport.requests[0]["body"])
+        self.assertNotIn("UNTRUSTED_REPAIR_METADATA", json.dumps(request))
+        artifact = sync.read_json(self.work_dir / "result.json")
+        self.assertEqual(artifact["result"], self.valid_payload)
+        self.assertEqual(
+            artifact["usage"],
+            {
+                "prompt_tokens": 20,
+                "completion_tokens": 10,
+                "total_tokens": 30,
+                "prompt_cache_hit_tokens": 5,
+            },
+        )
+
+    def test_invalid_then_valid_result_repairs_once_and_sums_usage(self) -> None:
+        transport = FakeTransport(
+            [
+                self.response(self.invalid_payload),
+                self.response(
+                    self.valid_payload,
+                    prompt_tokens=40,
+                    completion_tokens=6,
+                    cache_hit_tokens=7,
+                ),
+            ]
+        )
+        context_before = copy.deepcopy(self.context)
+        original_validate = sync.validate_sync_result
+        validations: list[tuple[object, list[str], pathlib.Path, object]] = []
+
+        def tracked_validate(
+            candidate: object,
+            commit_shas: list[str],
+            docs_root: pathlib.Path,
+            limits: object,
+        ) -> object:
+            validations.append(
+                (copy.deepcopy(candidate), list(commit_shas), docs_root, limits)
+            )
+            return original_validate(candidate, commit_shas, docs_root, limits)
+
+        with mock.patch.object(
+            sync, "validate_sync_result", side_effect=tracked_validate
+        ), self.assertLogs(sync.LOG, level="WARNING") as logs:
+            self.assertEqual(self.generate(self.client(transport)), 0)
+
+        self.assertEqual(len(logs.output), 1)
+        self.assertIn("one corrective attempt", logs.output[0])
+        self.assertNotIn("# Invalid", logs.output[0])
+        self.assertEqual(len(transport.requests), 2)
+        self.assertEqual(len(validations), 2)
+        self.assertEqual(
+            [item[0] for item in validations],
+            [self.invalid_payload, self.valid_payload],
+        )
+        for _, commit_shas, docs_root, validation_limits in validations:
+            self.assertEqual(commit_shas, [SHA_ONE])
+            self.assertEqual(docs_root, self.docs)
+            self.assertIs(validation_limits, self.test_limits)
+        self.assertEqual(
+            sync.read_json(self.work_dir / "prepared.json"), context_before
+        )
+
+        first_request = json.loads(transport.requests[0]["body"])
+        second_request = json.loads(transport.requests[1]["body"])
+        source_json = json.dumps(
+            context_before, ensure_ascii=False, separators=(",", ":")
+        )
+        self.assertIn(source_json, first_request["messages"][1]["content"])
+        self.assertIn(source_json, second_request["messages"][1]["content"])
+        trusted_system = second_request["messages"][0]["content"]
+        trusted_user = second_request["messages"][1]["content"]
+        for instruction in (trusted_system, trusted_user):
+            self.assertIn("full schema", instruction)
+            self.assertIn("commit order", instruction)
+            self.assertIn("source-evidence", instruction)
+            self.assertIn("Markdown/MDX rules", instruction)
+        self.assertIn("UNTRUSTED_REPAIR_METADATA", trusted_user)
+        metadata_json = trusted_user.split(
+            "UNTRUSTED_REPAIR_METADATA_JSON_BEGIN\n", 1
+        )[1].split("\nUNTRUSTED_REPAIR_METADATA_JSON_END", 1)[0]
+        self.assertEqual(
+            json.loads(metadata_json),
+            {
+                "rejected_result": self.invalid_payload,
+                "validation_error": (
+                    "docs/Generated.md:3 contains JSX or raw HTML syntax"
+                ),
+            },
+        )
+
+        artifact = sync.read_json(self.work_dir / "result.json")
+        self.assertEqual(artifact["result"], self.valid_payload)
+        self.assertEqual(artifact["model"], "deepseek-flash")
+        self.assertEqual(
+            artifact["usage"],
+            {
+                "prompt_tokens": 60,
+                "completion_tokens": 16,
+                "total_tokens": 76,
+                "prompt_cache_hit_tokens": 12,
+            },
+        )
+
+    def test_repair_usage_omits_cache_metrics_missing_from_either_response(
+        self,
+    ) -> None:
+        cases = (
+            (
+                "first omits cache metrics",
+                {"cache_hit_tokens": None},
+                {"cache_hit_tokens": 7, "cache_miss_tokens": 3},
+            ),
+            (
+                "second omits cache metrics",
+                {"cache_hit_tokens": 7, "cache_miss_tokens": 3},
+                {"cache_hit_tokens": None},
+            ),
+        )
+        for name, first_options, second_options in cases:
+            with self.subTest(name=name):
+                transport = FakeTransport(
+                    [
+                        self.response(self.invalid_payload, **first_options),
+                        self.response(
+                            self.valid_payload,
+                            prompt_tokens=40,
+                            completion_tokens=6,
+                            **second_options,
+                        ),
+                    ]
+                )
+
+                self.assertEqual(self.generate(self.client(transport)), 0)
+
+                artifact = sync.read_json(self.work_dir / "result.json")
+                self.assertEqual(
+                    artifact["usage"],
+                    {
+                        "prompt_tokens": 60,
+                        "completion_tokens": 16,
+                        "total_tokens": 76,
+                    },
+                )
+
+    def test_invalid_repair_fails_closed_without_result(self) -> None:
+        second_invalid = payload(
+            [
+                {
+                    "path": "docs/Generated.md",
+                    "content": "# Still invalid\n\n{unsafeExpression}\n",
+                }
+            ]
+        )
+        transport = FakeTransport(
+            [
+                self.response(self.invalid_payload),
+                self.response(second_invalid),
+            ]
+        )
+
+        with self.assertRaisesRegex(sync.ValidationFailure, "MDX expression"):
+            self.generate(self.client(transport))
+
+        self.assertEqual(len(transport.requests), 2)
+        self.assertFalse((self.work_dir / "result.json").exists())
+
+    def test_repair_prompt_limit_failure_is_not_retried(self) -> None:
+        validation_error = "docs/Generated.md:3 contains JSX or raw HTML syntax"
+        repair_metadata = {
+            "rejected_result": self.invalid_payload,
+            "validation_error": validation_error,
+        }
+        repair_prompt_bytes = sync.serialized_message_bytes(
+            self.context, repair_metadata=repair_metadata
+        )
+        transport = FakeTransport(
+            [
+                self.response(self.invalid_payload),
+                self.response(self.valid_payload),
+            ]
+        )
+
+        with self.assertRaisesRegex(
+            sync.LimitFailure, f"maximum is {repair_prompt_bytes - 1}"
+        ):
+            self.generate(
+                self.client(transport, max_prompt_bytes=repair_prompt_bytes - 1)
+            )
+
+        self.assertEqual(len(transport.requests), 1)
+        self.assertFalse((self.work_dir / "result.json").exists())
+
+    def test_repair_prompt_exact_limit_is_accepted(self) -> None:
+        validation_error = "docs/Generated.md:3 contains JSX or raw HTML syntax"
+        repair_metadata = {
+            "rejected_result": self.invalid_payload,
+            "validation_error": validation_error,
+        }
+        repair_prompt_bytes = sync.serialized_message_bytes(
+            self.context, repair_metadata=repair_metadata
+        )
+        transport = FakeTransport(
+            [
+                self.response(self.invalid_payload),
+                self.response(self.valid_payload),
+            ]
+        )
+
+        self.assertEqual(
+            self.generate(
+                self.client(transport, max_prompt_bytes=repair_prompt_bytes)
+            ),
+            0,
+        )
+
+        self.assertEqual(len(transport.requests), 2)
+        self.assertTrue((self.work_dir / "result.json").is_file())
+
+    def test_repair_api_failure_is_not_retried(self) -> None:
+        transport = FakeTransport(
+            [
+                self.response(self.invalid_payload),
+                api_json({"message": "invalid request"}, status=400),
+            ]
+        )
+
+        with self.assertRaisesRegex(sync.ApiFailure, "HTTP 400"):
+            self.generate(self.client(transport))
+
+        self.assertEqual(len(transport.requests), 2)
+        self.assertFalse((self.work_dir / "result.json").exists())
+
+    def test_changed_model_name_on_repair_is_rejected(self) -> None:
+        transport = FakeTransport(
+            [
+                self.response(self.invalid_payload),
+                self.response(self.valid_payload, model="deepseek-chat"),
+            ]
+        )
+
+        with self.assertRaisesRegex(sync.ApiFailure, "model changed"):
+            self.generate(self.client(transport))
+
+        self.assertEqual(len(transport.requests), 2)
+        self.assertFalse((self.work_dir / "result.json").exists())
+
+
 class BuildPreviewRecoveryTests(unittest.TestCase):
     def test_dispatch_failure_reports_pull_request_and_manual_command(self) -> None:
         class FailingGithub:
