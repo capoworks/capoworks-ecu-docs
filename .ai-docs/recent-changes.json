@@ -2,9 +2,49 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50",
-  "latest_analyzed_at": "2026-10-20T17:12:47.056249+00:00",
+  "latest_analyzed_commit": "728292632f3c1ae1fb4a1747d7809cfd23204658",
+  "latest_analyzed_at": "2026-10-20T17:18:35.352752+00:00",
   "entries": [
+    {
+      "commit": "728292632f3c1ae1fb4a1747d7809cfd23204658",
+      "subject": "Merge pull request #69 from capoworks/ops/github-hosted-runners",
+      "authored_at": "2026-10-20T12:44:28+02:00",
+      "parents": [
+        "ee8be3687e27842eef36445f5c91a8d8ef83ff50",
+        "0c023c7d17aae037cf78fc2fcae90ab825cb6230"
+      ],
+      "comment": "This merge integrates the two CI commits already covered above. The combined diff contains only the same workflow runner and binutils changes, with no conflict-resolution edits and no additional user-facing effect.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-20T17:18:35.352752+00:00",
+      "integration_batch_commit": "728292632f3c1ae1fb4a1747d7809cfd23204658"
+    },
+    {
+      "commit": "0c023c7d17aae037cf78fc2fcae90ab825cb6230",
+      "subject": "ci: use bundled ARM binutils on hosted firmware builds",
+      "authored_at": "2026-10-20T10:59:25+02:00",
+      "parents": [
+        "4c088b92c1536af286170689d67e9b3f593a8ff8"
+      ],
+      "comment": "The hosted firmware build now links the bundled ARM objcopy and objdump into a temporary tools directory and adds it to the job PATH. This is CI-internal tooling setup; the documented local Core8 helper already uses the bundled ARM binutils, and no firmware, artifact, or user workflow changes.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-20T17:18:35.352752+00:00",
+      "integration_batch_commit": "728292632f3c1ae1fb4a1747d7809cfd23204658"
+    },
+    {
+      "commit": "4c088b92c1536af286170689d67e9b3f593a8ff8",
+      "subject": "ci: move software workflows to GitHub-hosted runners",
+      "authored_at": "2026-10-20T10:58:02+02:00",
+      "parents": [
+        "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
+      ],
+      "comment": "The software workflows were moved from a self-hosted runner label to GitHub-hosted Ubuntu 24.04 runners, with Java 21 and build packages installed inside the job. This affects only how Capoworks CI jobs are executed; firmware behavior, artifacts for users, and local build instructions are unchanged.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-20T17:18:35.352752+00:00",
+      "integration_batch_commit": "728292632f3c1ae1fb4a1747d7809cfd23204658"
+    },
     {
       "commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50",
       "subject": "Merge pull request #67 from capoworks/build/firmware-memory-budget",
@@ -766,47 +806,6 @@
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-19T22:22:03+00:00",
       "integration_batch_commit": "319d4e5145062a0fc802d3bc3f79a7f3be233625"
-    },
-    {
-      "commit": "28d56b01d7b3e7136bf15bbad3000be8ef91c84f",
-      "subject": "Merge pull request #46 from capoworks/align/pr-20",
-      "authored_at": "2026-10-18T16:58:24+02:00",
-      "parents": [
-        "9e5c2b3ffaf806706debe1b57b565d839b9e381c",
-        "c65ff75a4513b23648c4f0bdfe2f44580c7b261a"
-      ],
-      "comment": "This integration merge carries the Capoworks CI update from c65ff75a4513b23648c4f0bdfe2f44580c7b261a. It adds no separate firmware behavior or merge-resolution change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "28d56b01d7b3e7136bf15bbad3000be8ef91c84f"
-    },
-    {
-      "commit": "c65ff75a4513b23648c4f0bdfe2f44580c7b261a",
-      "subject": "ci: verify Capoworks pull requests and publish build reports",
-      "authored_at": "2026-10-17T20:58:09+02:00",
-      "parents": [
-        "b44802638c7e07bcd18789a2c7c90b21dad67711"
-      ],
-      "comment": "This adds Capoworks pull-request CI checks and build reports, with small test and interface adjustments needed by that workflow. It changes contributor validation rather than a documented end-user engine setting or procedure.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "28d56b01d7b3e7136bf15bbad3000be8ef91c84f"
-    },
-    {
-      "commit": "9e5c2b3ffaf806706debe1b57b565d839b9e381c",
-      "subject": "Merge pull request #45 from capoworks/align/pr-25",
-      "authored_at": "2026-10-18T16:58:11+02:00",
-      "parents": [
-        "9dcf59a0c875cb4774cac5c1d8c4061ea27a19fe",
-        "b44802638c7e07bcd18789a2c7c90b21dad67711"
-      ],
-      "comment": "This integration merge carries the flash-test correction from b44802638c7e07bcd18789a2c7c90b21dad67711. It adds no separate firmware behavior or merge-resolution change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "9e5c2b3ffaf806706debe1b57b565d839b9e381c"
     }
   ]
 }
