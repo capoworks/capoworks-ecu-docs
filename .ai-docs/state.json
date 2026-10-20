@@ -4,7 +4,7 @@
   "source_branch": "master",
   "target_repository": "capoworks/capoworks-ecu-docs",
   "target_branch": "master",
-  "cursor_commit": "48628aefd9b14e32a6af54a3747e2ebccd917828",
+  "cursor_commit": "19b3d53c158fbcd11fa14ecaebbcbb7cbc49552d",
   "initial_backfill": {
     "through_commit": "be02e3cdaa2c177d05853a41af6dacc9c0766b77",
     "commit_count": 5,
@@ -12,32 +12,33 @@
   },
   "last_sync": {
     "range": {
-      "base_exclusive": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3",
-      "head_inclusive": "48628aefd9b14e32a6af54a3747e2ebccd917828",
+      "base_exclusive": "48628aefd9b14e32a6af54a3747e2ebccd917828",
+      "head_inclusive": "19b3d53c158fbcd11fa14ecaebbcbb7cbc49552d",
       "commit_count": 1
     },
     "model": "deepseek-flash",
     "usage": {
-      "prompt_tokens": 38093,
-      "completion_tokens": 191,
-      "total_tokens": 38284,
-      "prompt_cache_hit_tokens": 0,
-      "prompt_cache_miss_tokens": 38093
+      "prompt_tokens": 37984,
+      "completion_tokens": 161,
+      "total_tokens": 38145,
+      "prompt_cache_hit_tokens": 896,
+      "prompt_cache_miss_tokens": 37088
     },
-    "summary": "The Capoworks ECU README now links to the wiki's Recent changes page beside the existing Wiki and Documentation link. No firmware, tune, flashing, or build behavior changed.",
+    "summary": "No user-facing firmware documentation change is needed for this commit. It only normalizes README line endings.",
     "outcome": "no-impact",
     "decisions": [
       {
-        "commit": "48628aefd9b14e32a6af54a3747e2ebccd917828",
+        "commit": "19b3d53c158fbcd11fa14ecaebbcbb7cbc49552d",
         "decision": "no-impact",
-        "rationale": "The repository README gained a Recent changes link to the wiki. This is a documentation navigation change only; no firmware, tune format, flashing, or builder workflow is affected, so no wiki page needs updating.",
+        "rationale": "The commit only converts README.md line endings from CRLF to LF. The rendered text, links, tune format, build steps, and firmware behavior are unchanged, so no driver, tuner, installer, or builder action is required.",
         "evidence": [
-          "README.md: link line changed to add [Recent changes](https://capoworks.github.io/capoworks-ecu-docs/recent-changes/) between Wiki and Documentation and Source",
-          "README.md: rest of the file is unchanged apart from line-ending normalization (LF to CRLF)"
+          "README.md diff shows every line removed with trailing \\r and re-added without it",
+          "No content, link, or code change in the README.md diff",
+          "changed_paths contains only README.md"
         ]
       }
     ],
     "files_changed": [],
-    "recorded_at": "2026-10-20T02:27:44.052776+00:00"
+    "recorded_at": "2026-10-20T16:12:15.115608+00:00"
   }
 }
