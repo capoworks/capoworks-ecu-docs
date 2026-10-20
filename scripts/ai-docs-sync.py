@@ -2633,9 +2633,10 @@ def _pull_request_body(
     lines.extend(
         [
             "",
-            "This pull request is never merged by automation. A supplemental "
-            "`build-preview.yml` dispatch is requested for the exact bot commit, but "
-            "that dispatch does not create or satisfy required PR status checks.",
+            "After generation and isolated validation, automation may merge this pull "
+            "request only when the exact merge preview passes the trusted lint, test, "
+            "build, history, state, and diff checks. Automation never bypasses branch "
+            "protection.",
         ]
     )
     body = "\n".join(lines) + "\n"

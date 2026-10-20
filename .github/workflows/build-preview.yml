@@ -45,5 +45,8 @@ jobs:
       - name: Install Node.js dependencies
         run: npm ci
 
+      - name: Lint code, links, and Markdown
+        run: npm run lint
+
       - name: Build
         run: npm run build

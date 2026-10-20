@@ -21,13 +21,19 @@ This directory contains the merged cursor state and operating notes for
 3. Under **Settings > Actions > General**, allow GitHub Actions to create pull
    requests. If organization policy restricts the default token, explicitly
    allow the `contents: write`, `pull-requests: write`, and `actions: write`
-   permissions requested by the sync job. The unit-test job remains read-only.
-4. Protect `master` and decide whether the automation branch needs review. The
-   workflow never merges its pull request.
+   permissions requested by the sync and merge jobs. Unit-test and publication
+   validation jobs remain read-only.
+4. Protect `master` as required. The workflow may merge its own pull request
+   after a separate read-only validation job and an exact merge-preview check
+   succeed. It uses the normal GitHub merge API and never bypasses branch
+   protection.
 
-The workflow runs every six hours, supports manual `workflow_dispatch`, and
+The workflow polls every 15 minutes, supports manual `workflow_dispatch`, and
 accepts the public `firmware-updated` `repository_dispatch` event from the
-firmware repository.
+firmware repository. GitHub may delay scheduled workflows, so the schedule is
+a reliable catch-up path rather than a real-time trigger. A push to `master`
+that changes `.ai-docs/state.json` also starts a catch-up run, which covers
+manually merged documentation PRs.
 
 ## Initial history and normal operation
 
@@ -75,17 +81,45 @@ manually reviewed pull request for that event. It does not advance the cursor or
 skip the event. During the initial backfill, limit failures retain their normal
 fail-closed behavior instead of this integration-event recovery message.
 
-If source `master` already equals the merged cursor, the run exits before an API
-call. If there are commits but no user-facing impact, the bot still opens a
-state-only pull request containing every per-commit no-impact decision. This
-audit trail and cursor become authoritative only after a human merges the PR.
-Opening a PR does not advance the checked-in cursor because `master` does not
-contain the bot change yet.
+If source `master` already equals the merged cursor, the run exits without an AI
+request. If there are commits but no user-facing impact, the bot still opens a
+state-only pull request containing every per-commit no-impact decision. Opening
+a PR does not advance the checked-in cursor; the publication merge does.
 
 ## Pull-request lifecycle
 
-- An open `automation/firmware-docs` PR causes later runs to skip as pending.
-  Once it is merged, the next run catches up from the updated master cursor.
+- An open `automation/firmware-docs` PR causes preparation to skip as pending.
+  The publication selector resumes that existing PR instead of asking the
+  model to regenerate it.
+- The selector accepts only an open, non-draft PR opened by
+  `github-actions[bot]`, carrying the sync marker, with the exact target
+  repository, automation head branch, `master` base, and sync-bot head commit.
+  A foreign repository, human PR, extra commit, changed head, or changed base
+  is refused.
+- The exact `refs/pull/<number>/merge` tree is fetched and validated against
+  current `master`. The diff may change only `docs/**/*.md`,
+  `.ai-docs/state.json`, exactly one new
+  `.ai-docs/history/<new-cursor>.json`, and optionally
+  `.ai-docs/recent-changes.json`. Deletes, renames, symlinks, executable-mode
+  changes, configuration, scripts, workflows, dependencies, and credentials
+  are outside the whitelist.
+- A separate read-only job checks out the selected merge-preview SHA without
+  persisted credentials and runs `npm ci`, the complete lint suite, all stdlib
+  documentation tests, and the production build. It has no model secret and
+  no write token. Pull-request checks created by `GITHUB_TOKEN` are not trusted
+  as this gate because GitHub may leave them awaiting approval or expire them.
+- A merge job requeries the PR and `master`, rejects any head, base, membership,
+  or preview change, and calls the normal REST merge API with the expected head
+  SHA. The merge commit must have exactly the validated base and head as its
+  parents. The job does not use auto-merge or administrator bypass.
+- After a successful merge, the job explicitly dispatches `deploy.yml` and
+  `ai-docs-sync.yml` on `master`, because a merge made with `GITHUB_TOKEN` may
+  suppress the corresponding `push` workflows. The documentation workflow
+  handles one integration event per run, so repeated catch-up dispatches make
+  bounded progress without creating a large combined PR.
+- If deploy dispatch still fails after the merge, the run records the merged
+  SHA and failed workflow in its job summary. Later runs check for a deploy run
+  on current `master` and retry the missing dispatch without merging again.
 - A closed, unmerged bot PR stops the workflow for an explicit human decision.
   It is not treated as an opening to replace the branch.
 - A bot branch with no recognizable PR history, or with commits newer than its
@@ -99,8 +133,9 @@ The fixed commits use identity `ai-docs-sync[bot]`. The checkout does not persis
 credentials. Both prepare and finalize receive the same job-scoped `GITHUB_TOKEN`
 with `contents`, pull-request, and Actions write permissions; prepare uses it only
 for read-only API operations, while finalize writes and opens the pull request.
-Generation receives only `DEEPSEEK_API_KEY` and no `GITHUB_TOKEN`; separate build
-workflows have `contents: read` and no model secret.
+Generation receives only `DEEPSEEK_API_KEY` and no `GITHUB_TOKEN`; the
+publication validation job has `contents: read` and no model secret; and the
+merge job has a write token but no model secret.
 
 ## Validation and trust boundary
 
@@ -157,16 +192,19 @@ Model requests use JSON mode, an explicit bounded `max_tokens` value, and
 `thinking: {"type": "disabled"}` so the structured result is not consumed by
 the API's default thinking mode.
 
-## Preview dispatch limitation
+## Preview checks
 
 GitHub can suppress or require manual approval of pull-request workflow runs
-triggered by a PR opened with `GITHUB_TOKEN`, so do not rely on them starting
-automatically. After opening the PR, the workflow explicitly dispatches
-`build-preview.yml` on `master` with the exact bot commit SHA in an input named
-`ref`. The read-only preview workflow must honor that manual `ref`. This
-supplemental dispatch does not create, attach, or satisfy required pull-request
-status checks; approving PR checks is a separate action. Branch protection must
-not assume otherwise.
+triggered by a PR opened with `GITHUB_TOKEN`. Publication therefore uses the
+dedicated read-only validation job described above as its authoritative gate.
+The exact merge-preview SHA from that job is what gets linted, tested, and
+built; stale jobs or checks from another SHA are never accepted.
+
+After opening a PR, the existing sync workflow still requests a supplemental
+`build-preview.yml` dispatch for the exact bot commit. That supplemental run
+and its annotated PR checks are not a substitute for the publication
+validation job. The preview workflow now runs the same lint suite as well as
+the build for manual diagnostics.
 
 The integrated preview workflow validates that `inputs.ref` is a full commit
 SHA and checks out that exact revision. If PR creation succeeds but the
@@ -180,8 +218,8 @@ gh workflow run build-preview.yml --repo capoworks/capoworks-ecu-docs \
   -f ref=<40-character-bot-commit-sha>
 ```
 
-A later scheduled run sees the open PR and skips as pending; it does not try to
-infer dispatch completion from a workflow run's `head_sha`, because a manual
+A later scheduled run sees the open PR and resumes publication validation; it
+does not infer validity from an old preview run's `head_sha`, because a manual
 dispatch runs from `master` while the build checks out the SHA supplied in
 `inputs.ref`.
 
