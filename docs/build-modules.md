@@ -114,6 +114,8 @@ These are compile-time defaults and placements, not calculated free-RAM margins.
 
 The selected profile drives both live-data generation and `gen_config_board.sh`. Host-only standalone generators refresh the profile through `module_profile_host.mk`, which reuses the canonical resolver without requiring a compiler. When parent Make supplies an explicit profile, the generators validate and reuse it.
 
+Frankenso has no `board.mk` of its own and builds with the `f407-discovery` board metadata. For that board only, `gen_config_board.sh` resolves the host-only module profile against the sibling `f407-discovery` directory while configuration generation still uses the Frankenso board directory. No manual workaround is needed when generating Frankenso configuration.
+
 Generated headers, configuration structures, and `firmware/tunerstudio/generated/*.ini` files are build products and are not committed. Treat a generated INI and its firmware as one matching pair.
 
 Cylinder fuel trim renders its exact 1-to-N TunerStudio rows into `firmware/generated/cylinder_fuel_trim.ini`. This is a small fixed renderer for the module's single repeated row pattern, not a general template language. The profile is refreshed before generation, so changing the count or disabling the module updates the generated fragment and configuration stamp on the first Make invocation without requiring a clean build.
