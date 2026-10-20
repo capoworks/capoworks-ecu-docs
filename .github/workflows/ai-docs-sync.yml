@@ -183,8 +183,9 @@ jobs:
         with:
           python-version: "3.13"
 
-      # The script requeries the PR and master, revalidates the exact preview,
-      # and lets GitHub branch protection reject any non-fast-forward merge.
+      # REST merge pins the PR head but cannot atomically pin its base.
+      # Post-merge tree check rejects unexpected results; Pages fully validates actual master before public deploy.
+      # GitHub enforces any configured protection.
       - name: Revalidate, merge, and dispatch deploy and sync
         env:
           GITHUB_TOKEN: ${{ github.token }}
