@@ -225,18 +225,14 @@ def validate_pull_metadata(
         )
     base_sha = _require_sha(base.get("sha"), "pull request base")
     head_sha = _require_sha(head.get("sha"), "pull request head")
-    if base_sha != current_master:
-        raise SYNC.ValidationFailure(
-            f"pull request #{number} base {base_sha} does not match current master "
-            f"{current_master}"
-        )
+    current_master = _require_sha(current_master, "current target master")
     body = pull.get("body")
     if not isinstance(body, str) or SYNC.PR_MARKER not in body.splitlines():
         raise SYNC.ValidationFailure(f"pull request #{number} lacks the sync marker")
     merge_sha = pull.get("merge_commit_sha")
     if merge_sha is not None:
         merge_sha = _require_sha(merge_sha, "pull request merge preview")
-    return Candidate(number, base_sha, head_sha, merge_sha or "")
+    return Candidate(number, current_master, head_sha, merge_sha or "")
 
 
 def _git_env(token: str) -> dict[str, str]:
@@ -366,6 +362,15 @@ def _read_git_file(
     )
 
 
+def _tree_sha(
+    runner: SYNC.CappedRunner, root: pathlib.Path, commit: str
+) -> str:
+    return _require_sha(
+        _git_text(runner, root, ["show", "-s", "--format=%T", commit]).strip(),
+        f"commit {commit} tree",
+    )
+
+
 def _parse_raw_diff(data: bytes) -> tuple[ChangedPath, ...]:
     tokens = data.split(b"\0")
     if tokens and tokens[-1] == b"":
@@ -395,6 +400,87 @@ def _parse_raw_diff(data: bytes) -> tuple[ChangedPath, ...]:
         seen.add(path)
         changed.append(ChangedPath(path, status, old_mode, new_mode))
     return tuple(changed)
+
+
+def _materialize_base_docs(
+    sync_module: Any,
+    runner: SYNC.CappedRunner,
+    root: pathlib.Path,
+    base_sha: str,
+    destination: pathlib.Path,
+) -> pathlib.Path:
+    """Create a small, non-executing view of the selected base docs."""
+
+    docs_root = destination / "docs"
+    docs_root.mkdir()
+    raw = _git(
+        runner,
+        root,
+        ["ls-tree", "-r", "-z", "--full-tree", base_sha, "--", "docs"],
+        max_output_bytes=4_000_000,
+    )
+    seen: set[str] = set()
+    for record in raw.split(b"\0"):
+        if not record:
+            continue
+        try:
+            metadata, path_bytes = record.split(b"\t", 1)
+            mode_bytes, kind_bytes, object_bytes = metadata.split(b" ", 2)
+            mode = mode_bytes.decode("ascii")
+            kind = kind_bytes.decode("ascii")
+            object_sha = object_bytes.decode("ascii")
+            path = path_bytes.decode("utf-8", "strict")
+        except (UnicodeDecodeError, ValueError) as exc:
+            raise SYNC.ValidationFailure(
+                "selected base documentation tree is malformed"
+            ) from exc
+        pure = pathlib.PurePosixPath(path)
+        if (
+            pure.is_absolute()
+            or not pure.parts
+            or pure.parts[0] != "docs"
+            or any(part in {"", ".", ".."} for part in pure.parts)
+        ):
+            raise SYNC.ValidationFailure(
+                f"selected base documentation path is unsafe: {path!r}"
+            )
+        if path == "docs":
+            raise SYNC.ValidationFailure(
+                "selected base documentation root is not a directory"
+            )
+        if path in seen:
+            raise SYNC.ValidationFailure(
+                f"selected base documentation path is repeated: {path!r}"
+            )
+        seen.add(path)
+        if kind != "blob" or mode not in {"100644", "100755", "120000"}:
+            raise SYNC.ValidationFailure(
+                f"selected base documentation entry is unsupported: {path!r}"
+            )
+        if not SYNC.SHA_RE.fullmatch(object_sha):
+            raise SYNC.ValidationFailure(
+                f"selected base documentation object is malformed: {path!r}"
+            )
+        if pure.suffix.lower() not in {".md", ".mdx"} and mode != "120000":
+            continue
+        target = destination.joinpath(*pure.parts)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        content = _git(
+            runner,
+            root,
+            ["cat-file", "blob", object_sha],
+            max_output_bytes=2_000_000,
+        )
+        if mode == "120000":
+            try:
+                os.symlink(content, target)
+            except (OSError, ValueError) as exc:
+                raise sync_module.ValidationFailure(
+                    f"could not materialize selected base documentation link: {path!r}"
+                ) from exc
+        else:
+            target.write_bytes(content)
+    return docs_root
 
 
 def _load_state_bytes(
@@ -557,9 +643,17 @@ def _validate_state_transition(
             for path, content in zip(docs, docs_content)
         ],
     }
-    validated = sync_module.validate_sync_result(
-        payload, commit_shas, root / "docs", sync_module.Limits()
-    )
+    with tempfile.TemporaryDirectory(prefix="ai-docs-base-docs-") as directory:
+        base_docs = _materialize_base_docs(
+            sync_module,
+            runner,
+            root,
+            base_sha,
+            pathlib.Path(directory),
+        )
+        validated = sync_module.validate_sync_result(
+            payload, commit_shas, base_docs, sync_module.Limits()
+        )
     if [file.path for file in validated.files] != docs:
         raise SYNC.ValidationFailure("validated document set changed unexpectedly")
     expected_outcome = "update" if docs else "no-impact"
@@ -898,6 +992,12 @@ def merge_phase(
         raise SYNC.ApiFailure("fetched target master does not equal the merge result")
     if _parents(runner, root, merged_sha) != (expected.base_sha, expected.head_sha):
         raise SYNC.ApiFailure("merged commit parents do not match the validated preview")
+    if _tree_sha(runner, root, expected.merge_sha) != _tree_sha(
+        runner, root, merged_sha
+    ):
+        raise SYNC.ApiFailure(
+            "merged commit tree does not match the validated merge preview"
+        )
 
     failures: list[str] = []
     for workflow in ("deploy.yml", "ai-docs-sync.yml"):

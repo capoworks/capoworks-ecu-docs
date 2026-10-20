@@ -15,6 +15,7 @@ from unittest import mock
 
 
 PUBLISH_SCRIPT = pathlib.Path(__file__).with_name("ai-docs-publish.py")
+DEPLOY_WORKFLOW = PUBLISH_SCRIPT.parent.parent / ".github" / "workflows" / "deploy.yml"
 spec = importlib.util.spec_from_file_location("ai_docs_publish_test_target", PUBLISH_SCRIPT)
 if spec is None or spec.loader is None:
     raise RuntimeError("could not load publication script")
@@ -86,11 +87,14 @@ def _next_state(update: bool, files: list[str]) -> dict:
 
 
 class GitCandidate:
-    def __init__(self, root: pathlib.Path, base: str, head: str, merge: str) -> None:
+    def __init__(
+        self, root: pathlib.Path, base: str, head: str, merge: str, branch: str
+    ) -> None:
         self.root = root
         self.base = base
         self.head = head
         self.merge = merge
+        self.branch = branch
 
 
 class GitFixture:
@@ -138,7 +142,8 @@ class GitFixture:
         mutate=None,
         bot_identity: tuple[str, str] = (sync.COMMIT_NAME, sync.COMMIT_EMAIL),
     ) -> GitCandidate:
-        self._git("switch", "-c", f"candidate-{len(list(self.root.glob('docs/*')))}")
+        branch = f"candidate-{len(list(self.root.glob('docs/*')))}"
+        self._git("switch", "-c", branch)
         files = ["docs/existing.md"] if update else []
         if update:
             (self.root / "docs" / "existing.md").write_text(
@@ -166,8 +171,7 @@ class GitFixture:
         head = self._git("rev-parse", "HEAD").strip()
         tree = self._git("rev-parse", "HEAD^{tree}").strip()
         merge = self._git("commit-tree", tree, "-p", self.base, "-p", head).strip()
-        self._git("switch", "master")
-        return GitCandidate(self.root, self.base, head, merge)
+        return GitCandidate(self.root, self.base, head, merge, branch)
 
 
 def _pull(
@@ -239,11 +243,17 @@ class MetadataTests(unittest.TestCase):
         pull["head"]["sha"] = "not-a-sha"
         variants.append(pull)
         pull = _pull()
-        pull["base"]["sha"] = "7" * 40
+        pull["base"]["sha"] = "g" * 40
         variants.append(pull)
         for variant in variants:
             with self.subTest(variant=variant):
                 self.assert_refused(variant)
+
+    def test_stale_reported_creation_base_is_pinned_to_current_master(self) -> None:
+        pull = _pull()
+        pull["base"]["sha"] = "2" * 40
+        candidate = publish.validate_pull_metadata(pull, "4" * 40)
+        self.assertEqual(candidate.base_sha, "4" * 40)
 
 
 class CandidateValidationTests(unittest.TestCase):
@@ -266,7 +276,19 @@ class CandidateValidationTests(unittest.TestCase):
 
     def test_feature_and_no_impact_candidates_are_safe(self) -> None:
         feature = self.fixture.candidate(update=True)
+        candidate_doc = feature.root / "docs" / "existing.md"
+        unrelated = feature.root / "unrelated.txt"
+        unrelated.write_text("leave me alone\n", encoding="utf-8")
+        self.assertEqual(
+            candidate_doc.read_text(encoding="utf-8"),
+            "---\ntitle: Existing\n---\n\nNew content.\n",
+        )
         self.assertEqual(self.validate(feature).merge_sha, feature.merge)
+        self.assertEqual(
+            candidate_doc.read_text(encoding="utf-8"),
+            "---\ntitle: Existing\n---\n\nNew content.\n",
+        )
+        self.assertEqual(unrelated.read_text(encoding="utf-8"), "leave me alone\n")
 
         no_impact_fixture = GitFixture(
             pathlib.Path(self.temporary.name) / "no-impact"
@@ -284,21 +306,41 @@ class CandidateValidationTests(unittest.TestCase):
     def test_older_bot_base_resumes_when_state_is_unchanged(self) -> None:
         fixture = GitFixture(pathlib.Path(self.temporary.name) / "older-base")
         candidate = fixture.candidate(update=False)
+        fixture._git("switch", "master")
         (fixture.root / "docs" / "unrelated.md").write_text(
             "---\ntitle: Unrelated\n---\n\nHuman master change.\n", encoding="utf-8"
         )
         fixture._git("add", "-A")
         fixture._git("commit", "-m", "unrelated master change")
         current_base = fixture._git("rev-parse", "HEAD").strip()
-        fixture._git("merge", "--no-ff", "candidate-1", "-m", "merge preview")
+        fixture._git("merge", "--no-ff", candidate.branch, "-m", "merge preview")
         merge = fixture._git("rev-parse", "HEAD").strip()
-        validated = publish.validate_candidate_diff(
+        pull = _pull(
+            candidate,
+            current_master=current_base,
+            merge_commit_sha=merge,
+        )
+        with mock.patch.object(
+            publish, "_fetch_candidate", return_value=merge
+        ) as fetch:
+            validated = publish.validate_fetched_candidate(
+                runner=self.runner,
+                root=fixture.root,
+                token="test-token",
+                number=33,
+                current_master=current_base,
+                pull=pull,
+            )
+        fetch.assert_called_once_with(
             self.runner,
             fixture.root,
-            base_sha=current_base,
-            head_sha=candidate.head,
-            merge_sha=merge,
+            "test-token",
+            33,
+            current_base,
+            candidate.head,
         )
+        self.assertEqual(pull["base"]["sha"], candidate.base)
+        self.assertEqual(validated.base_sha, current_base)
         self.assertEqual(validated.head_sha, candidate.head)
 
     def test_delete_symlink_config_human_file_are_refused(self) -> None:
@@ -468,6 +510,9 @@ class MergeGateTests(unittest.TestCase):
             validate_fetched_candidate=mock.Mock(return_value=self.expected),
             _fetch_master=mock.Mock(return_value=self.merged),
             _parents=mock.Mock(return_value=(self.expected.base_sha, self.expected.head_sha)),
+            _tree_sha=mock.Mock(
+                side_effect=("a" * 40, "a" * 40)
+            ),
         )
 
     def test_validation_failure_never_invokes_merge(self) -> None:
@@ -511,6 +556,53 @@ class MergeGateTests(unittest.TestCase):
         )
         self.assertEqual(caught.exception.merged_sha, self.merged)
         self.assertIn("ai-docs-sync.yml", str(caught.exception))
+
+    def test_wrong_merged_tree_prevents_all_dispatch(self) -> None:
+        github = self._github()
+        with mock.patch.multiple(
+            publish,
+            validate_fetched_candidate=mock.Mock(return_value=self.expected),
+            _fetch_master=mock.Mock(return_value=self.merged),
+            _parents=mock.Mock(
+                return_value=(self.expected.base_sha, self.expected.head_sha)
+            ),
+            _tree_sha=mock.Mock(side_effect=("a" * 40, "b" * 40)),
+        ):
+            with self.assertRaises(sync.ApiFailure):
+                publish.merge_phase(
+                    root=pathlib.Path("."),
+                    github=github,
+                    expected=self.expected,
+                )
+        self.assertEqual(github.dispatch_calls, [])
+
+
+class DeployWorkflowTests(unittest.TestCase):
+    def setUp(self) -> None:
+        text = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
+        self.build = text.split("\n  build:", 1)[1].split("\n  deploy:", 1)[0]
+        self.deploy = text.split("\n  deploy:", 1)[1]
+
+    def test_read_only_build_runs_lint_and_stdlib_tests_before_build(self) -> None:
+        install = self.build.index("run: npm ci")
+        lint = self.build.index("run: npm run lint")
+        tests = self.build.index("python3 -m unittest discover")
+        build = self.build.index("run: npm run build")
+        self.assertLess(install, lint)
+        self.assertLess(lint, tests)
+        self.assertLess(tests, build)
+        self.assertIn("--pattern 'test_ai_docs*.py'", self.build)
+        self.assertRegex(self.build, r"permissions:\s*\n\s+contents: read")
+        self.assertNotIn("DEEPSEEK", self.build)
+        self.assertNotIn("GITHUB_TOKEN", self.build)
+
+    def test_write_deploy_job_never_executes_generated_docs(self) -> None:
+        self.assertRegex(self.deploy, r"pages: write")
+        self.assertRegex(self.deploy, r"id-token: write")
+        self.assertIn("actions/deploy-pages@v4", self.deploy)
+        self.assertNotRegex(self.deploy, r"(?m)^\s+run:")
+        self.assertNotIn("npm ", self.deploy)
+        self.assertNotIn("python", self.deploy)
 
 
 if __name__ == "__main__":
