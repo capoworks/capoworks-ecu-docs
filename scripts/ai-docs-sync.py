@@ -2073,6 +2073,9 @@ def generate_phase(
             model_result.result, commit_shas, root / "docs", limits
         )
     except ValidationFailure as initial_error:
+        LOG.warning(
+            "AI output validation failed; making one corrective attempt"
+        )
         repair_metadata = {
             "rejected_result": model_result.result,
             "validation_error": str(initial_error),
@@ -2087,12 +2090,23 @@ def generate_phase(
             )
         initial_usage = dict(model_result.usage)
         repair_usage = dict(repair_result.usage)
-        if set(initial_usage) != set(repair_usage):
-            raise ApiFailure(
-                "AI usage fields changed between initial and repair responses"
-            )
         usage: dict[str, int] = {}
-        for key in initial_usage:
+        for key in ("prompt_tokens", "completion_tokens", "total_tokens"):
+            initial_value = initial_usage.get(key)
+            repair_value = repair_usage.get(key)
+            if (
+                not isinstance(initial_value, int)
+                or isinstance(initial_value, bool)
+                or not isinstance(repair_value, int)
+                or isinstance(repair_value, bool)
+                or initial_value < 0
+                or repair_value < 0
+            ):
+                raise ApiFailure("AI usage is malformed across repair responses")
+            usage[key] = initial_value + repair_value
+        for key in ("prompt_cache_hit_tokens", "prompt_cache_miss_tokens"):
+            if key not in initial_usage or key not in repair_usage:
+                continue
             initial_value = initial_usage[key]
             repair_value = repair_usage[key]
             if (

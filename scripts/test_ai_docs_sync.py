@@ -2373,8 +2373,18 @@ class GenerationRepairTests(TempDocs):
         model: str = "deepseek-flash",
         prompt_tokens: int = 20,
         completion_tokens: int = 10,
-        cache_hit_tokens: int = 5,
+        cache_hit_tokens: int | None = 5,
+        cache_miss_tokens: int | None = None,
     ) -> tuple:
+        usage = {
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": prompt_tokens + completion_tokens,
+        }
+        if cache_hit_tokens is not None:
+            usage["prompt_cache_hit_tokens"] = cache_hit_tokens
+        if cache_miss_tokens is not None:
+            usage["prompt_cache_miss_tokens"] = cache_miss_tokens
         return api_json(
             {
                 "model": model,
@@ -2384,12 +2394,7 @@ class GenerationRepairTests(TempDocs):
                         "finish_reason": "stop",
                     }
                 ],
-                "usage": {
-                    "prompt_tokens": prompt_tokens,
-                    "completion_tokens": completion_tokens,
-                    "total_tokens": prompt_tokens + completion_tokens,
-                    "prompt_cache_hit_tokens": cache_hit_tokens,
-                },
+                "usage": usage,
             }
         )
 
@@ -2470,9 +2475,12 @@ class GenerationRepairTests(TempDocs):
 
         with mock.patch.object(
             sync, "validate_sync_result", side_effect=tracked_validate
-        ):
+        ), self.assertLogs(sync.LOG, level="WARNING") as logs:
             self.assertEqual(self.generate(self.client(transport)), 0)
 
+        self.assertEqual(len(logs.output), 1)
+        self.assertIn("one corrective attempt", logs.output[0])
+        self.assertNotIn("# Invalid", logs.output[0])
         self.assertEqual(len(transport.requests), 2)
         self.assertEqual(len(validations), 2)
         self.assertEqual(
@@ -2527,6 +2535,47 @@ class GenerationRepairTests(TempDocs):
                 "prompt_cache_hit_tokens": 12,
             },
         )
+
+    def test_repair_usage_omits_cache_metrics_missing_from_either_response(
+        self,
+    ) -> None:
+        cases = (
+            (
+                "first omits cache metrics",
+                {"cache_hit_tokens": None},
+                {"cache_hit_tokens": 7, "cache_miss_tokens": 3},
+            ),
+            (
+                "second omits cache metrics",
+                {"cache_hit_tokens": 7, "cache_miss_tokens": 3},
+                {"cache_hit_tokens": None},
+            ),
+        )
+        for name, first_options, second_options in cases:
+            with self.subTest(name=name):
+                transport = FakeTransport(
+                    [
+                        self.response(self.invalid_payload, **first_options),
+                        self.response(
+                            self.valid_payload,
+                            prompt_tokens=40,
+                            completion_tokens=6,
+                            **second_options,
+                        ),
+                    ]
+                )
+
+                self.assertEqual(self.generate(self.client(transport)), 0)
+
+                artifact = sync.read_json(self.work_dir / "result.json")
+                self.assertEqual(
+                    artifact["usage"],
+                    {
+                        "prompt_tokens": 60,
+                        "completion_tokens": 16,
+                        "total_tokens": 76,
+                    },
+                )
 
     def test_invalid_repair_fails_closed_without_result(self) -> None:
         second_invalid = payload(
