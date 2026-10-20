@@ -2,9 +2,36 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "728292632f3c1ae1fb4a1747d7809cfd23204658",
-  "latest_analyzed_at": "2026-10-20T17:18:35.352752+00:00",
+  "latest_analyzed_commit": "1734a4b70c11ff811885c4ee75e58cabef8b2af5",
+  "latest_analyzed_at": "2026-10-20T17:21:16.832280+00:00",
   "entries": [
+    {
+      "commit": "1734a4b70c11ff811885c4ee75e58cabef8b2af5",
+      "subject": "Merge pull request #70 from capoworks/fix/ci-configs-windows-simulator",
+      "authored_at": "2026-10-20T13:37:18+02:00",
+      "parents": [
+        "728292632f3c1ae1fb4a1747d7809cfd23204658",
+        "95d6e40b34ec625e49eb25c32490bb89ae6c18e7"
+      ],
+      "comment": "Integration merge of pull request #70 with no conflict-resolution changes beyond the child commit already documented. No additional user-facing documentation change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-20T17:21:16.832280+00:00",
+      "integration_batch_commit": "1734a4b70c11ff811885c4ee75e58cabef8b2af5"
+    },
+    {
+      "commit": "95d6e40b34ec625e49eb25c32490bb89ae6c18e7",
+      "subject": "fix: restore Frankenso config generation and Windows simulator build",
+      "authored_at": "2026-10-20T13:23:55+02:00",
+      "parents": [
+        "728292632f3c1ae1fb4a1747d7809cfd23204658"
+      ],
+      "comment": "Capoworks ECU restored Frankenso configuration generation: gen_config_board.sh now resolves the host-only module profile against the f407-discovery board metadata when the board directory is config/boards/frankenso, because Frankenso has no board.mk of its own. Config generation itself still uses the Frankenso board directory. Builders generating Frankenso configuration no longer need a manual workaround; no tune, flashing, or runtime behavior changes. The simulator's SleepExecutor batch-order test now casts its expected and actual callback counts to int for the firmwareError format, so the Windows simulator build compiles. This is a test-only change with no effect on simulator or ECU behavior.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-20T17:21:16.832280+00:00",
+      "integration_batch_commit": "1734a4b70c11ff811885c4ee75e58cabef8b2af5"
+    },
     {
       "commit": "728292632f3c1ae1fb4a1747d7809cfd23204658",
       "subject": "Merge pull request #69 from capoworks/ops/github-hosted-runners",
@@ -779,33 +806,6 @@
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-19T22:22:03+00:00",
       "integration_batch_commit": "ed3e5c7f9f365826eae8551d3e873cefe53ea8a6"
-    },
-    {
-      "commit": "319d4e5145062a0fc802d3bc3f79a7f3be233625",
-      "subject": "Merge pull request #47 from capoworks/align/pr-21",
-      "authored_at": "2026-10-18T16:58:33+02:00",
-      "parents": [
-        "28d56b01d7b3e7136bf15bbad3000be8ef91c84f",
-        "034ec75bc1e9bf7391eeb0050b13038c0f60e3d7"
-      ],
-      "comment": "This integration merge carries the Core8 build-tool update from 034ec75bc1e9bf7391eeb0050b13038c0f60e3d7. It adds no separate firmware behavior or merge-resolution change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "319d4e5145062a0fc802d3bc3f79a7f3be233625"
-    },
-    {
-      "commit": "034ec75bc1e9bf7391eeb0050b13038c0f60e3d7",
-      "subject": "tools: add portable Core8 build and explicit DFU tasks",
-      "authored_at": "2026-10-17T21:03:55+02:00",
-      "parents": [
-        "c65ff75a4513b23648c4f0bdfe2f44580c7b261a"
-      ],
-      "comment": "Core8 builds now use a portable helper with bundled ARM artifact checks and a separate signature-checked DFU action. Builders should use Linux or WSL and follow the Core8 tool prerequisites; flashing remains an explicit choice rather than part of the default build task.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "319d4e5145062a0fc802d3bc3f79a7f3be233625"
     }
   ]
 }
