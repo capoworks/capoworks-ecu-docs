@@ -1,0 +1,379 @@
+{
+  "schema_version": 1,
+  "batch_head": "ee8be3687e27842eef36445f5c91a8d8ef83ff50",
+  "previous_cursor_commit": "19b3d53c158fbcd11fa14ecaebbcbb7cbc49552d",
+  "cursor_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "48628aefd9b14e32a6af54a3747e2ebccd917828",
+      "head_inclusive": "19b3d53c158fbcd11fa14ecaebbcbb7cbc49552d",
+      "commit_count": 1
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 37984,
+      "completion_tokens": 161,
+      "total_tokens": 38145,
+      "prompt_cache_hit_tokens": 896,
+      "prompt_cache_miss_tokens": 37088
+    },
+    "summary": "No user-facing firmware documentation change is needed for this commit. It only normalizes README line endings.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "19b3d53c158fbcd11fa14ecaebbcbb7cbc49552d",
+        "decision": "no-impact",
+        "rationale": "The commit only converts README.md line endings from CRLF to LF. The rendered text, links, tune format, build steps, and firmware behavior are unchanged, so no driver, tuner, installer, or builder action is required.",
+        "evidence": [
+          "README.md diff shows every line removed with trailing \\r and re-added without it",
+          "No content, link, or code change in the README.md diff",
+          "changed_paths contains only README.md"
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-20T16:12:15.115608+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "19b3d53c158fbcd11fa14ecaebbcbb7cbc49552d",
+      "head_inclusive": "ee8be3687e27842eef36445f5c91a8d8ef83ff50",
+      "commit_count": 35
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 1894060,
+      "completion_tokens": 14372,
+      "total_tokens": 1908432,
+      "prompt_cache_hit_tokens": 1882624,
+      "prompt_cache_miss_tokens": 11436
+    },
+    "summary": "Capoworks ECU build-time module profiles, memory-budget changes, and new optional modules are documented. Firmware now selects modules at compile time, defaults omit Hella OPS-T, EMP pump, and shock preload, cylinder fuel trim is default-on with capacity 6, and Lua is excluded on hellen128. F4 memory placement, Lua heap sizes, compressed INI dictionary, and F7 alignment changed. Tunes with an incompatible layout are rejected and must be transferred manually.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "468d04c15df228ea7cf4b17b2e8485ba77178274",
+        "decision": "update",
+        "rationale": "F4 boards now place CAN, USB console, and USB mass-storage background objects in ordinary SRAM, and the F407 Lua heap drops from 30,000 to 20,000 bytes, reducing script capacity. The compressed INI drive uses a 16 KiB DEFLATE dictionary, saving 16 KiB RAM. F7 functions use 4-byte alignment. Hardware timing and smaller-heap behavior are unvalidated.",
+        "evidence": [
+          "firmware/global.h: CCM_OPTIONAL_BACKGROUND now defined for STM32F4XX",
+          "firmware/hw_layer/ports/stm32/stm32f4/efifeatures.h: LUA_USER_HEAP 30000 -> 20000",
+          "firmware/hw_layer/mass_storage/compressed_block_device.h: DEFLATE_WINDOW_SIZE 16*1024",
+          "firmware/hw_layer/ports/stm32/stm32f7/hw_ports.mk: -falign-functions=16 -> 4",
+          "firmware/CHANGELOG.md Changed entries"
+        ]
+      },
+      {
+        "commit": "281634cb33858a1f4a02e84d12a37051f6dc5002",
+        "decision": "update",
+        "rationale": "On STM32F429 the main loop moves to ordinary SRAM and the non-Ethernet Lua heap drops from 65,000 to 60,000 bytes; the 25,000-byte Ethernet heap is unchanged. F407 keeps its main loop in CCM. Timing and smaller-heap behavior are unvalidated.",
+        "evidence": [
+          "firmware/controllers/core/main_loop.cpp: EFI_IS_F42x mainLoop without CCM_OPTIONAL",
+          "firmware/hw_layer/ports/stm32/stm32f4/efifeatures.h: LUA_USER_HEAP 65000 -> 60000",
+          "firmware/CHANGELOG.md updated F4 memory entry"
+        ]
+      },
+      {
+        "commit": "80f6ff460e8e0b5bfe97a27f777edc145c2d0c55",
+        "decision": "no-impact",
+        "rationale": "Comment-only clarification of MCU memory placement and alignment wording; no firmware behavior or user action changes.",
+        "evidence": [
+          "firmware/global.h comment text only",
+          "firmware/CHANGELOG.md wording change only"
+        ]
+      },
+      {
+        "commit": "c08fee825499d1b73351e492671aa311aefa89bb",
+        "decision": "no-impact",
+        "rationale": "Host-side compression tuning (memLevel) changes only build-time output density, not the decoder window or firmware behavior.",
+        "evidence": [
+          "firmware/hw_layer/mass_storage/create_ini_image_compressed.sh: memLevel=6 added"
+        ]
+      },
+      {
+        "commit": "73a6eb9ee1573f6a0ecd2c8787c934603a1c5024",
+        "decision": "update",
+        "rationale": "Only non-Ethernet STM32F429 builds move the main loop to ordinary SRAM; Ethernet-console F429 builds keep the main loop in CCM. This refines the earlier F429 memory-placement note.",
+        "evidence": [
+          "firmware/controllers/core/main_loop.cpp: EFI_IS_F42x && !MODULE_ETHERNET_CONSOLE",
+          "firmware/global.h comment update",
+          "firmware/CHANGELOG.md wording update"
+        ]
+      },
+      {
+        "commit": "0bc31eab6a05cae53393da03da7001558d3d780d",
+        "decision": "update",
+        "rationale": "Ethernet TCP MSS is now fixed at 1460 bytes for a standard 1500-byte MTU instead of scaling with the TunerStudio block size. No hardware testing was performed.",
+        "evidence": [
+          "firmware/net/lwipopts.h: TCP_MSS (BLOCKING_FACTOR + 10) -> 1460",
+          "firmware/CHANGELOG.md Ethernet TCP buffer entry"
+        ]
+      },
+      {
+        "commit": "b12a882d934d817190aadd496bafd8b3a667f0ed",
+        "decision": "update",
+        "rationale": "Tune images now carry a static configuration-layout identity. Binary tunes with an incompatible layout are rejected and defaults restored; export and re-import values with matching definitions because binary migration is not provided. Module selection is compile-time via FOME_MODULES.",
+        "evidence": [
+          "firmware/controllers/algo/persistent_configuration.h: layoutIdLow/layoutIdHigh header",
+          "firmware/controllers/configuration_storage.cpp: validateHeader checks CONFIG_LAYOUT_ID",
+          "firmware/controllers/modules/module_profile.mk new catalog",
+          "docs/build-modules.md added"
+        ]
+      },
+      {
+        "commit": "67d3a98c7e7b43d7d02f0e3d5889712c5686a9f1",
+        "decision": "no-impact",
+        "rationale": "Build-time generator change that omits unselected module telemetry; no separate user-facing behavior beyond the module-profile documentation already covered.",
+        "evidence": [
+          "java_tools/.../LiveDataProcessor.java: -modules option and includeTelemetry",
+          "firmware/gen_live_documentation.sh: -modules argument"
+        ]
+      },
+      {
+        "commit": "379b57b8e0499ff013a69300be105c4cb09a4173",
+        "decision": "update",
+        "rationale": "Modules can now contribute persistent calibration tables and contextual TunerStudio fragments. Builders adding module fragments must use the documented anchors and named INI contexts; malformed or misplaced markers fail generation.",
+        "evidence": [
+          "firmware/integration/fome_config.txt: ! MODULE_PERSISTENT_CONFIG anchor",
+          "firmware/tunerstudio/tunerstudio.template.ini: ; MODULE_INI markers",
+          "java_tools/.../ModuleFragments.java: PERSISTENT_CONFIG_ANCHOR and INI context validation"
+        ]
+      },
+      {
+        "commit": "568143dd8403162a692a9cc665bf158fc5e32bfc",
+        "decision": "update",
+        "rationale": "Hella OPS+T support becomes an optional build module. When selected it provides the combined oil pressure and temperature sensor input; existing providers keep priority. It is not in the default profile.",
+        "evidence": [
+          "firmware/controllers/modules/hella_opst/hella_opst.mk new module",
+          "firmware/controllers/modules/module_profile.mk: hella_opst added to catalog",
+          "firmware/CHANGELOG.md Hella entry"
+        ]
+      },
+      {
+        "commit": "9704a2ccac329e2a7017b9627b82b14185b3f9c0",
+        "decision": "update",
+        "rationale": "Hella OPS+T is excluded from the default module profile, so it must be selected explicitly with FOME_MODULES.",
+        "evidence": [
+          "firmware/controllers/modules/module_profile.mk: FOME_MODULES_DEFAULT filters out hella_opst"
+        ]
+      },
+      {
+        "commit": "97eb549288268ec78e5d168c240fe599f827fe71",
+        "decision": "update",
+        "rationale": "Boost control becomes an optional build module covering its configuration, tables, telemetry, Lua hooks, and TunerStudio controls. Overboost fuel cut and the generic DC/ETB wastegate path remain available without it.",
+        "evidence": [
+          "firmware/controllers/modules/boost/boost.mk new module",
+          "firmware/controllers/actuators/boost_control.cpp: guarded by MODULE_BOOST",
+          "firmware/CHANGELOG.md boost entry"
+        ]
+      },
+      {
+        "commit": "be4f0d0d6e127f553db4bf25f040a2f67878eb8c",
+        "decision": "update",
+        "rationale": "The Engine Sniffer event recorder becomes an optional build module; the binary tooth logger and verbose trigger logging remain available without it.",
+        "evidence": [
+          "firmware/controllers/modules/engine_sniffer/engine_sniffer.mk new module",
+          "firmware/hw_layer/ports/stm32/stm32f4/efifeatures.h: EFI_ENGINE_SNIFFER MODULE_ENGINE_SNIFFER",
+          "firmware/CHANGELOG.md Engine Sniffer entry"
+        ]
+      },
+      {
+        "commit": "e29fffab367b27587d2b6af73834c0a6af9259ca",
+        "decision": "update",
+        "rationale": "Lua becomes a build module; when not selected its VM, tune fields, gauges, bench outputs, and digital inputs are omitted. The console Lua editor now resolves the luaScript field from the active INI and rejects mismatched signatures or oversized scripts.",
+        "evidence": [
+          "firmware/controllers/modules/lua/lua.mk new module",
+          "firmware/controllers/core/value_lookup.cpp moved from controllers/lua",
+          "java_console/.../LuaScriptPanel.java: resolveLuaScriptField",
+          "docs/build-modules.md added"
+        ]
+      },
+      {
+        "commit": "266395705e4e137e410c07266a60080722e34fbf",
+        "decision": "update",
+        "rationale": "Adds an optional EMP coolant pump module with Caponord J1939 state machine, configuration and fallback tables, telemetry, service controls, after-run power hold, and CAN TX-thread queue. It is disabled at runtime by enableEmpPump and requires the fan module.",
+        "evidence": [
+          "firmware/controllers/modules/emp_pump/emp_pump.cpp new",
+          "firmware/controllers/modules/module_profile.mk: emp_pump requires fan",
+          "firmware/CHANGELOG.md EMP entry"
+        ]
+      },
+      {
+        "commit": "f6408c6d01663399ff6ec973f1304ac217b75fbf",
+        "decision": "update",
+        "rationale": "The EMP pump is excluded from the default module profile and must be selected explicitly with FOME_MODULES.",
+        "evidence": [
+          "firmware/controllers/modules/module_profile.mk: FOME_MODULES_DEFAULT filters out emp_pump"
+        ]
+      },
+      {
+        "commit": "df4db7df337552685a34c18b6a76d0b09d8272d1",
+        "decision": "update",
+        "rationale": "Adds an optional Caponord electronic shock preload controller on CAN2 with preset, position, target, alarm and current telemetry, service controls, and a default-off enableShockPreload setting. CAN read and write must be enabled.",
+        "evidence": [
+          "firmware/controllers/modules/shock_preload/shock_preload.cpp new",
+          "firmware/controllers/modules/shock_preload/config.txt: enableShockPreload",
+          "firmware/CHANGELOG.md shock preload entry"
+        ]
+      },
+      {
+        "commit": "5312a145319cc43173543df574eab29910f37d98",
+        "decision": "update",
+        "rationale": "Shock preload is excluded from the default module profile and must be selected explicitly with FOME_MODULES.",
+        "evidence": [
+          "firmware/controllers/modules/module_profile.mk: FOME_MODULES_DEFAULT filters out shock_preload"
+        ]
+      },
+      {
+        "commit": "73e3ac9ef165efef9d1fb6ba543d7a0106cec6cf",
+        "decision": "update",
+        "rationale": "Default module profile now includes boost, engine_sniffer, lua, and cylinder_fuel_trim, omits hella_opst, emp_pump, and shock_preload, and removes lua on hellen128. Explicitly selecting lua on hellen128 is a Make error.",
+        "evidence": [
+          "firmware/controllers/modules/module_profile.mk: FOME_MODULES_DEFAULT and board-unsupported check",
+          "firmware/config/boards/hellen/hellen128/board.mk: FOME_MODULES_BOARD_UNSUPPORTED += lua",
+          "docs/build-modules.md default profile table"
+        ]
+      },
+      {
+        "commit": "530330507e930eb8b1a6d0a4579b3478b648fa52",
+        "decision": "update",
+        "rationale": "Documents MCU resource budgets: Lua heap sizes per MCU, F4 SRAM/CCM placement, 16 KiB DEFLATE dictionary, and F7 4-byte alignment, noting these are compile-time defaults and not validated hardware margins.",
+        "evidence": [
+          "docs/build-modules.md Resource budgets section"
+        ]
+      },
+      {
+        "commit": "a2cfe90ad4f91071805e2da6d8b50cc350665d61",
+        "decision": "update",
+        "rationale": "Cylinder fuel trim becomes an optional build module with one 16x16 factor table per configured cylinder, a dedicated 1-to-12 count, all six load coordinates, shared axes, and materialized TunerStudio tables. Enabling it or changing its count changes the persistent layout with no binary migration.",
+        "evidence": [
+          "firmware/controllers/modules/cylinder_fuel_trim/cylinder_fuel_trim.cpp new",
+          "firmware/controllers/modules/cylinder_fuel_trim/persistent_config.txt",
+          "firmware/controllers/modules/module_profile.mk: FOME_CYLINDER_TRIM_COUNT validation",
+          "docs/build-modules.md cylinder fuel trim section"
+        ]
+      },
+      {
+        "commit": "b852c8d82eeae83acf3366e99ba1dde718c69dbb",
+        "decision": "update",
+        "rationale": "Cylinder fuel trim is now default-on with capacity 6; FOME_CYLINDER_TRIM_COUNT is optional and defaults to 6. Engines with more than 6 cylinders must raise the count or omit the module.",
+        "evidence": [
+          "firmware/controllers/modules/module_profile.mk: FOME_CYLINDER_TRIM_COUNT ?= 6",
+          "firmware/controllers/modules/module_profile.mk: cylinder_fuel_trim removed from default filter-out",
+          "docs/build-modules.md default capacity 6"
+        ]
+      },
+      {
+        "commit": "e5c84bb88f725b9ca85b92a17d454e1b2a0d00a0",
+        "decision": "no-impact",
+        "rationale": "Test-only change adding a 6-cylinder CI matrix entry and a unit-test default of 12; it does not change firmware defaults or user-facing behavior.",
+        "evidence": [
+          "unit_tests/Makefile: FOME_CYLINDER_TRIM_COUNT ?= 12",
+          "build-unit-tests.yaml: trim_count [4, 6, 12]"
+        ]
+      },
+      {
+        "commit": "b143c3040bf47b4ba6a204f3e4c6e0913cd8e23b",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the cylinder fuel trim branch; child commits are audited separately and the merge adds no distinct user-facing change.",
+        "evidence": [
+          "Merge pull request #68, no conflict-resolution diff"
+        ]
+      },
+      {
+        "commit": "69fd4a3d957be2a4b6db4caf3474f0016eabeb4e",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the board module policy branch; child commits are audited separately and the merge adds no distinct user-facing change.",
+        "evidence": [
+          "Merge pull request #66, no conflict-resolution diff"
+        ]
+      },
+      {
+        "commit": "f423fbe27ab2d9e55cb5ef4aecf597381e428464",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the shock preload branch; child commits are audited separately and the merge adds no distinct user-facing change.",
+        "evidence": [
+          "Merge pull request #65, no conflict-resolution diff"
+        ]
+      },
+      {
+        "commit": "a6ee931372698568bb5a07f183ad41d3ec069a3f",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the EMP pump branch; child commits are audited separately and the merge adds no distinct user-facing change.",
+        "evidence": [
+          "Merge pull request #64, no conflict-resolution diff"
+        ]
+      },
+      {
+        "commit": "f4c3a3b4c8cb7f39e3a9c6aef91b70fbe96cbd2b",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the Lua module branch; child commits are audited separately and the merge adds no distinct user-facing change.",
+        "evidence": [
+          "Merge pull request #61, no conflict-resolution diff"
+        ]
+      },
+      {
+        "commit": "beda34e75aa0599f9b67be5348caf54347c2752f",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the Engine Sniffer branch; child commits are audited separately and the merge adds no distinct user-facing change.",
+        "evidence": [
+          "Merge pull request #60, no conflict-resolution diff"
+        ]
+      },
+      {
+        "commit": "d73a32e99faead20ef00ef373228d554fc66c33e",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the Boost branch; child commits are audited separately and the merge adds no distinct user-facing change.",
+        "evidence": [
+          "Merge pull request #59, no conflict-resolution diff"
+        ]
+      },
+      {
+        "commit": "da1f76475d1991628d56ebde3ecfc6d2480e8ba0",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the Hella OPS-T branch; child commits are audited separately and the merge adds no distinct user-facing change.",
+        "evidence": [
+          "Merge pull request #58, no conflict-resolution diff"
+        ]
+      },
+      {
+        "commit": "2099f11a649138f11c138fc21562e6288210da20",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the static composition branch; child commits are audited separately and the merge adds no distinct user-facing change.",
+        "evidence": [
+          "Merge pull request #57, no conflict-resolution diff"
+        ]
+      },
+      {
+        "commit": "ac2da247fe24c316afb73eb9565814ca12582dc8",
+        "decision": "no-impact",
+        "rationale": "CI infrastructure only: adds an isolated ephemeral self-hosted runner and JOBS validation. It does not change firmware, flashing, or tune behavior.",
+        "evidence": [
+          "misc/ci/selfhosted/ new files",
+          "firmware/config/boards/common_make.sh: JOBS validation"
+        ]
+      },
+      {
+        "commit": "0207f7e1006530dc80cb85d0215b404b602ca909",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the ephemeral runner branch; the only conflict resolution is a PCH cleanup line in common_make.sh, which is build tooling with no firmware or user-facing effect.",
+        "evidence": [
+          "Merge pull request #63",
+          "firmware/config/boards/common_make.sh: rm -f pch/pch.h.gch/* conflict resolution"
+        ]
+      },
+      {
+        "commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the firmware memory budget branch; child commits are audited separately and the merge adds no distinct user-facing change.",
+        "evidence": [
+          "Merge pull request #67, no conflict-resolution diff"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/build-modules.md"
+    ],
+    "recorded_at": "2026-10-20T17:12:47.055146+00:00"
+  }
+}
