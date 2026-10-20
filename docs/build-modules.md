@@ -20,10 +20,10 @@ fan fuel_pump gear_detector tachometer trip_odometer map_averaging boost engine_
 
 On `hellen128`, `lua` is removed from that default because this board does not support Lua. Non-`hellen128` boards retain `lua` in their default profile. `cylinder_fuel_trim` is included with a default capacity of 6 on every board. `hella_opst`, `emp_pump`, and `shock_preload` are omitted from the default profile on every board, but remain available for explicit selection. The catalog above lists every token recognized by the resolver; it is not the default profile.
 
-Keep `fan fuel_pump gear_detector tachometer trip_odometer map_averaging` in every supported profile. Build availability and default inclusion are:
+Keep `fan fuel_pump gear_detector tachometer trip_odometer` in every supported profile, and keep `map_averaging` except on boards/profiles using `NO_MAP_AVERAGING`. Build availability and default inclusion are:
 
 | Feature | Token | Included by default |
-|---|---|---|
+| --- | --- | --- |
 | Hella OPS-T | `hella_opst` | No |
 | Boost | `boost` | Yes |
 | Engine Sniffer | `engine_sniffer` | Yes |
@@ -83,7 +83,7 @@ The explicit arguments prevent bare `make clean` from defaulting to another boar
 Each module may provide four conventional fragments, without another registry:
 
 | File | Purpose |
-|---|---|
+| --- | --- |
 | `config.txt` | Fields inserted at `! MODULE_CONFIG` into the active `engine_configuration_s`. |
 | `persistent_config.txt` | Calibration fields inserted at `! MODULE_PERSISTENT_CONFIG` into root `persistent_config_s`, avoiding another active configuration copy. |
 | `output_channels.txt` | Live output channels inserted at `! MODULE_OUTPUTS`. |
