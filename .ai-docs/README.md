@@ -87,6 +87,15 @@ subdivisions. It does not advance the cursor or skip the event. During the
 initial backfill, limit failures retain their normal fail-closed behavior
 instead of this integration-event recovery message.
 
+After an otherwise successful model response fails strict result validation,
+the generate phase makes at most one repair request. That request includes the
+original evidence plus the rejected result and validation error as explicitly
+untrusted metadata. The repair prompt has the same serialized-size cap, and its
+complete replacement result must pass the unchanged validator. Usage is summed
+across both calls for audit; if the repair also fails, no generation result,
+cursor advance, or pull request is produced. API failures and limit violations
+are not repaired.
+
 If source `master` already equals the merged cursor, the run exits without an AI
 request. If there are commits but no user-facing impact, the bot still opens a
 state-only pull request containing every per-commit no-impact decision. Opening
