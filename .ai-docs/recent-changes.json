@@ -2,9 +2,22 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "48628aefd9b14e32a6af54a3747e2ebccd917828",
-  "latest_analyzed_at": "2026-10-20T02:27:44.053715+00:00",
+  "latest_analyzed_commit": "19b3d53c158fbcd11fa14ecaebbcbb7cbc49552d",
+  "latest_analyzed_at": "2026-10-20T16:12:15.116568+00:00",
   "entries": [
+    {
+      "commit": "19b3d53c158fbcd11fa14ecaebbcbb7cbc49552d",
+      "subject": "fix(docs): preserve README line endings",
+      "authored_at": "2026-10-20T01:00:31+02:00",
+      "parents": [
+        "48628aefd9b14e32a6af54a3747e2ebccd917828"
+      ],
+      "comment": "The commit only converts README.md line endings from CRLF to LF. The rendered text, links, tune format, build steps, and firmware behavior are unchanged, so no driver, tuner, installer, or builder action is required.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-20T16:12:15.116568+00:00",
+      "integration_batch_commit": "19b3d53c158fbcd11fa14ecaebbcbb7cbc49552d"
+    },
     {
       "commit": "48628aefd9b14e32a6af54a3747e2ebccd917828",
       "subject": "docs: link recent changes beside the wiki",
