@@ -81,6 +81,9 @@ jobs:
       - name: Prepare source range and audit context
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          AI_DOCS_MAX_CURRENT_FILES: ${{ vars.AI_DOCS_MAX_CURRENT_FILES }}
+          AI_DOCS_MAX_WIKI_DOCS: ${{ vars.AI_DOCS_MAX_WIKI_DOCS }}
+          AI_DOCS_MAX_OUTPUT_FILES: ${{ vars.AI_DOCS_MAX_OUTPUT_FILES }}
           AI_DOCS_WORK_DIR: ${{ runner.temp }}/ai-docs-sync
         run: python3 -u scripts/ai-docs-sync.py prepare
 
