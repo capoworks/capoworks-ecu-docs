@@ -283,6 +283,82 @@ class PathMarkdownAndFrontmatterTests(TempDocs):
         content = "Use ``a ` and <script>alert(1)</script>`` as literal text.\n"
         sync.validate_markdown_body(content, "docs/SafeInlineCode.md")
 
+    def test_table_delimiters_require_spaces_around_each_cell(self) -> None:
+        for delimiter in ("|---|---|", "| --- |---|", "|:---|:---:|"):
+            with self.subTest(delimiter=delimiter):
+                content = f"| Name | Value |\n{delimiter}\n| A | B |\n"
+                with self.assertRaisesRegex(
+                    sync.ValidationFailure,
+                    r"docs/Generated\.md:2.*expected \| --- \| --- \|",
+                ):
+                    sync.validate_markdown_body(content, "docs/Generated.md")
+
+    def test_malformed_table_delimiters_fail_closed(self) -> None:
+        for delimiter in ("| -- | --- |", "| --- | :-: |", "| -: | :-: |"):
+            with self.subTest(delimiter=delimiter):
+                content = f"| Name | Value |\n{delimiter}\n| A | B |\n"
+                with self.assertRaisesRegex(sync.ValidationFailure, "delimiter row"):
+                    sync.validate_markdown_body(content, "docs/Generated.md")
+
+    def test_valid_spaced_table_delimiters_allow_alignment_colons(self) -> None:
+        content = (
+            "| Name | Value | Note |\n"
+            "| :--- | ---: | :---: |\n"
+            "| A | B | C |\n"
+        )
+        sync.validate_markdown_body(content, "docs/ValidTable.md")
+
+    def test_table_delimiters_in_fences_and_inline_code_are_ignored(self) -> None:
+        content = (
+            "```md\n"
+            "|---|---|\n"
+            "```\n\n"
+            "Use `|---|---|` as a literal delimiter example.\n"
+        )
+        sync.validate_markdown_body(content, "docs/SafeCode.md")
+
+    def test_non_code_markdown_links_follow_repository_route_policy(self) -> None:
+        bad_destinations = (
+            "guide.md",
+            "../guide.mdx#section",
+            "/01-guide",
+            "nested/02-guide",
+        )
+        for destination in bad_destinations:
+            with self.subTest(destination=destination):
+                content = f"Read [the guide]({destination}).\n"
+                with self.assertRaisesRegex(
+                    sync.ValidationFailure,
+                    r"docs/Generated\.md:1 Markdown link destination",
+                ):
+                    sync.validate_markdown_body(content, "docs/Generated.md")
+
+    def test_safe_markdown_links_and_code_link_examples_are_allowed(self) -> None:
+        content = (
+            "[Extensionless route](../../build-modules/)\n"
+            "[External reference](https://example.com/reference)\n"
+            "[Section](#local-section)\n\n"
+            "`[source extension](guide.md)`\n\n"
+            "```md\n"
+            "[numbered route](/01-guide)\n"
+            "```\n"
+        )
+        sync.validate_markdown_body(content, "docs/SafeLinks.md")
+
+    def test_malformed_markdown_link_url_fails_body_validation_with_context(
+        self,
+    ) -> None:
+        content = "# Links\n\n[host](https://[bad])\n"
+
+        with self.assertRaises(sync.ValidationFailure) as raised:
+            sync.validate_markdown_body(content, "docs/Generated.md")
+
+        message = str(raised.exception)
+        self.assertIn("docs/Generated.md:3", message)
+        self.assertIn("'https://[bad]'", message)
+        self.assertIn("is malformed", message)
+        self.assertIn("fix the URL syntax", message)
+
     def test_markdown_syntax_after_inline_code_is_still_rejected(self) -> None:
         unsafe_bodies = [
             ("`safe` <script>alert(1)</script>\n", "JSX or raw HTML"),
@@ -2588,6 +2664,11 @@ class ModelTransportTests(unittest.TestCase):
                         f"{total_bytes} UTF-8 bytes",
                         system_flat,
                     )
+                    self.assertIn(
+                        "specific evidence items per commit within the enforced maximum",
+                        system_flat,
+                    )
+                    self.assertNotIn("enforced maximum of 8", system_flat)
                     self.assertNotIn("max_evidence_items", system)
                     self.assertNotIn("777", system)
                     if metadata is not None:
@@ -2618,6 +2699,19 @@ class ModelTransportTests(unittest.TestCase):
             messages[0]["content"],
         )
         self.assertIn("at most 7 file objects", messages[0]["content"])
+        trusted_prompt = messages[0]["content"]
+        self.assertIn("spaced Markdown table delimiter rows", trusted_prompt)
+        self.assertIn("`| --- | --- |`", trusted_prompt)
+        self.assertIn("extensionless Docusaurus routes", trusted_prompt)
+        self.assertIn(
+            "`/Software/On-Demand-Firmware-Build/`", trusted_prompt
+        )
+        self.assertIn("`../../build-modules/`", trusted_prompt)
+        self.assertIn("`../build-modules` is the wrong", trusted_prompt)
+        self.assertIn("1-3 best", trusted_prompt)
+        self.assertIn("within the enforced maximum", trusted_prompt)
+        self.assertIn("existing target wiki document", trusted_prompt)
+        self.assertIn("not wholesale replacement templates", trusted_prompt)
 
         model_payload = {
             "summary": "No impact.",
@@ -2863,6 +2957,134 @@ class GenerationRepairTests(TempDocs):
                 "prompt_cache_hit_tokens": 12,
             },
         )
+
+    def test_compact_table_delimiter_repairs_once_to_spaced_table(self) -> None:
+        compact_table = payload(
+            [
+                {
+                    "path": "docs/Generated.md",
+                    "content": (
+                        "# Table\n\n"
+                        "| Name | Value |\n"
+                        "|---|---|\n"
+                        "| A | B |\n"
+                    ),
+                }
+            ]
+        )
+        spaced_table = payload(
+            [
+                {
+                    "path": "docs/Generated.md",
+                    "content": (
+                        "# Table\n\n"
+                        "| Name | Value |\n"
+                        "| --- | --- |\n"
+                        "| A | B |\n"
+                    ),
+                }
+            ]
+        )
+        transport = FakeTransport(
+            [self.response(compact_table), self.response(spaced_table)]
+        )
+
+        self.assertEqual(self.generate(self.client(transport)), 0)
+
+        self.assertEqual(len(transport.requests), 2)
+        repair_request = json.loads(transport.requests[1]["body"])
+        repair_user = repair_request["messages"][1]["content"]
+        metadata_json = repair_user.split(
+            "UNTRUSTED_REPAIR_METADATA_JSON_BEGIN\n", 1
+        )[1].split("\nUNTRUSTED_REPAIR_METADATA_JSON_END", 1)[0]
+        metadata = json.loads(metadata_json)
+        self.assertEqual(
+            metadata["validation_error"],
+            "docs/Generated.md:4 has a malformed Markdown table delimiter row; "
+            "expected | --- | --- |",
+        )
+        self.assertEqual(
+            sync.read_json(self.work_dir / "result.json")["result"], spaced_table
+        )
+
+    def test_malformed_ipv6_link_repairs_once_to_valid_url(self) -> None:
+        malformed_ipv6 = payload(
+            [
+                {
+                    "path": "docs/Generated.md",
+                    "content": "# Links\n\n[host](https://[bad])\n",
+                }
+            ]
+        )
+        corrected = payload(
+            [
+                {
+                    "path": "docs/Generated.md",
+                    "content": "# Links\n\n[host](https://example.com/)\n",
+                }
+            ]
+        )
+        transport = FakeTransport(
+            [self.response(malformed_ipv6), self.response(corrected)]
+        )
+
+        self.assertEqual(self.generate(self.client(transport)), 0)
+
+        self.assertEqual(len(transport.requests), 2)
+        repair_request = json.loads(transport.requests[1]["body"])
+        repair_user = repair_request["messages"][1]["content"]
+        metadata_json = repair_user.split(
+            "UNTRUSTED_REPAIR_METADATA_JSON_BEGIN\n", 1
+        )[1].split("\nUNTRUSTED_REPAIR_METADATA_JSON_END", 1)[0]
+        metadata = json.loads(metadata_json)
+        self.assertEqual(metadata["rejected_result"], malformed_ipv6)
+        self.assertIn(
+            "docs/Generated.md:3 Markdown link destination 'https://[bad]' "
+            "is malformed",
+            metadata["validation_error"],
+        )
+        self.assertEqual(
+            sync.read_json(self.work_dir / "result.json")["result"], corrected
+        )
+
+    def test_malformed_table_delimiter_after_repair_fails_closed(self) -> None:
+        compact_table = payload(
+            [
+                {
+                    "path": "docs/Generated.md",
+                    "content": (
+                        "# Table\n\n"
+                        "| Name | Value |\n"
+                        "|---|---|\n"
+                        "| A | B |\n"
+                    ),
+                }
+            ]
+        )
+        still_malformed = payload(
+            [
+                {
+                    "path": "docs/Generated.md",
+                    "content": (
+                        "# Table\n\n"
+                        "| Name | Value |\n"
+                        "| -- | --- |\n"
+                        "| A | B |\n"
+                    ),
+                }
+            ]
+        )
+        transport = FakeTransport(
+            [self.response(compact_table), self.response(still_malformed)]
+        )
+
+        with self.assertRaisesRegex(
+            sync.ValidationFailure, "malformed Markdown table delimiter row"
+        ):
+            self.generate(self.client(transport))
+
+        self.assertEqual(len(transport.requests), 2)
+        self.assertFalse((self.work_dir / "result.json").exists())
 
     def test_oversized_evidence_repair_selects_bounded_entries_in_two_calls(
         self,
