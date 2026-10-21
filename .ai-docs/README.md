@@ -94,7 +94,11 @@ untrusted metadata. The repair prompt has the same serialized-size cap, and its
 complete replacement result must pass the unchanged validator. Usage is summed
 across both calls for audit; if the repair also fails, no generation result,
 cursor advance, or pull request is produced. API failures and limit violations
-are not repaired.
+are not repaired. When the rejected result contains too many evidence entries,
+the trusted repair instruction tells the model to select the best specific
+entries within the active evidence limit rather than repeat the oversized
+array. Rejected model content remains complete untrusted metadata; it is not
+truncated or sanitized.
 
 If source `master` already equals the merged cursor, the run exits without an AI
 request. If there are commits but no user-facing impact, the bot still opens a
@@ -171,6 +175,18 @@ replacements. All output is validated before any file is written:
 - only safely scalar allowlisted frontmatter on new files;
 - safe Markdown with no executable imports, exports, JSX, HTML, MDX expressions,
   or dangerous link schemes outside fenced code blocks.
+
+Every initial and repair system prompt includes a trusted quantitative contract
+generated from the active run limits. It states that decisions must cover
+exactly the listed commits; each decision must contain between one and the
+active evidence maximum (eight by default); summary is limited to 4,000
+characters; each rationale and evidence item is limited to the active
+decision-text maximum (4,000 by default); and file count and UTF-8 byte totals
+must fit the active output limits. The defaults allow 50 files, 256,000 UTF-8
+bytes per file, and 750,000 UTF-8 bytes in total. `AI_DOCS_MAX_OUTPUT_FILES`
+therefore changes both the validator and the contract given to the model.
+Preparation and client dispatch serialize the same contract when enforcing the
+exact prompt-byte cap.
 
 The PR stores the source range, actual response model, actual token usage, and
 all per-commit evidence in `.ai-docs/state.json` and the PR body. Invalid or

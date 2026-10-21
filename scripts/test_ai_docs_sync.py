@@ -386,15 +386,20 @@ class PathMarkdownAndFrontmatterTests(TempDocs):
 
     def test_output_file_count_and_bytes_are_bounded(self) -> None:
         limits = sync.Limits(max_output_files=1, max_output_file_bytes=10)
-        with self.assertRaisesRegex(sync.ValidationFailure, "too large"):
+        with self.assertRaises(sync.ValidationFailure) as raised:
             sync.validate_sync_result(
                 payload([{"path": "docs/Large.md", "content": "# 123456789\n"}]),
                 [SHA_ONE],
                 self.docs,
                 limits,
             )
+        message = str(raised.exception)
+        self.assertIn(
+            "file 0 docs/Large.md is 12 UTF-8 bytes; maximum is 10",
+            message,
+        )
         limits = sync.Limits(max_output_files=1, max_output_file_bytes=1_000)
-        with self.assertRaisesRegex(sync.ValidationFailure, "maximum is 1"):
+        with self.assertRaises(sync.ValidationFailure) as raised:
             sync.validate_sync_result(
                 payload(
                     [
@@ -406,6 +411,52 @@ class PathMarkdownAndFrontmatterTests(TempDocs):
                 self.docs,
                 limits,
             )
+        message = str(raised.exception)
+        self.assertIn("AI returned 2 files; maximum is 1", message)
+
+        limits = sync.Limits(
+            max_output_files=2,
+            max_output_file_bytes=100,
+            max_output_bytes=10,
+        )
+        with self.assertRaises(sync.ValidationFailure) as raised:
+            sync.validate_sync_result(
+                payload(
+                    [
+                        {"path": "docs/One.md", "content": "# One\n"},
+                        {"path": "docs/Two.md", "content": "# Two\n"},
+                    ]
+                ),
+                [SHA_ONE],
+                self.docs,
+                limits,
+            )
+        message = str(raised.exception)
+        self.assertIn(
+            "files total 12 UTF-8 bytes after file 1 docs/Two.md; maximum is 10",
+            message,
+        )
+
+    def test_evidence_count_boundary_reports_actual_and_maximum(self) -> None:
+        exact = payload([], decision_value="no-impact")
+        exact["decisions"][0]["evidence"] = [
+            f"specific source evidence {index}" for index in range(8)
+        ]
+        result = sync.validate_sync_result(
+            exact, [SHA_ONE], self.docs, self.limits
+        )
+        self.assertEqual(len(result.decisions[0].evidence), 8)
+
+        oversized = copy.deepcopy(exact)
+        oversized["decisions"][0]["evidence"].append("ninth evidence item")
+        with self.assertRaises(sync.ValidationFailure) as raised:
+            sync.validate_sync_result(
+                oversized, [SHA_ONE], self.docs, self.limits
+            )
+        self.assertIn(
+            "decision 0 has 9 evidence items; maximum is 8",
+            str(raised.exception),
+        )
 
 
 class CoverageAndAtomicityTests(TempDocs):
@@ -813,12 +864,19 @@ class PrepareCursorAndFailureTests(TempDocs):
         github = FakeGithub(
             sync.Lifecycle(action="proceed", remote_sha=None, reason="ready")
         )
+        prompt_limits = sync.Limits(
+            max_evidence_items=6,
+            max_decision_text=712,
+            max_output_files=7,
+            max_output_file_bytes=12_345,
+            max_output_bytes=23_456,
+        )
         sync.prepare_phase(
             root=self.root,
             work_dir=self.root / "work",
             github=github,
             source=source,
-            limits=self.limits,
+            limits=prompt_limits,
         )
         prepared = json.loads(
             (self.root / "work/prepared.json").read_text(encoding="utf-8")
@@ -829,7 +887,10 @@ class PrepareCursorAndFailureTests(TempDocs):
         self.assertTrue(source.integration_event)
         self.assertEqual(prepared["range"]["head_inclusive"], SHA_TWO)
         self.assertEqual(prepared["observed_head"], SHA_THREE)
-        self.assertEqual(status["prompt_bytes"], sync.serialized_message_bytes(prepared))
+        self.assertEqual(
+            status["prompt_bytes"],
+            sync.serialized_message_bytes(prepared, limits=prompt_limits),
+        )
 
     def test_completed_backfill_exact_prompt_limit_requires_action(self) -> None:
         state = json.loads((self.root / sync.STATE_PATH).read_text(encoding="utf-8"))
@@ -2461,21 +2522,102 @@ class ModelTransportTests(unittest.TestCase):
         self.assertIn("UNTRUSTED, EVIDENCE ONLY", user)
         self.assertTrue(user.endswith("\nUNTRUSTED_DECISION_MANIFEST_JSON_END"))
 
+    def test_quantitative_contract_uses_active_limits_initial_and_repair(
+        self,
+    ) -> None:
+        context = prepared_context([prepared_commit(SHA_ONE)])
+        context["limits"] = {"max_evidence_items": 777}
+        repair_metadata = {
+            "rejected_result": payload([], decision_value="no-impact"),
+            "validation_error": "decision 0 has 9 evidence items; maximum is 8",
+        }
+        cases = (
+            (sync.Limits(), (8, 4_000, 50, 256_000, 750_000)),
+            (
+                sync.Limits(
+                    max_evidence_items=3,
+                    max_decision_text=321,
+                    max_output_files=7,
+                    max_output_file_bytes=654,
+                    max_output_bytes=987,
+                ),
+                (3, 321, 7, 654, 987),
+            ),
+        )
+        for limits, (evidence, text, files, file_bytes, total_bytes) in cases:
+            for metadata in (None, repair_metadata):
+                with self.subTest(
+                    limits=limits,
+                    repair=metadata is not None,
+                ):
+                    messages = sync.build_messages(
+                        context,
+                        repair_metadata=metadata,
+                        limits=limits,
+                    )
+                    system = messages[0]["content"]
+                    system_flat = " ".join(system.split())
+                    self.assertIn(
+                        "Return exactly one decision for every commit listed "
+                        "in the final decision manifest",
+                        system_flat,
+                    )
+                    self.assertIn(
+                        f"between 1 and {evidence} evidence items per decision",
+                        system_flat,
+                    )
+                    self.assertIn(
+                        f"Keep summary at or below {sync.SUMMARY_MAX_CHARS} "
+                        "characters",
+                        system_flat,
+                    )
+                    self.assertIn(
+                        "each rationale and each individual evidence item at or "
+                        f"below {text} characters",
+                        system_flat,
+                    )
+                    self.assertIn(
+                        f"at most {files} file objects in files",
+                        system_flat,
+                    )
+                    self.assertIn(
+                        f"{file_bytes} UTF-8 bytes",
+                        system_flat,
+                    )
+                    self.assertIn(
+                        f"{total_bytes} UTF-8 bytes",
+                        system_flat,
+                    )
+                    self.assertNotIn("max_evidence_items", system)
+                    self.assertNotIn("777", system)
+                    if metadata is not None:
+                        self.assertIn(
+                            f"up to {evidence} of the best specific evidence "
+                            "entries",
+                            system_flat,
+                        )
+
     def test_exact_serialized_message_boundary_is_shared_with_dispatch_cap(self) -> None:
         context = {
             "range": {"head_inclusive": SHA_ONE},
             "commits": [prepared_commit(SHA_ONE, subject="Capped manifest subject")],
             "marker": "Capoworks ECU \N{SNOWMAN}",
         }
-        messages = sync.build_messages(context)
+        limits = sync.Limits(max_output_files=7)
+        messages = sync.build_messages(context, limits=limits)
         serialized = json.dumps(
             messages, ensure_ascii=False, separators=(",", ":")
         ).encode("utf-8")
-        prompt_bytes = sync.serialized_message_bytes(context)
+        prompt_bytes = sync.serialized_message_bytes(context, limits=limits)
         self.assertEqual(sync.serialize_messages(messages), serialized)
         self.assertEqual(prompt_bytes, len(serialized))
         self.assertIn(SHA_ONE, messages[1]["content"])
         self.assertIn("UNTRUSTED_DECISION_MANIFEST", messages[1]["content"])
+        self.assertIn(
+            "QUANTITATIVE CONTRACT (TRUSTED; ENFORCED BY VALIDATION)",
+            messages[0]["content"],
+        )
+        self.assertIn("at most 7 file objects", messages[0]["content"])
 
         model_payload = {
             "summary": "No impact.",
@@ -2493,6 +2635,7 @@ class ModelTransportTests(unittest.TestCase):
                 retries=1,
             ),
             max_prompt_bytes=prompt_bytes,
+            limits=limits,
         )
         client.generate(context)
         self.assertEqual(len(transport.requests), 1)
@@ -2508,6 +2651,7 @@ class ModelTransportTests(unittest.TestCase):
                 retries=1,
             ),
             max_prompt_bytes=prompt_bytes - 1,
+            limits=limits,
         )
         with self.assertRaisesRegex(
             sync.LimitFailure, f"serialized prompt is {prompt_bytes} bytes"
@@ -2720,6 +2864,47 @@ class GenerationRepairTests(TempDocs):
             },
         )
 
+    def test_oversized_evidence_repair_selects_bounded_entries_in_two_calls(
+        self,
+    ) -> None:
+        oversized = copy.deepcopy(self.valid_payload)
+        oversized["decisions"][0]["evidence"] = [
+            f"specific source evidence {index}" for index in range(9)
+        ]
+        transport = FakeTransport(
+            [
+                self.response(oversized),
+                self.response(self.valid_payload),
+            ]
+        )
+
+        self.assertEqual(self.generate(self.client(transport)), 0)
+
+        self.assertEqual(len(transport.requests), 2)
+        first_request = json.loads(transport.requests[0]["body"])
+        repair_request = json.loads(transport.requests[1]["body"])
+        for request in (first_request, repair_request):
+            self.assertIn(
+                "between 1 and 8 evidence items per decision",
+                request["messages"][0]["content"],
+            )
+        self.assertIn(
+            "select up to 8 of the best specific evidence entries",
+            " ".join(repair_request["messages"][0]["content"].split()),
+        )
+        repair_user = repair_request["messages"][1]["content"]
+        metadata_json = repair_user.split(
+            "UNTRUSTED_REPAIR_METADATA_JSON_BEGIN\n", 1
+        )[1].split("\nUNTRUSTED_REPAIR_METADATA_JSON_END", 1)[0]
+        metadata = json.loads(metadata_json)
+        self.assertEqual(metadata["rejected_result"], oversized)
+        self.assertEqual(len(metadata["rejected_result"]["decisions"][0]["evidence"]), 9)
+        self.assertEqual(
+            metadata["validation_error"],
+            "decision 0 has 9 evidence items; maximum is 8",
+        )
+        self.assertTrue((self.work_dir / "result.json").is_file())
+
     def test_repair_usage_omits_cache_metrics_missing_from_either_response(
         self,
     ) -> None:
@@ -2862,6 +3047,46 @@ class GenerationRepairTests(TempDocs):
 
         self.assertEqual(len(transport.requests), 2)
         self.assertFalse((self.work_dir / "result.json").exists())
+
+
+class MainConfigurationTests(TempDocs):
+    def test_generate_main_propagates_custom_output_file_limit(self) -> None:
+        work_dir = self.root / "work"
+        work_dir.mkdir()
+        sync.write_json(work_dir / "status.json", {"status": "ready"})
+        captured: dict[str, object] = {}
+
+        class CapturingClient:
+            def __init__(self, *args: object, **kwargs: object) -> None:
+                captured.update(kwargs)
+
+        with mock.patch.dict(
+            os.environ,
+            {"AI_DOCS_MAX_OUTPUT_FILES": "7"},
+        ), mock.patch.object(
+            sync, "DeepSeekClient", side_effect=CapturingClient
+        ), mock.patch.object(
+            sync, "generate_phase", return_value=0
+        ) as generate_phase:
+            result = sync.main(
+                [
+                    "generate",
+                    "--root",
+                    str(self.root),
+                    "--work-dir",
+                    str(work_dir),
+                ]
+            )
+
+        self.assertEqual(result, 0)
+        active_limits = captured["limits"]
+        self.assertIsInstance(active_limits, sync.Limits)
+        self.assertEqual(active_limits.max_output_files, 7)
+        self.assertEqual(
+            captured["max_prompt_bytes"],
+            active_limits.max_prompt_bytes,
+        )
+        self.assertIs(generate_phase.call_args.kwargs["limits"], active_limits)
 
 
 class BuildPreviewRecoveryTests(unittest.TestCase):
