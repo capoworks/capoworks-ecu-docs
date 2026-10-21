@@ -23,7 +23,7 @@ On `hellen128`, `lua` is removed from that default because this board does not s
 Keep `fan fuel_pump gear_detector tachometer trip_odometer map_averaging` in every supported profile. Build availability and default inclusion are:
 
 | Feature | Token | Included by default |
-|---|---|---|
+| --- | --- | --- |
 | Hella OPS-T | `hella_opst` | No |
 | Boost | `boost` | Yes |
 | Engine Sniffer | `engine_sniffer` | Yes |
@@ -66,7 +66,7 @@ FOME_MODULES="fan fuel_pump gear_detector tachometer trip_odometer map_averaging
 Two optional build-profile values control fuel calibration table sizes:
 
 | Option | Values | Default | Effect |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `FOME_VE_RPM_COUNT` | `16`, `32` | `16` | RPM points in both the Speed Density VE table and the Alpha-N table |
 | `FOME_AIRMASS_BLEND_SIZE` | `8`, `16` | `8` | Both axes of the SD + Alpha-N authority table |
 
@@ -123,7 +123,7 @@ The explicit arguments prevent bare `make clean` from defaulting to another boar
 Each module may provide four conventional fragments, without another registry:
 
 | File | Purpose |
-|---|---|
+| --- | --- |
 | `config.txt` | Fields inserted at `! MODULE_CONFIG` into the active `engine_configuration_s`. |
 | `persistent_config.txt` | Calibration fields inserted at `! MODULE_PERSISTENT_CONFIG` into root `persistent_config_s`, avoiding another active configuration copy. |
 | `output_channels.txt` | Live output channels inserted at `! MODULE_OUTPUTS`. |
