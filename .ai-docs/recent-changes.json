@@ -2,9 +2,22 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "1734a4b70c11ff811885c4ee75e58cabef8b2af5",
-  "latest_analyzed_at": "2026-10-20T17:21:16.832280+00:00",
+  "latest_analyzed_commit": "caf060b87c40d3c4c75f06836b684064a0dbec57",
+  "latest_analyzed_at": "2026-10-20T20:14:30.041764+00:00",
   "entries": [
+    {
+      "commit": "caf060b87c40d3c4c75f06836b684064a0dbec57",
+      "subject": "Add validated on-demand firmware build workflow",
+      "authored_at": "2026-10-20T20:52:05+02:00",
+      "parents": [
+        "1734a4b70c11ff811885c4ee75e58cabef8b2af5"
+      ],
+      "comment": "Capoworks ECU adds a manual GitHub Actions workflow, Custom firmware build, that builds firmware for one selected board from the current master source. The request must supply a request_id of letters, digits, underscores, and hyphens, a board from the fixed list, and optionally a comma-separated list of opt-in modules. The workflow always includes the base modules fan, fuel_pump, gear_detector, tachometer, trip_odometer, and map_averaging, and rejects base modules, unknown or duplicate tokens, empty tokens, and over-long input. It rejects lua on hellen128 and shock_preload on boards other than core8, atlas, proteus_f4, proteus_f7, and proteus_h7. It also fails if the workflow's module list no longer matches the firmware module catalog. The build uses the repository's own compile script for the board, so the resulting binary and generated INI must be treated as one matching pair. Artifacts are retained for 14 days and include fome.bin, fome_update.srec when produced, the board INI when produced, and a manifest.json with SHA-256 hashes and the source commit. This is a build convenience only: it does not flash hardware, and a successful build is not engine or hardware validation.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-20T20:14:30.041764+00:00",
+      "integration_batch_commit": "caf060b87c40d3c4c75f06836b684064a0dbec57"
+    },
     {
       "commit": "1734a4b70c11ff811885c4ee75e58cabef8b2af5",
       "subject": "Merge pull request #70 from capoworks/fix/ci-configs-windows-simulator",
@@ -790,19 +803,6 @@
       ],
       "comment": "This integration merge carries the air-mass calibration and atomic fuel publication update from fef0a82ef6899b7b09c77ad0c9dd4f8996fe1733. It adds no separate firmware behavior or merge-resolution change.",
       "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "ed3e5c7f9f365826eae8551d3e873cefe53ea8a6"
-    },
-    {
-      "commit": "fef0a82ef6899b7b09c77ad0c9dd4f8996fe1733",
-      "subject": "feat(airmass): separate model calibration and publish fuel atomically",
-      "authored_at": "2026-10-17T20:10:32+02:00",
-      "parents": [
-        "034ec75bc1e9bf7391eeb0050b13038c0f60e3d7"
-      ],
-      "comment": "Air-mass model calibration is separated from the fuel, ignition and actuator consumers that share calculated load, and per-cylinder fuel results publish atomically. Layout 20032 requires manual tune transfer; back up older tunes and use the matching generated TunerStudio INI.",
-      "decision": "update",
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-19T22:22:03+00:00",
       "integration_batch_commit": "ed3e5c7f9f365826eae8551d3e873cefe53ea8a6"

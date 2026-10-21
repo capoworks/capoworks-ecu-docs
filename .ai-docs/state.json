@@ -4,7 +4,7 @@
   "source_branch": "master",
   "target_repository": "capoworks/capoworks-ecu-docs",
   "target_branch": "master",
-  "cursor_commit": "1734a4b70c11ff811885c4ee75e58cabef8b2af5",
+  "cursor_commit": "caf060b87c40d3c4c75f06836b684064a0dbec57",
   "initial_backfill": {
     "through_commit": "be02e3cdaa2c177d05853a41af6dacc9c0766b77",
     "commit_count": 5,
@@ -12,46 +12,39 @@
   },
   "last_sync": {
     "range": {
-      "base_exclusive": "728292632f3c1ae1fb4a1747d7809cfd23204658",
-      "head_inclusive": "1734a4b70c11ff811885c4ee75e58cabef8b2af5",
-      "commit_count": 2
+      "base_exclusive": "1734a4b70c11ff811885c4ee75e58cabef8b2af5",
+      "head_inclusive": "caf060b87c40d3c4c75f06836b684064a0dbec57",
+      "commit_count": 1
     },
     "model": "deepseek-flash",
     "usage": {
-      "prompt_tokens": 71358,
-      "completion_tokens": 4263,
-      "total_tokens": 75621,
-      "prompt_cache_hit_tokens": 2176,
-      "prompt_cache_miss_tokens": 69182
+      "prompt_tokens": 42808,
+      "completion_tokens": 1502,
+      "total_tokens": 44310,
+      "prompt_cache_hit_tokens": 1024,
+      "prompt_cache_miss_tokens": 41784
     },
-    "summary": "Capoworks ECU restored Frankenso configuration generation and fixed the Windows simulator build. Builders generating Frankenso configuration now use the f407-discovery board metadata for the host-only module profile, and the simulator's batch-order test now compiles on Windows.",
+    "summary": "Added a Capoworks ECU on-demand firmware build workflow that validates a requested board and opt-in module profile, builds from master, and publishes firmware artifacts with a checksum manifest.",
     "outcome": "update",
     "decisions": [
       {
-        "commit": "95d6e40b34ec625e49eb25c32490bb89ae6c18e7",
+        "commit": "caf060b87c40d3c4c75f06836b684064a0dbec57",
         "decision": "update",
-        "rationale": "Capoworks ECU restored Frankenso configuration generation: gen_config_board.sh now resolves the host-only module profile against the f407-discovery board metadata when the board directory is config/boards/frankenso, because Frankenso has no board.mk of its own. Config generation itself still uses the Frankenso board directory. Builders generating Frankenso configuration no longer need a manual workaround; no tune, flashing, or runtime behavior changes. The simulator's SleepExecutor batch-order test now casts its expected and actual callback counts to int for the firmwareError format, so the Windows simulator build compiles. This is a test-only change with no effect on simulator or ECU behavior.",
+        "rationale": "Capoworks ECU adds a manual GitHub Actions workflow, Custom firmware build, that builds firmware for one selected board from the current master source. The request must supply a request_id of letters, digits, underscores, and hyphens, a board from the fixed list, and optionally a comma-separated list of opt-in modules. The workflow always includes the base modules fan, fuel_pump, gear_detector, tachometer, trip_odometer, and map_averaging, and rejects base modules, unknown or duplicate tokens, empty tokens, and over-long input. It rejects lua on hellen128 and shock_preload on boards other than core8, atlas, proteus_f4, proteus_f7, and proteus_h7. It also fails if the workflow's module list no longer matches the firmware module catalog. The build uses the repository's own compile script for the board, so the resulting binary and generated INI must be treated as one matching pair. Artifacts are retained for 14 days and include fome.bin, fome_update.srec when produced, the board INI when produced, and a manifest.json with SHA-256 hashes and the source commit. This is a build convenience only: it does not flash hardware, and a successful build is not engine or hardware validation.",
         "evidence": [
-          "firmware/gen_config_board.sh: added PROFILE_BOARD_DIR=$BOARD_DIR and a case on BOARD_DIR_NORMALIZED matching config/boards/frankenso or */config/boards/frankenso to set PROFILE_BOARD_DIR to the sibling f407-discovery directory",
-          "firmware/gen_config_board.sh: module-profile make invocation now passes BOARD_DIR=\"$PROFILE_BOARD_DIR\" while config generation still passes -board ${BOARD_DIR}",
-          "firmware/gen_config_board.sh: comment states Frankenso builds with f407-discovery board metadata and has no board.mk",
-          "simulator/simulator/rusEfiFunctionalTest.cpp: assertBatchOrder firmwareError format changed from %zu to %d with static_cast<int> on expectedCount and context->callbackCount"
-        ]
-      },
-      {
-        "commit": "1734a4b70c11ff811885c4ee75e58cabef8b2af5",
-        "decision": "no-impact",
-        "rationale": "Integration merge of pull request #70 with no conflict-resolution changes beyond the child commit already documented. No additional user-facing documentation change.",
-        "evidence": [
-          "Merge commit 1734a4b70c11ff811885c4ee75e58cabef8b2af5 has parents 728292632 and 95d6e40b3",
-          "Changed paths are the same two files already covered by child commit 95d6e40b: firmware/gen_config_board.sh and simulator/simulator/rusEfiFunctionalTest.cpp",
-          "Merge diff shows no additional hunks beyond the child commit"
+          "New file .github/workflows/custom-firmware-build.yaml with workflow_dispatch inputs request_id, board, and features",
+          "Board choice list includes hellen72, hellen-nb1, hellenNA8_96, hellenNA6, hellen128, mre_f4, mre_f7, proteus_f4, proteus_f7, proteus_h7, stm32f429_nucleo, f407-discovery, atlas, core8",
+          "base_modules and optional_modules arrays; canonical_catalog compared against FOME_MODULE_CATALOG in firmware/controllers/modules/module_profile.mk",
+          "Validation rejects hellen128 with lua and restricts shock_preload to core8, atlas, proteus_f4, proteus_f7, proteus_h7",
+          "Checkout step pins ref: master; build step runs bash \"$COMPILE_SCRIPT\" in the mapped board directory",
+          "Verify step checks firmware/deliver/fome.bin and compares resolved modules from module_profile.sh against FOME_MODULES",
+          "Manifest generation writes sha256 and size_bytes per artifact plus source commit; upload-artifact retention-days: 14"
         ]
       }
     ],
     "files_changed": [
-      "docs/build-modules.md"
+      "docs/10-Software/On-Demand-Firmware-Build.md"
     ],
-    "recorded_at": "2026-10-20T17:21:16.830423+00:00"
+    "recorded_at": "2026-10-20T20:14:30.040009+00:00"
   }
 }
