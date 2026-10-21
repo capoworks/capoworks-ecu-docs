@@ -2,9 +2,49 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4",
-  "latest_analyzed_at": "2026-10-21T13:20:00.522905+00:00",
+  "latest_analyzed_commit": "eb220b087c876be73e297990f3b8e175e4e1ade6",
+  "latest_analyzed_at": "2026-10-21T13:43:01.938395+00:00",
   "entries": [
+    {
+      "commit": "eb220b087c876be73e297990f3b8e175e4e1ade6",
+      "subject": "Merge pull request #73 from capoworks/docs/giacomo-author-attribution",
+      "authored_at": "2026-10-21T11:41:16+02:00",
+      "parents": [
+        "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4",
+        "8f4cb53a76daa3ce79cb64dc263645f28952a5b2"
+      ],
+      "comment": "Integration merge of the attribution branch. Its child commits are audited separately and the merge adds no conflict-resolution or behavioral change, so it has no additional user-facing documentation effect.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-21T13:43:01.938395+00:00",
+      "integration_batch_commit": "eb220b087c876be73e297990f3b8e175e4e1ade6"
+    },
+    {
+      "commit": "8f4cb53a76daa3ce79cb64dc263645f28952a5b2",
+      "subject": "docs: correct EMP authorship and remove inaccurate provenance",
+      "authored_at": "2026-10-21T11:39:56+02:00",
+      "parents": [
+        "551cb085c016fb904ab542c73a4b0db585113d55"
+      ],
+      "comment": "Edits only the comment headers of the EMP pump source files, replacing the adaptation note with an author line and removing a provenance paragraph. The EMP pump protocol, configuration, and runtime behavior are unchanged, so no documentation or user action follows.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-21T13:43:01.938395+00:00",
+      "integration_batch_commit": "eb220b087c876be73e297990f3b8e175e4e1ade6"
+    },
+    {
+      "commit": "551cb085c016fb904ab542c73a4b0db585113d55",
+      "subject": "docs: credit Giacomo di Ciocco and record source attribution policy",
+      "authored_at": "2026-10-21T10:57:59+02:00",
+      "parents": [
+        "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4"
+      ],
+      "comment": "Adds a contributor credit to the repository README, a new AGENTS.md attribution policy, and Doxygen file/author headers to existing source files. No firmware behavior, configuration field, tune layout, build option, or flashing step changed, so no driver, tuner, or builder action is required.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-21T13:43:01.938395+00:00",
+      "integration_batch_commit": "eb220b087c876be73e297990f3b8e175e4e1ade6"
+    },
     {
       "commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4",
       "subject": "Merge pull request #72 from capoworks/feat/build-resource-matrix",
@@ -764,46 +804,6 @@
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-19T22:22:03+00:00",
       "integration_batch_commit": "a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd"
-    },
-    {
-      "commit": "eee63c82b531db9bc6fa640c58ad76cf740a2ff0",
-      "subject": "feat(airmass): blend captured SD and Alpha-N masses with TPS or MAP authority",
-      "authored_at": "2026-10-17T23:56:19+02:00",
-      "parents": [
-        "45298b9020a52059c278d3d0ba16bae89b7e6a7f"
-      ],
-      "comment": "A new SD + Alpha-N fuel strategy can blend the two branch air-mass calculations through a TPS or measured-MAP authority table. The selectors do not change either branch calibration, and branch health, fallback and diagnostics determine when a blended result is available.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd"
-    },
-    {
-      "commit": "1bf806b838061c4b00663575ed0ce3e930c6dfc8",
-      "subject": "Merge pull request #52 from capoworks/align/pr-27",
-      "authored_at": "2026-10-18T16:59:17+02:00",
-      "parents": [
-        "21260be2bf5ba5f7afa8df8b0ec193b719e6242b",
-        "45298b9020a52059c278d3d0ba16bae89b7e6a7f"
-      ],
-      "comment": "This integration merge carries the independent load-coordinate update from 45298b9020a52059c278d3d0ba16bae89b7e6a7f. It adds no separate firmware behavior or merge-resolution change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "1bf806b838061c4b00663575ed0ce3e930c6dfc8"
-    },
-    {
-      "commit": "45298b9020a52059c278d3d0ba16bae89b7e6a7f",
-      "subject": "feat(airmass): give control functions independent captured load coordinates",
-      "authored_at": "2026-10-17T22:47:38+02:00",
-      "parents": [
-        "ea47b68b374a863051e7f0ef62a068a068b138d7"
-      ],
-      "comment": "Independent captured load selectors let individual fuel, ignition and actuator consumers choose measured MAP, effective MAP, TPS, accelerator pedal or cylinder filling. These selectors do not change the fuel strategy; check the coordinate and units for each consumer, especially when MAP is estimated.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "1bf806b838061c4b00663575ed0ce3e930c6dfc8"
     }
   ]
 }
