@@ -1,13 +1,24 @@
 # On-Demand Firmware Build
 
-Capoworks ECU provides a manual GitHub Actions workflow, **Custom firmware build**, that builds a
-firmware image for one board with a chosen set of optional modules and calibration table dimensions.
-It is a build convenience: it does not flash an ECU, and a successful build is not engine or hardware
-validation.
+Capoworks ECU offers two ways to build a firmware image for one board with a chosen set of optional
+modules and calibration table dimensions: the public on-demand firmware builder and a manual GitHub
+Actions workflow, **Custom firmware build**. Both are build conveniences: neither flashes an ECU, and
+a successful build is not engine or hardware validation.
 
-## Request inputs
+## Public on-demand firmware builder
 
-The workflow takes seven inputs:
+The public builder is available at [capoworks.undo.it/firmware](https://capoworks.undo.it/firmware).
+Sign in to your account, select a supported board, and choose any opt-in modules and table dimensions
+before starting the build. When the build completes, download the matching firmware image and the
+generated TunerStudio INI. Each user can run up to six builds per day.
+
+The builder applies the same module catalog, dimension rules, and resource gate described on this
+page. Treat the downloaded firmware image and its generated INI as one matching pair, and do not pair
+an image with an INI from another board or build.
+
+## Manual workflow request inputs
+
+The **Custom firmware build** workflow takes seven inputs:
 
 | Input | Required | Allowed values | Description |
 | --- | --- | --- | --- |
@@ -38,7 +49,7 @@ hellen72 hellen-nb1 hellenNA8_96 hellenNA6 hellen128 mre_f4 mre_f7 proteus_f4 pr
 
 ## Module profile
 
-The workflow always includes these base modules:
+The build always includes these base modules:
 
 ```text
 fan fuel_pump gear_detector tachometer trip_odometer map_averaging
@@ -120,18 +131,18 @@ boundary.
 
 ## Build behavior
 
-The workflow checks out the current `master` source, installs the build dependencies, and runs the
-repository's own compile script for the selected board. It then verifies that the firmware image was
-produced, checks the generated module profile, extracts resource evidence, and gates the package against
-the active board policy.
+The manual workflow checks out the current `master` source, installs the build dependencies, and runs
+the repository's own compile script for the selected board. It then verifies that the firmware image
+was produced, checks the generated module profile, extracts resource evidence, and gates the package
+against the active board policy.
 
-Because the source is always `master`, the workflow does not build an arbitrary branch or tag. Use the
-local build instructions in [Build-time module profiles](../../build-modules/) when you need a specific
-source revision or a profile the workflow does not accept.
+Because the manual workflow's source is always `master`, it does not build an arbitrary branch or tag.
+Use the local build instructions in [Build-time module profiles](../../build-modules/) when you need a
+specific source revision or a profile the workflow does not accept.
 
 ## Artifacts
 
-A successful run uploads an artifact named `custom-firmware-<board>` containing:
+A successful manual run uploads an artifact named `custom-firmware-<board>` containing:
 
 | File | Purpose |
 | --- | --- |
@@ -146,5 +157,6 @@ Artifacts are retained for 14 days. Download them before they expire.
 
 - Treat the firmware image and its generated INI as one matching pair. Do not pair an image with an INI from another board or build.
 - The manifest records the source commit and file hashes for traceability; it is not a cryptographic authenticity guarantee.
-- The workflow never flashes an ECU. Flashing remains a separate, deliberate operation.
+- Neither the public builder nor the manual workflow flashes an ECU. Flashing remains a separate, deliberate operation.
 - A successful build does not establish that the firmware has been validated on a particular board, engine, sensor, or wiring setup.
+- The public builder allows up to six builds per user per day.

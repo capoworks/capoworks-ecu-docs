@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "batch_head": "bcad6ff1ff5b19ee294788ebca6255bcf72909f5",
+  "previous_cursor_commit": "eb220b087c876be73e297990f3b8e175e4e1ade6",
+  "cursor_commit": "bcad6ff1ff5b19ee294788ebca6255bcf72909f5",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4",
+      "head_inclusive": "eb220b087c876be73e297990f3b8e175e4e1ade6",
+      "commit_count": 3
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 203619,
+      "completion_tokens": 1142,
+      "total_tokens": 204761,
+      "prompt_cache_hit_tokens": 2688,
+      "prompt_cache_miss_tokens": 200931
+    },
+    "summary": "Attribution and provenance housekeeping only. The Capoworks firmware repository now credits Giacomo di Ciocco as author of Capoworks-specific contributions, adds a source-file attribution policy, and corrects the EMP pump file headers. No firmware behavior, configuration, tune format, build option, or flashing procedure changed, so no wiki page needs updating.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "551cb085c016fb904ab542c73a4b0db585113d55",
+        "decision": "no-impact",
+        "rationale": "Adds a contributor credit to the repository README, a new AGENTS.md attribution policy, and Doxygen file/author headers to existing source files. No firmware behavior, configuration field, tune layout, build option, or flashing step changed, so no driver, tuner, or builder action is required.",
+        "evidence": [
+          "README.md: adds 'Author of Capoworks-specific contributions: **Giacomo di Ciocco**.' under Credits",
+          "AGENTS.md: new project-scoped source attribution policy for future first-party files",
+          "firmware/controllers/sensors/hella_opst.cpp and other files: comment-only Doxygen @file/@author headers added, no code changes"
+        ]
+      },
+      {
+        "commit": "8f4cb53a76daa3ce79cb64dc263645f28952a5b2",
+        "decision": "no-impact",
+        "rationale": "Edits only the comment headers of the EMP pump source files, replacing the adaptation note with an author line and removing a provenance paragraph. The EMP pump protocol, configuration, and runtime behavior are unchanged, so no documentation or user action follows.",
+        "evidence": [
+          "firmware/controllers/modules/emp_pump/emp_pump.cpp: header comment reduced to @file and @author lines",
+          "firmware/controllers/modules/emp_pump/emp_pump.h: removed Speeduino commit reference and 'native FOME adaptation' sentence from the header comment",
+          "No changes to EmpPumpConfig, CAN IDs, or state machine code"
+        ]
+      },
+      {
+        "commit": "eb220b087c876be73e297990f3b8e175e4e1ade6",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the attribution branch. Its child commits are audited separately and the merge adds no conflict-resolution or behavioral change, so it has no additional user-facing documentation effect.",
+        "evidence": [
+          "Merge commit eb220b087c876be73e297990f3b8e175e4e1ade6 with parents 413ce9aac and 8f4cb53a7",
+          "Changed paths are the same attribution-only files from the two child commits",
+          "No additional diff content beyond the merged children"
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-21T13:43:01.936233+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "eb220b087c876be73e297990f3b8e175e4e1ade6",
+      "head_inclusive": "bcad6ff1ff5b19ee294788ebca6255bcf72909f5",
+      "commit_count": 1
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 30738,
+      "completion_tokens": 2717,
+      "total_tokens": 33455,
+      "prompt_cache_hit_tokens": 1536,
+      "prompt_cache_miss_tokens": 29202
+    },
+    "summary": "The repository README now presents the public Capoworks ECU on-demand firmware builder, including how to sign in, select a board, choose opt-in modules and table dimensions, download the matching firmware image and generated TunerStudio INI, and the limit of six builds per user per day. The existing on-demand firmware build wiki page is updated to describe the public builder alongside the manual workflow, with the same profile rules, artifact pairing, and safety boundaries.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "bcad6ff1ff5b19ee294788ebca6255bcf72909f5",
+        "decision": "update",
+        "rationale": "The repository README now advertises the public Capoworks ECU on-demand firmware builder at capoworks.undo.it/firmware and adds a section describing the user flow: sign in, select a supported board, choose opt-in modules and table dimensions, then download the matching firmware image and generated TunerStudio INI. It also states a limit of six builds per user per day. The on-demand firmware build wiki page is updated so readers can use the public builder as well as the manual GitHub Actions workflow, while keeping the same profile rules, the requirement to treat firmware and INI as one matching pair, and the warning that a successful build is not engine or hardware validation.",
+        "evidence": [
+          "README.md: link bar gains 'On-Demand Firmware Builder' pointing to https://capoworks.undo.it/firmware",
+          "README.md: new 'On-Demand Firmware Builder' section describes sign-in, board selection, opt-in modules and table dimensions, downloading the firmware image and generated TunerStudio INI, and a limit of six builds per day",
+          "README.md: section links to https://capoworks.github.io/capoworks-ecu-docs/Software/On-Demand-Firmware-Build/"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/10-Software/On-Demand-Firmware-Build.md"
+    ],
+    "recorded_at": "2026-10-21T13:45:46.204319+00:00"
+  }
+}
