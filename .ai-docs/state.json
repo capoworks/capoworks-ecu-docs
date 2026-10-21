@@ -4,7 +4,7 @@
   "source_branch": "master",
   "target_repository": "capoworks/capoworks-ecu-docs",
   "target_branch": "master",
-  "cursor_commit": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12",
+  "cursor_commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4",
   "initial_backfill": {
     "through_commit": "be02e3cdaa2c177d05853a41af6dacc9c0766b77",
     "commit_count": 5,
@@ -12,47 +12,71 @@
   },
   "last_sync": {
     "range": {
-      "base_exclusive": "caf060b87c40d3c4c75f06836b684064a0dbec57",
-      "head_inclusive": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12",
-      "commit_count": 2
+      "base_exclusive": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12",
+      "head_inclusive": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4",
+      "commit_count": 5
     },
     "model": "deepseek-flash",
     "usage": {
-      "prompt_tokens": 798296,
-      "completion_tokens": 9856,
-      "total_tokens": 808152,
-      "prompt_cache_hit_tokens": 2176,
-      "prompt_cache_miss_tokens": 796120
+      "prompt_tokens": 521896,
+      "completion_tokens": 14752,
+      "total_tokens": 536648,
+      "prompt_cache_hit_tokens": 1280,
+      "prompt_cache_miss_tokens": 520616
     },
-    "summary": "Capoworks ECU adds build-profile options for fuel table dimensions and engine preset selection, plus an F7 persistent-configuration size check. Builders can now choose 32-point VE RPM axes and 16-point SD + Alpha-N blend axes, and can restrict which engine presets are compiled in. Expanded-dimension builds reject engine presets and need a matching generated INI because the tune layout changes.",
+    "summary": "Adds Capoworks ECU build-resource evidence tooling: deterministic ELF resource extraction, bounded calibration plans, a manual resource-matrix workflow, and a resource gate that must pass before custom firmware is packaged. Also adds new custom-firmware build inputs for VE RPM count, airmass blend size, cylinder trim count, and engine presets, and makes macOS unit-test and configuration generation use Homebrew GNU Make and modern Bash.",
     "outcome": "update",
     "decisions": [
       {
-        "commit": "3060ccd5873a89e6499c9ade5756338ab7c529fd",
+        "commit": "c1c6fa222a32a8d3b45f55b2096db850aab891d2",
         "decision": "update",
-        "rationale": "Capoworks ECU adds two build-profile options. FOME_VE_RPM_COUNT accepts 16 or 32 and sets the RPM points of the Speed Density VE and Alpha-N tables; FOME_AIRMASS_BLEND_SIZE accepts 8 or 16 and sets both axes of the SD + Alpha-N authority table. Defaults stay at 16 and 8, so existing builds are unchanged. FOME_ENGINE_PRESETS accepts all, none, or exact engine_type_e symbol names and filters which preset dispatch code is compiled; omitting it keeps all presets at default dimensions but includes none when either dimension is expanded, and an explicit symbol list is rejected in expanded builds. Changing either dimension changes the persistent layout, so binary tunes from a differently sized build are rejected and reset; export values with the matching generated TunerStudio INI and re-import them manually. On STM32F7 a new static assertion rejects a persistent record larger than the 32 KiB copy slot, so expanded tables plus a high cylinder-trim count can fail to compile. Builders should set the options on the compile command, not as compiler defines, and rebuild without a clean build.",
+        "rationale": "Adds Capoworks ECU build-resource tooling and a new build-resource guide. Custom firmware builds now accept VE RPM count (16/32), airmass blend size (8/16), cylinder trim count (1-12), and engine presets, and are resolved through the canonical catalog instead of the workflow's own board table. A resource gate now runs after the build and before packaging, so a rejected resource report prevents firmware publication. Normal firmware CI and Core8 CI also collect resource evidence. Builders should read the new resource guide and expect a failed resource gate to block artifacts; results prove build-time technical fit only, not runtime or hardware behavior.",
         "evidence": [
-          "firmware/controllers/modules/module_profile.mk: FOME_VE_RPM_COUNT ?= 16 and FOME_AIRMASS_BLEND_SIZE ?= 8 validation, include of engine_preset_profile.mk",
-          "firmware/controllers/modules/engine_preset_profile.sh: render of FOME_ENGINE_PRESET_ENABLED_* switches, rejection of literal presets when expanded",
-          "firmware/controllers/algo/defaults/default_fuel.cpp: setDefaultVeRpmBins and setDefaultAirmassBlendBins 16/32 and 8/16 defaults",
-          "firmware/integration/fome_config.txt: veRpmBins uses VE_RPM_COUNT; ALPHA_N_RPM_COUNT and AIRMASS_BLEND_*_COUNT moved to generated defines",
-          "firmware/controllers/algo/persistent_configuration.h: STM32F7XX static_assert sizeof(persistent_config_container_s) <= 32 KiB",
-          "firmware/controllers/algo/engine_configuration.cpp: isEnginePresetAvailable, getDefaultEngineType, applyEnginePreset dispatch guards",
-          "firmware/CHANGELOG.md and docs/build-modules.md: new Fuel table dimensions and Engine presets sections"
+          "docs/build-resources.md added with evidence identity, statuses, calibration coverage, and command reference",
+          "misc/firmware_builder/resources.py, matrix.py, catalog.py, calibration.py, pipeline.py added",
+          "custom-firmware-build.yaml adds ve_rpm_count, airmass_blend_size, cylinder_trim_count, engine_presets inputs and Extract and gate resources step before Package validated firmware",
+          "build-firmware.yaml and capoworks-checks.yaml add calibration.py collect steps; Core8 firmware upload now requires collect_resources success",
+          "docs/build-modules.md links to build-resources.md; firmware/CHANGELOG.md adds Tooling entry"
         ]
       },
       {
-        "commit": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12",
+        "commit": "6a58d55561e10a7936f16b7482dba206aa2a2944",
         "decision": "no-impact",
-        "rationale": "Integration merge of the build-time table profile branch. Its child commit is documented separately and the merge adds no conflict-resolution changes of its own, so no additional user-facing documentation is needed.",
+        "rationale": "CI-only change: the macOS unit-test job installs Homebrew GNU Make and prepends its bin directory to PATH. No firmware behavior, build option, flashing step, or tune layout changes for users.",
         "evidence": [
-          "Merge commit 9a6fb7c5 with parents caf060b8 and 3060ccd5; changed paths match the child commit and the diff body is empty"
+          ".github/workflows/build-unit-tests.yaml: brew install mtools zip dosfstools make and echo \"$(brew --prefix make)/libexec/gnubin\" >> \"$GITHUB_PATH\""
+        ]
+      },
+      {
+        "commit": "5710b0c4c5115783330ffdf7d3fe8d55f57e8e00",
+        "decision": "no-impact",
+        "rationale": "Replaces mapfile with a read loop in the engine preset renderer so it runs under Bash 3.2. The generated preset profile output is unchanged; this is a build-script portability fix with no user-facing firmware or configuration change.",
+        "evidence": [
+          "firmware/controllers/modules/engine_preset_profile.sh: mapfile -t supported and mapfile -t enum_symbols replaced with while IFS= read -r loops"
+        ]
+      },
+      {
+        "commit": "e04544ed46cb547f5a423c0e2b1fae27945a5e09",
+        "decision": "no-impact",
+        "rationale": "Build-tooling portability change: the macOS unit-test job installs Homebrew Bash and prints make/bash versions, and gen_config_board.sh uses an env-based Bash shebang. No firmware feature, build option, or tune behavior changes for users.",
+        "evidence": [
+          ".github/workflows/build-unit-tests.yaml: brew install ... bash, PATH update, make --version and bash --version",
+          "firmware/gen_config_board.sh: shebang changed from #!/bin/bash to #!/usr/bin/env bash"
+        ]
+      },
+      {
+        "commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the build-resource-matrix branch. Its child commits are audited separately and the merge adds no conflict-resolution changes with distinct user-facing effect.",
+        "evidence": [
+          "Merge commit 413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4 with parents 9a6fb7c5a and e04544ed4; no additional diff content beyond the audited child commits"
         ]
       }
     ],
     "files_changed": [
-      "docs/build-modules.md"
+      "docs/build-modules.md",
+      "docs/build-resources.md"
     ],
-    "recorded_at": "2026-10-21T01:00:50.553064+00:00"
+    "recorded_at": "2026-10-21T13:20:00.520849+00:00"
   }
 }

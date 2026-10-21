@@ -2,9 +2,75 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12",
-  "latest_analyzed_at": "2026-10-21T01:00:50.555060+00:00",
+  "latest_analyzed_commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4",
+  "latest_analyzed_at": "2026-10-21T13:20:00.522905+00:00",
   "entries": [
+    {
+      "commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4",
+      "subject": "Merge pull request #72 from capoworks/feat/build-resource-matrix",
+      "authored_at": "2026-10-21T10:35:01+02:00",
+      "parents": [
+        "9a6fb7c5a604c209d2a5b118d94b257b205b2e12",
+        "e04544ed46cb547f5a423c0e2b1fae27945a5e09"
+      ],
+      "comment": "Integration merge of the build-resource-matrix branch. Its child commits are audited separately and the merge adds no conflict-resolution changes with distinct user-facing effect.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-21T13:20:00.522905+00:00",
+      "integration_batch_commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4"
+    },
+    {
+      "commit": "e04544ed46cb547f5a423c0e2b1fae27945a5e09",
+      "subject": "Select modern Bash for macOS configuration generation",
+      "authored_at": "2026-10-21T00:24:41+02:00",
+      "parents": [
+        "5710b0c4c5115783330ffdf7d3fe8d55f57e8e00"
+      ],
+      "comment": "Build-tooling portability change: the macOS unit-test job installs Homebrew Bash and prints make/bash versions, and gen_config_board.sh uses an env-based Bash shebang. No firmware feature, build option, or tune behavior changes for users.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-21T13:20:00.522905+00:00",
+      "integration_batch_commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4"
+    },
+    {
+      "commit": "5710b0c4c5115783330ffdf7d3fe8d55f57e8e00",
+      "subject": "Keep engine preset generation compatible with Bash 3.2",
+      "authored_at": "2026-10-21T00:16:38+02:00",
+      "parents": [
+        "6a58d55561e10a7936f16b7482dba206aa2a2944"
+      ],
+      "comment": "Replaces mapfile with a read loop in the engine preset renderer so it runs under Bash 3.2. The generated preset profile output is unchanged; this is a build-script portability fix with no user-facing firmware or configuration change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-21T13:20:00.522905+00:00",
+      "integration_batch_commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4"
+    },
+    {
+      "commit": "6a58d55561e10a7936f16b7482dba206aa2a2944",
+      "subject": "Use Homebrew GNU Make for macOS unit tests",
+      "authored_at": "2026-10-21T00:08:35+02:00",
+      "parents": [
+        "c1c6fa222a32a8d3b45f55b2096db850aab891d2"
+      ],
+      "comment": "CI-only change: the macOS unit-test job installs Homebrew GNU Make and prepends its bin directory to PATH. No firmware behavior, build option, flashing step, or tune layout changes for users.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-21T13:20:00.522905+00:00",
+      "integration_batch_commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4"
+    },
+    {
+      "commit": "c1c6fa222a32a8d3b45f55b2096db850aab891d2",
+      "subject": "Add board resource evidence and opt-in feature preflight",
+      "authored_at": "2026-10-20T23:52:45+02:00",
+      "parents": [
+        "3060ccd5873a89e6499c9ade5756338ab7c529fd"
+      ],
+      "comment": "Adds Capoworks ECU build-resource tooling and a new build-resource guide. Custom firmware builds now accept VE RPM count (16/32), airmass blend size (8/16), cylinder trim count (1-12), and engine presets, and are resolved through the canonical catalog instead of the workflow's own board table. A resource gate now runs after the build and before packaging, so a rejected resource report prevents firmware publication. Normal firmware CI and Core8 CI also collect resource evidence. Builders should read the new resource guide and expect a failed resource gate to block artifacts; results prove build-time technical fit only, not runtime or hardware behavior.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-21T13:20:00.522905+00:00",
+      "integration_batch_commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4"
+    },
     {
       "commit": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12",
       "subject": "Merge pull request #71 from capoworks/feat/build-time-table-profiles",
@@ -738,74 +804,6 @@
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-19T22:22:03+00:00",
       "integration_batch_commit": "1bf806b838061c4b00663575ed0ce3e930c6dfc8"
-    },
-    {
-      "commit": "21260be2bf5ba5f7afa8df8b0ec193b719e6242b",
-      "subject": "Merge pull request #51 from capoworks/align/pr-26",
-      "authored_at": "2026-10-18T16:59:08+02:00",
-      "parents": [
-        "77ce47cc2527050c3130c2ddc010b3b49b460f8f",
-        "ea47b68b374a863051e7f0ef62a068a068b138d7"
-      ],
-      "comment": "This integration merge carries the time-budget dwell-planning update from ea47b68b374a863051e7f0ef62a068a068b138d7. It adds no separate firmware behavior or merge-resolution change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "21260be2bf5ba5f7afa8df8b0ec193b719e6242b"
-    },
-    {
-      "commit": "ea47b68b374a863051e7f0ef62a068a068b138d7",
-      "subject": "feat(ignition): plan dwell with a causal time budget",
-      "authored_at": "2026-10-17T22:33:31+02:00",
-      "parents": [
-        "69f7973f5da52a1d5e6b37a848cc7a88205ac01f"
-      ],
-      "comment": "Experimental time-budget dwell planning can retarget individual-coil ignition events within causal timing and physical dwell limits on supported synchronized triggers. It is opt-in, Legacy remains the default and fallback, and the behavior requires timing and dwell validation on the intended hardware.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "21260be2bf5ba5f7afa8df8b0ec193b719e6242b"
-    },
-    {
-      "commit": "77ce47cc2527050c3130c2ddc010b3b49b460f8f",
-      "subject": "Merge pull request #50 from capoworks/align/pr-24",
-      "authored_at": "2026-10-18T16:58:58+02:00",
-      "parents": [
-        "809de8f8ec49b1442e9e5fa8f7fe73005da8be74",
-        "69f7973f5da52a1d5e6b37a848cc7a88205ac01f"
-      ],
-      "comment": "This integration merge carries the cycle-profile ignition update from 69f7973f5da52a1d5e6b37a848cc7a88205ac01f. It adds no separate firmware behavior or merge-resolution change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "77ce47cc2527050c3130c2ddc010b3b49b460f8f"
-    },
-    {
-      "commit": "69f7973f5da52a1d5e6b37a848cc7a88205ac01f",
-      "subject": "feat(ignition): add optional cycle-profile angle conversion",
-      "authored_at": "2026-10-17T22:05:11+02:00",
-      "parents": [
-        "09886f0b28a6e7544becb1fd2221da5527a1e673"
-      ],
-      "comment": "Experimental cycle-profile timing converts ignition charge and firing angles using recent tooth history on supported missing-tooth wheels with full cam synchronization. It is opt-in and falls back to RPM-based conversion outside a valid profile; RPM and injection scheduling are unchanged.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "77ce47cc2527050c3130c2ddc010b3b49b460f8f"
-    },
-    {
-      "commit": "809de8f8ec49b1442e9e5fa8f7fe73005da8be74",
-      "subject": "Merge pull request #49 from capoworks/align/pr-23",
-      "authored_at": "2026-10-18T16:58:50+02:00",
-      "parents": [
-        "ed3e5c7f9f365826eae8551d3e873cefe53ea8a6",
-        "09886f0b28a6e7544becb1fd2221da5527a1e673"
-      ],
-      "comment": "This integration merge carries the rolling-cycle idle feedback update from 09886f0b28a6e7544becb1fd2221da5527a1e673. It adds no separate firmware behavior or merge-resolution change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "809de8f8ec49b1442e9e5fa8f7fe73005da8be74"
     }
   ]
 }
