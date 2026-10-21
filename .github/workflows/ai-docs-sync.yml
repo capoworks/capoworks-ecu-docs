@@ -161,6 +161,44 @@ jobs:
       - name: Build the documentation site
         run: npm run build
 
+  mark-publication-failed:
+    name: Record failed publication candidate
+    needs: [sync, validate-publication]
+    if: >-
+      always() &&
+      needs.sync.outputs.publish == 'true' &&
+      needs.validate-publication.result == 'failure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Check out the selected trusted base without credentials
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.sync.outputs.base_sha }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Record the exact failed candidate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ needs.sync.outputs.pr_number }}
+          BASE_SHA: ${{ needs.sync.outputs.base_sha }}
+          HEAD_SHA: ${{ needs.sync.outputs.head_sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: >-
+          python3 -u scripts/ai-docs-publish.py mark-failed
+          --pr-number "$PR_NUMBER"
+          --base-sha "$BASE_SHA"
+          --head-sha "$HEAD_SHA"
+          --run-id "$RUN_ID"
+
   merge-publication:
     name: Merge validated publication and dispatch follow-ups
     needs: [sync, validate-publication]
