@@ -345,6 +345,158 @@ class PathMarkdownAndFrontmatterTests(TempDocs):
         )
         sync.validate_markdown_body(content, "docs/SafeLinks.md")
 
+    def test_root_forward_link_to_new_document_uses_rendered_route(self) -> None:
+        (self.docs / "build-modules.md").write_text("# Build modules\n", encoding="utf-8")
+        new_document = {"path": "docs/build-resources.md", "content": "# Resources\n"}
+        bad = payload(
+            [
+                {
+                    "path": "docs/build-modules.md",
+                    "content": "# Build modules\n\n[Resources](build-resources)\n",
+                },
+                new_document,
+            ]
+        )
+        with self.assertRaises(sync.ValidationFailure) as raised:
+            sync.validate_sync_result(bad, [SHA_ONE], self.docs, self.limits)
+        message = str(raised.exception)
+        self.assertIn("actual resolved path '/build-modules/build-resources/'", message)
+        self.assertIn("correct route '/build-resources/'", message)
+        self.assertIn("use the relative route '../build-resources/'", message)
+
+        good = copy.deepcopy(bad)
+        good["files"][0]["content"] = (
+            "# Build modules\n\n[Resources](../build-resources/)\n"
+        )
+        result = sync.validate_sync_result(good, [SHA_ONE], self.docs, self.limits)
+        self.assertEqual([file.path for file in result.files], [
+            "docs/build-modules.md",
+            "docs/build-resources.md",
+        ])
+
+    def test_nested_forward_link_resolves_from_rendered_page_route(self) -> None:
+        software = self.docs / "Software"
+        software.mkdir()
+        (software / "On-Demand-Firmware-Build.md").write_text(
+            "# On-demand firmware build\n", encoding="utf-8"
+        )
+        (self.docs / "build-modules.md").write_text("# Build modules\n", encoding="utf-8")
+
+        def link_payload(link: str) -> dict[str, object]:
+            return payload(
+                [
+                    {
+                        "path": "docs/Software/On-Demand-Firmware-Build.md",
+                        "content": f"# On-demand firmware build\n\n[Modules]({link})\n",
+                    }
+                ]
+            )
+
+        with self.assertRaises(sync.ValidationFailure) as raised:
+            sync.validate_sync_result(
+                link_payload("../build-modules"),
+                [SHA_ONE],
+                self.docs,
+                self.limits,
+            )
+        message = str(raised.exception)
+        self.assertIn("actual resolved path '/Software/build-modules/'", message)
+        self.assertIn("correct route '/build-modules/'", message)
+        self.assertIn("use the relative route '../../build-modules/'", message)
+        sync.validate_sync_result(
+            link_payload("../../build-modules/"),
+            [SHA_ONE],
+            self.docs,
+            self.limits,
+        )
+
+    def test_route_catalog_matches_number_slug_and_category_index_defaults(
+        self,
+    ) -> None:
+        software = self.docs / "01-Software"
+        aux = self.docs / "09-Hardware" / "05-Aux-Hardware"
+        aux.mkdir(parents=True)
+        software.mkdir()
+        (software / "02-Tool.md").write_text("# Tool\n", encoding="utf-8")
+        (software / "2021-11-Release.md").write_text("# Release\n", encoding="utf-8")
+        (software / "8.0-Version.md").write_text("# Version\n", encoding="utf-8")
+        (software / "Custom.md").write_text(
+            "---\nslug: /custom/path\n---\n# Custom\n", encoding="utf-8"
+        )
+        (software / "Relative.md").write_text(
+            "---\nslug: sibling\n---\n# Relative\n", encoding="utf-8"
+        )
+        (aux / "Index.mdx").write_text("# Auxiliary hardware\n", encoding="utf-8")
+        (software / "Complex.md").write_text(
+            "---\nslug:\n  - unsupported\n---\n# Complex\n", encoding="utf-8"
+        )
+
+        routes = sync._derive_target_doc_routes(self.docs)
+
+        self.assertEqual(routes["docs/01-Software/02-Tool.md"], "/Software/Tool/")
+        self.assertEqual(
+            routes["docs/01-Software/2021-11-Release.md"],
+            "/Software/2021-11-Release/",
+        )
+        self.assertEqual(
+            routes["docs/01-Software/8.0-Version.md"],
+            "/Software/8.0-Version/",
+        )
+        self.assertEqual(routes["docs/01-Software/Custom.md"], "/custom/path/")
+        self.assertEqual(
+            routes["docs/01-Software/Relative.md"], "/Software/sibling/"
+        )
+        self.assertEqual(
+            routes["docs/09-Hardware/05-Aux-Hardware/Index.mdx"],
+            "/Hardware/Aux-Hardware/",
+        )
+        self.assertNotIn("docs/01-Software/Complex.md", routes)
+
+    def test_route_preflight_excludes_code_assets_external_and_unknown_routes(
+        self,
+    ) -> None:
+        (self.docs / "build-modules.md").write_text("# Build modules\n", encoding="utf-8")
+        (self.docs / "build-resources.md").write_text("# Resources\n", encoding="utf-8")
+        content = (
+            "# Build modules\n\n"
+            "`[inline code](build-resources)`\n\n"
+            "```md\n"
+            "[fenced code](build-resources)\n"
+            "```\n\n"
+            "[Good relative](../build-resources/)\n"
+            "[External](https://example.com/build-resources)\n"
+            "[Mail](mailto:docs@example.com)\n"
+            "[Anchor](#build-modules)\n"
+            "[Asset](../assets/logo.png)\n"
+            "![Image asset](build-resources)\n"
+            "[Absolute route](/Software/build-resources/)\n"
+            "[Category](/category/build-resources/)\n"
+            "[Legacy alias](/r/build-resources)\n"
+            "[Unknown route](../not-a-document)\n"
+        )
+        result = sync.validate_sync_result(
+            payload([{"path": "docs/build-modules.md", "content": content}]),
+            [SHA_ONE],
+            self.docs,
+            self.limits,
+        )
+        self.assertEqual(result.files[0].path, "docs/build-modules.md")
+
+    def test_prospective_output_files_join_trusted_route_catalog(self) -> None:
+        (self.docs / "build-modules.md").write_text("# Build modules\n", encoding="utf-8")
+        prospective = {
+            "docs/build-resources.md": (
+                "---\nslug: /resources/custom\n---\n# Resources\n"
+            )
+        }
+        routes = sync._derive_target_doc_routes(
+            self.docs, prospective_files=prospective
+        )
+        self.assertEqual(routes["docs/build-modules.md"], "/build-modules/")
+        self.assertEqual(
+            routes["docs/build-resources.md"], "/resources/custom/"
+        )
+
     def test_malformed_markdown_link_url_fails_body_validation_with_context(
         self,
     ) -> None:
@@ -963,6 +1115,7 @@ class PrepareCursorAndFailureTests(TempDocs):
         self.assertTrue(source.integration_event)
         self.assertEqual(prepared["range"]["head_inclusive"], SHA_TWO)
         self.assertEqual(prepared["observed_head"], SHA_THREE)
+        self.assertEqual(prepared["target_doc_routes"], {})
         self.assertEqual(
             status["prompt_bytes"],
             sync.serialized_message_bytes(prepared, limits=prompt_limits),
@@ -3005,6 +3158,67 @@ class GenerationRepairTests(TempDocs):
         )
         self.assertEqual(
             sync.read_json(self.work_dir / "result.json")["result"], spaced_table
+        )
+
+    def test_known_route_mismatch_repairs_once_and_ignores_forged_context(
+        self,
+    ) -> None:
+        (self.docs / "build-modules.md").write_text(
+            "# Build modules\n", encoding="utf-8"
+        )
+        self.context["target_doc_routes"] = {
+            "docs/forged.md": "/build-modules/build-resources/"
+        }
+        sync.write_json(self.work_dir / "prepared.json", self.context)
+        resources = {
+            "path": "docs/build-resources.md",
+            "content": "# Build resources\n",
+        }
+        bad = payload(
+            [
+                {
+                    "path": "docs/build-modules.md",
+                    "content": (
+                        "# Build modules\n\n"
+                        "[Build resources](build-resources)\n"
+                    ),
+                },
+                resources,
+            ]
+        )
+        good = payload(
+            [
+                {
+                    "path": "docs/build-modules.md",
+                    "content": (
+                        "# Build modules\n\n"
+                        "[Build resources](../build-resources/)\n"
+                    ),
+                },
+                resources,
+            ]
+        )
+        transport = FakeTransport([self.response(bad), self.response(good)])
+
+        self.assertEqual(self.generate(self.client(transport)), 0)
+
+        self.assertEqual(len(transport.requests), 2)
+        repair_request = json.loads(transport.requests[1]["body"])
+        repair_user = repair_request["messages"][1]["content"]
+        metadata_json = repair_user.split(
+            "UNTRUSTED_REPAIR_METADATA_JSON_BEGIN\n", 1
+        )[1].split("\nUNTRUSTED_REPAIR_METADATA_JSON_END", 1)[0]
+        repair_metadata = json.loads(metadata_json)
+        self.assertIn(
+            "actual resolved path '/build-modules/build-resources/'",
+            repair_metadata["validation_error"],
+        )
+        self.assertIn(
+            "use the relative route '../build-resources/'",
+            repair_metadata["validation_error"],
+        )
+        self.assertEqual(
+            sync.read_json(self.work_dir / "result.json")["result"], good
         )
 
     def test_malformed_ipv6_link_repairs_once_to_valid_url(self) -> None:
