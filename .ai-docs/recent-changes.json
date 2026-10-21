@@ -2,9 +2,22 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "eb220b087c876be73e297990f3b8e175e4e1ade6",
-  "latest_analyzed_at": "2026-10-21T13:43:01.938395+00:00",
+  "latest_analyzed_commit": "bcad6ff1ff5b19ee294788ebca6255bcf72909f5",
+  "latest_analyzed_at": "2026-10-21T13:45:46.206590+00:00",
   "entries": [
+    {
+      "commit": "bcad6ff1ff5b19ee294788ebca6255bcf72909f5",
+      "subject": "Present on-demand firmware builder in repository README",
+      "authored_at": "2026-10-21T12:18:55+02:00",
+      "parents": [
+        "eb220b087c876be73e297990f3b8e175e4e1ade6"
+      ],
+      "comment": "The repository README now advertises the public Capoworks ECU on-demand firmware builder at capoworks.undo.it/firmware and adds a section describing the user flow: sign in, select a supported board, choose opt-in modules and table dimensions, then download the matching firmware image and generated TunerStudio INI. It also states a limit of six builds per user per day. The on-demand firmware build wiki page is updated so readers can use the public builder as well as the manual GitHub Actions workflow, while keeping the same profile rules, the requirement to treat firmware and INI as one matching pair, and the warning that a successful build is not engine or hardware validation.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-21T13:45:46.206590+00:00",
+      "integration_batch_commit": "bcad6ff1ff5b19ee294788ebca6255bcf72909f5"
+    },
     {
       "commit": "eb220b087c876be73e297990f3b8e175e4e1ade6",
       "subject": "Merge pull request #73 from capoworks/docs/giacomo-author-attribution",
@@ -790,20 +803,6 @@
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-19T22:22:03+00:00",
       "integration_batch_commit": "91b74aedfd7b58da66d95f259c16086c7c3e5093"
-    },
-    {
-      "commit": "a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd",
-      "subject": "Merge pull request #53 from capoworks/align/pr-28",
-      "authored_at": "2026-10-18T16:59:25+02:00",
-      "parents": [
-        "1bf806b838061c4b00663575ed0ce3e930c6dfc8",
-        "eee63c82b531db9bc6fa640c58ad76cf740a2ff0"
-      ],
-      "comment": "This integration merge carries the SD + Alpha-N blend update from eee63c82b531db9bc6fa640c58ad76cf740a2ff0. It adds no separate firmware behavior or merge-resolution change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd"
     }
   ]
 }
