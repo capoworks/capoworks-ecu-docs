@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "batch_head": "eb220b087c876be73e297990f3b8e175e4e1ade6",
+  "previous_cursor_commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4",
+  "cursor_commit": "eb220b087c876be73e297990f3b8e175e4e1ade6",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12",
+      "head_inclusive": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4",
+      "commit_count": 5
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 521896,
+      "completion_tokens": 14752,
+      "total_tokens": 536648,
+      "prompt_cache_hit_tokens": 1280,
+      "prompt_cache_miss_tokens": 520616
+    },
+    "summary": "Adds Capoworks ECU build-resource evidence tooling: deterministic ELF resource extraction, bounded calibration plans, a manual resource-matrix workflow, and a resource gate that must pass before custom firmware is packaged. Also adds new custom-firmware build inputs for VE RPM count, airmass blend size, cylinder trim count, and engine presets, and makes macOS unit-test and configuration generation use Homebrew GNU Make and modern Bash.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "c1c6fa222a32a8d3b45f55b2096db850aab891d2",
+        "decision": "update",
+        "rationale": "Adds Capoworks ECU build-resource tooling and a new build-resource guide. Custom firmware builds now accept VE RPM count (16/32), airmass blend size (8/16), cylinder trim count (1-12), and engine presets, and are resolved through the canonical catalog instead of the workflow's own board table. A resource gate now runs after the build and before packaging, so a rejected resource report prevents firmware publication. Normal firmware CI and Core8 CI also collect resource evidence. Builders should read the new resource guide and expect a failed resource gate to block artifacts; results prove build-time technical fit only, not runtime or hardware behavior.",
+        "evidence": [
+          "docs/build-resources.md added with evidence identity, statuses, calibration coverage, and command reference",
+          "misc/firmware_builder/resources.py, matrix.py, catalog.py, calibration.py, pipeline.py added",
+          "custom-firmware-build.yaml adds ve_rpm_count, airmass_blend_size, cylinder_trim_count, engine_presets inputs and Extract and gate resources step before Package validated firmware",
+          "build-firmware.yaml and capoworks-checks.yaml add calibration.py collect steps; Core8 firmware upload now requires collect_resources success",
+          "docs/build-modules.md links to build-resources.md; firmware/CHANGELOG.md adds Tooling entry"
+        ]
+      },
+      {
+        "commit": "6a58d55561e10a7936f16b7482dba206aa2a2944",
+        "decision": "no-impact",
+        "rationale": "CI-only change: the macOS unit-test job installs Homebrew GNU Make and prepends its bin directory to PATH. No firmware behavior, build option, flashing step, or tune layout changes for users.",
+        "evidence": [
+          ".github/workflows/build-unit-tests.yaml: brew install mtools zip dosfstools make and echo \"$(brew --prefix make)/libexec/gnubin\" >> \"$GITHUB_PATH\""
+        ]
+      },
+      {
+        "commit": "5710b0c4c5115783330ffdf7d3fe8d55f57e8e00",
+        "decision": "no-impact",
+        "rationale": "Replaces mapfile with a read loop in the engine preset renderer so it runs under Bash 3.2. The generated preset profile output is unchanged; this is a build-script portability fix with no user-facing firmware or configuration change.",
+        "evidence": [
+          "firmware/controllers/modules/engine_preset_profile.sh: mapfile -t supported and mapfile -t enum_symbols replaced with while IFS= read -r loops"
+        ]
+      },
+      {
+        "commit": "e04544ed46cb547f5a423c0e2b1fae27945a5e09",
+        "decision": "no-impact",
+        "rationale": "Build-tooling portability change: the macOS unit-test job installs Homebrew Bash and prints make/bash versions, and gen_config_board.sh uses an env-based Bash shebang. No firmware feature, build option, or tune behavior changes for users.",
+        "evidence": [
+          ".github/workflows/build-unit-tests.yaml: brew install ... bash, PATH update, make --version and bash --version",
+          "firmware/gen_config_board.sh: shebang changed from #!/bin/bash to #!/usr/bin/env bash"
+        ]
+      },
+      {
+        "commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the build-resource-matrix branch. Its child commits are audited separately and the merge adds no conflict-resolution changes with distinct user-facing effect.",
+        "evidence": [
+          "Merge commit 413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4 with parents 9a6fb7c5a and e04544ed4; no additional diff content beyond the audited child commits"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/build-modules.md",
+      "docs/build-resources.md"
+    ],
+    "recorded_at": "2026-10-21T13:20:00.520849+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4",
+      "head_inclusive": "eb220b087c876be73e297990f3b8e175e4e1ade6",
+      "commit_count": 3
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 203619,
+      "completion_tokens": 1142,
+      "total_tokens": 204761,
+      "prompt_cache_hit_tokens": 2688,
+      "prompt_cache_miss_tokens": 200931
+    },
+    "summary": "Attribution and provenance housekeeping only. The Capoworks firmware repository now credits Giacomo di Ciocco as author of Capoworks-specific contributions, adds a source-file attribution policy, and corrects the EMP pump file headers. No firmware behavior, configuration, tune format, build option, or flashing procedure changed, so no wiki page needs updating.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "551cb085c016fb904ab542c73a4b0db585113d55",
+        "decision": "no-impact",
+        "rationale": "Adds a contributor credit to the repository README, a new AGENTS.md attribution policy, and Doxygen file/author headers to existing source files. No firmware behavior, configuration field, tune layout, build option, or flashing step changed, so no driver, tuner, or builder action is required.",
+        "evidence": [
+          "README.md: adds 'Author of Capoworks-specific contributions: **Giacomo di Ciocco**.' under Credits",
+          "AGENTS.md: new project-scoped source attribution policy for future first-party files",
+          "firmware/controllers/sensors/hella_opst.cpp and other files: comment-only Doxygen @file/@author headers added, no code changes"
+        ]
+      },
+      {
+        "commit": "8f4cb53a76daa3ce79cb64dc263645f28952a5b2",
+        "decision": "no-impact",
+        "rationale": "Edits only the comment headers of the EMP pump source files, replacing the adaptation note with an author line and removing a provenance paragraph. The EMP pump protocol, configuration, and runtime behavior are unchanged, so no documentation or user action follows.",
+        "evidence": [
+          "firmware/controllers/modules/emp_pump/emp_pump.cpp: header comment reduced to @file and @author lines",
+          "firmware/controllers/modules/emp_pump/emp_pump.h: removed Speeduino commit reference and 'native FOME adaptation' sentence from the header comment",
+          "No changes to EmpPumpConfig, CAN IDs, or state machine code"
+        ]
+      },
+      {
+        "commit": "eb220b087c876be73e297990f3b8e175e4e1ade6",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the attribution branch. Its child commits are audited separately and the merge adds no conflict-resolution or behavioral change, so it has no additional user-facing documentation effect.",
+        "evidence": [
+          "Merge commit eb220b087c876be73e297990f3b8e175e4e1ade6 with parents 413ce9aac and 8f4cb53a7",
+          "Changed paths are the same attribution-only files from the two child commits",
+          "No additional diff content beyond the merged children"
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-21T13:43:01.936233+00:00"
+  }
+}
