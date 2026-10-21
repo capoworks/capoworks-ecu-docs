@@ -52,7 +52,7 @@ repository's own compile script for the selected board. It then verifies that th
 produced and that the modules recorded in the generated profile match the requested profile.
 
 Because the source is always `master`, the workflow does not build an arbitrary branch or tag. Use the
-local build instructions in [Build-time module profiles](../build-modules) when you need a specific
+local build instructions in [Build-time module profiles](../build-modules.md) when you need a specific
 source revision or a profile the workflow does not accept.
 
 ## Artifacts
