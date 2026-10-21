@@ -21,6 +21,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
 
     steps:
       - name: Validate manual ref
@@ -41,12 +42,22 @@ jobs:
         with:
           node-version-file: ".nvmrc"
           cache: "npm"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
 
       - name: Install Node.js dependencies
         run: npm ci
 
       - name: Lint code, links, and Markdown
         run: npm run lint
+
+      - name: Run all stdlib documentation tests
+        run: >-
+          python3 -m unittest discover
+          --start-directory scripts
+          --pattern 'test_ai_docs*.py'
+          --verbose
 
       - name: Build
         run: npm run build
