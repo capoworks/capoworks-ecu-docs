@@ -2,9 +2,36 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "caf060b87c40d3c4c75f06836b684064a0dbec57",
-  "latest_analyzed_at": "2026-10-20T20:14:30.041764+00:00",
+  "latest_analyzed_commit": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12",
+  "latest_analyzed_at": "2026-10-21T01:00:50.555060+00:00",
   "entries": [
+    {
+      "commit": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12",
+      "subject": "Merge pull request #71 from capoworks/feat/build-time-table-profiles",
+      "authored_at": "2026-10-20T22:50:06+02:00",
+      "parents": [
+        "caf060b87c40d3c4c75f06836b684064a0dbec57",
+        "3060ccd5873a89e6499c9ade5756338ab7c529fd"
+      ],
+      "comment": "Integration merge of the build-time table profile branch. Its child commit is documented separately and the merge adds no conflict-resolution changes of its own, so no additional user-facing documentation is needed.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-21T01:00:50.555060+00:00",
+      "integration_batch_commit": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12"
+    },
+    {
+      "commit": "3060ccd5873a89e6499c9ade5756338ab7c529fd",
+      "subject": "Add build-time fuel table dimensions and engine preset selection",
+      "authored_at": "2026-10-20T22:33:03+02:00",
+      "parents": [
+        "caf060b87c40d3c4c75f06836b684064a0dbec57"
+      ],
+      "comment": "Capoworks ECU adds two build-profile options. FOME_VE_RPM_COUNT accepts 16 or 32 and sets the RPM points of the Speed Density VE and Alpha-N tables; FOME_AIRMASS_BLEND_SIZE accepts 8 or 16 and sets both axes of the SD + Alpha-N authority table. Defaults stay at 16 and 8, so existing builds are unchanged. FOME_ENGINE_PRESETS accepts all, none, or exact engine_type_e symbol names and filters which preset dispatch code is compiled; omitting it keeps all presets at default dimensions but includes none when either dimension is expanded, and an explicit symbol list is rejected in expanded builds. Changing either dimension changes the persistent layout, so binary tunes from a differently sized build are rejected and reset; export values with the matching generated TunerStudio INI and re-import them manually. On STM32F7 a new static assertion rejects a persistent record larger than the 32 KiB copy slot, so expanded tables plus a high cylinder-trim count can fail to compile. Builders should set the options on the compile command, not as compiler defines, and rebuild without a clean build.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-21T01:00:50.555060+00:00",
+      "integration_batch_commit": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12"
+    },
     {
       "commit": "caf060b87c40d3c4c75f06836b684064a0dbec57",
       "subject": "Add validated on-demand firmware build workflow",
@@ -779,33 +806,6 @@
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-19T22:22:03+00:00",
       "integration_batch_commit": "809de8f8ec49b1442e9e5fa8f7fe73005da8be74"
-    },
-    {
-      "commit": "09886f0b28a6e7544becb1fd2221da5527a1e673",
-      "subject": "feat(idle): add optional rolling-cycle RPM feedback",
-      "authored_at": "2026-10-17T21:44:50+02:00",
-      "parents": [
-        "fef0a82ef6899b7b09c77ad0c9dd4f8996fe1733"
-      ],
-      "comment": "Closed-loop idle air and idle ignition can opt into a full-engine-cycle RPM estimate instead of instantaneous RPM. History must refill after synchronization or trigger changes, fallback behavior differs between the air and timing controllers, and idle PID gains may need retuning.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "809de8f8ec49b1442e9e5fa8f7fe73005da8be74"
-    },
-    {
-      "commit": "ed3e5c7f9f365826eae8551d3e873cefe53ea8a6",
-      "subject": "Merge pull request #48 from capoworks/align/pr-22",
-      "authored_at": "2026-10-18T16:58:41+02:00",
-      "parents": [
-        "319d4e5145062a0fc802d3bc3f79a7f3be233625",
-        "fef0a82ef6899b7b09c77ad0c9dd4f8996fe1733"
-      ],
-      "comment": "This integration merge carries the air-mass calibration and atomic fuel publication update from fef0a82ef6899b7b09c77ad0c9dd4f8996fe1733. It adds no separate firmware behavior or merge-resolution change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "ed3e5c7f9f365826eae8551d3e873cefe53ea8a6"
     }
   ]
 }

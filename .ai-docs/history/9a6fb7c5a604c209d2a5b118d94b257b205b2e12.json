@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "batch_head": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12",
+  "previous_cursor_commit": "caf060b87c40d3c4c75f06836b684064a0dbec57",
+  "cursor_commit": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "1734a4b70c11ff811885c4ee75e58cabef8b2af5",
+      "head_inclusive": "caf060b87c40d3c4c75f06836b684064a0dbec57",
+      "commit_count": 1
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 42808,
+      "completion_tokens": 1502,
+      "total_tokens": 44310,
+      "prompt_cache_hit_tokens": 1024,
+      "prompt_cache_miss_tokens": 41784
+    },
+    "summary": "Added a Capoworks ECU on-demand firmware build workflow that validates a requested board and opt-in module profile, builds from master, and publishes firmware artifacts with a checksum manifest.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "caf060b87c40d3c4c75f06836b684064a0dbec57",
+        "decision": "update",
+        "rationale": "Capoworks ECU adds a manual GitHub Actions workflow, Custom firmware build, that builds firmware for one selected board from the current master source. The request must supply a request_id of letters, digits, underscores, and hyphens, a board from the fixed list, and optionally a comma-separated list of opt-in modules. The workflow always includes the base modules fan, fuel_pump, gear_detector, tachometer, trip_odometer, and map_averaging, and rejects base modules, unknown or duplicate tokens, empty tokens, and over-long input. It rejects lua on hellen128 and shock_preload on boards other than core8, atlas, proteus_f4, proteus_f7, and proteus_h7. It also fails if the workflow's module list no longer matches the firmware module catalog. The build uses the repository's own compile script for the board, so the resulting binary and generated INI must be treated as one matching pair. Artifacts are retained for 14 days and include fome.bin, fome_update.srec when produced, the board INI when produced, and a manifest.json with SHA-256 hashes and the source commit. This is a build convenience only: it does not flash hardware, and a successful build is not engine or hardware validation.",
+        "evidence": [
+          "New file .github/workflows/custom-firmware-build.yaml with workflow_dispatch inputs request_id, board, and features",
+          "Board choice list includes hellen72, hellen-nb1, hellenNA8_96, hellenNA6, hellen128, mre_f4, mre_f7, proteus_f4, proteus_f7, proteus_h7, stm32f429_nucleo, f407-discovery, atlas, core8",
+          "base_modules and optional_modules arrays; canonical_catalog compared against FOME_MODULE_CATALOG in firmware/controllers/modules/module_profile.mk",
+          "Validation rejects hellen128 with lua and restricts shock_preload to core8, atlas, proteus_f4, proteus_f7, proteus_h7",
+          "Checkout step pins ref: master; build step runs bash \"$COMPILE_SCRIPT\" in the mapped board directory",
+          "Verify step checks firmware/deliver/fome.bin and compares resolved modules from module_profile.sh against FOME_MODULES",
+          "Manifest generation writes sha256 and size_bytes per artifact plus source commit; upload-artifact retention-days: 14"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/10-Software/On-Demand-Firmware-Build.md"
+    ],
+    "recorded_at": "2026-10-20T20:14:30.040009+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "caf060b87c40d3c4c75f06836b684064a0dbec57",
+      "head_inclusive": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12",
+      "commit_count": 2
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 798296,
+      "completion_tokens": 9856,
+      "total_tokens": 808152,
+      "prompt_cache_hit_tokens": 2176,
+      "prompt_cache_miss_tokens": 796120
+    },
+    "summary": "Capoworks ECU adds build-profile options for fuel table dimensions and engine preset selection, plus an F7 persistent-configuration size check. Builders can now choose 32-point VE RPM axes and 16-point SD + Alpha-N blend axes, and can restrict which engine presets are compiled in. Expanded-dimension builds reject engine presets and need a matching generated INI because the tune layout changes.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "3060ccd5873a89e6499c9ade5756338ab7c529fd",
+        "decision": "update",
+        "rationale": "Capoworks ECU adds two build-profile options. FOME_VE_RPM_COUNT accepts 16 or 32 and sets the RPM points of the Speed Density VE and Alpha-N tables; FOME_AIRMASS_BLEND_SIZE accepts 8 or 16 and sets both axes of the SD + Alpha-N authority table. Defaults stay at 16 and 8, so existing builds are unchanged. FOME_ENGINE_PRESETS accepts all, none, or exact engine_type_e symbol names and filters which preset dispatch code is compiled; omitting it keeps all presets at default dimensions but includes none when either dimension is expanded, and an explicit symbol list is rejected in expanded builds. Changing either dimension changes the persistent layout, so binary tunes from a differently sized build are rejected and reset; export values with the matching generated TunerStudio INI and re-import them manually. On STM32F7 a new static assertion rejects a persistent record larger than the 32 KiB copy slot, so expanded tables plus a high cylinder-trim count can fail to compile. Builders should set the options on the compile command, not as compiler defines, and rebuild without a clean build.",
+        "evidence": [
+          "firmware/controllers/modules/module_profile.mk: FOME_VE_RPM_COUNT ?= 16 and FOME_AIRMASS_BLEND_SIZE ?= 8 validation, include of engine_preset_profile.mk",
+          "firmware/controllers/modules/engine_preset_profile.sh: render of FOME_ENGINE_PRESET_ENABLED_* switches, rejection of literal presets when expanded",
+          "firmware/controllers/algo/defaults/default_fuel.cpp: setDefaultVeRpmBins and setDefaultAirmassBlendBins 16/32 and 8/16 defaults",
+          "firmware/integration/fome_config.txt: veRpmBins uses VE_RPM_COUNT; ALPHA_N_RPM_COUNT and AIRMASS_BLEND_*_COUNT moved to generated defines",
+          "firmware/controllers/algo/persistent_configuration.h: STM32F7XX static_assert sizeof(persistent_config_container_s) <= 32 KiB",
+          "firmware/controllers/algo/engine_configuration.cpp: isEnginePresetAvailable, getDefaultEngineType, applyEnginePreset dispatch guards",
+          "firmware/CHANGELOG.md and docs/build-modules.md: new Fuel table dimensions and Engine presets sections"
+        ]
+      },
+      {
+        "commit": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the build-time table profile branch. Its child commit is documented separately and the merge adds no conflict-resolution changes of its own, so no additional user-facing documentation is needed.",
+        "evidence": [
+          "Merge commit 9a6fb7c5 with parents caf060b8 and 3060ccd5; changed paths match the child commit and the diff body is empty"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/build-modules.md"
+    ],
+    "recorded_at": "2026-10-21T01:00:50.553064+00:00"
+  }
+}
