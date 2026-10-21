@@ -62,6 +62,11 @@ XML_TAG_RE = re.compile(
 )
 MDX_STATEMENT_RE = re.compile(r"^\s*(?:import|export)\b")
 DANGEROUS_LINK_RE = re.compile(r"(?:javascript|vbscript|data)\s*:", re.IGNORECASE)
+TABLE_DELIMITER_CELL_RE = re.compile(r":?-+:?")
+TABLE_DELIMITER_VALID_CELL_RE = re.compile(r":?-{3,}:?")
+MARKDOWN_INLINE_LINK_RE = re.compile(r"(?<!\\)\[(?:\\.|[^\[\]\\\n])*\]\(")
+NETWORK_LINK_SCHEME_RE = re.compile(r"^[a-z][a-z0-9+.-]*://", re.IGNORECASE)
+NUMBERED_ROUTE_PREFIX_RE = re.compile(r"(?:^|/)\d+-")
 SAFE_FRONTMATTER_KEYS = frozenset(
     {
         "title",
@@ -1075,6 +1080,94 @@ def _mask_inline_code_spans(line: str) -> str:
     return "".join(masked)
 
 
+def _markdown_link_destinations(line: str) -> Iterable[str]:
+    """Yield destinations from inline Markdown links outside masked code."""
+    for match in MARKDOWN_INLINE_LINK_RE.finditer(line):
+        cursor = match.end()
+        while cursor < len(line) and line[cursor].isspace():
+            cursor += 1
+        if cursor >= len(line):
+            continue
+        if line[cursor] == "<":
+            destination_end = cursor + 1
+            while destination_end < len(line):
+                if line[destination_end] == ">" and line[destination_end - 1] != "\\":
+                    break
+                destination_end += 1
+            if destination_end >= len(line):
+                continue
+            destination = line[cursor + 1 : destination_end]
+        else:
+            destination_start = cursor
+            depth = 0
+            while cursor < len(line):
+                character = line[cursor]
+                if character == "\\":
+                    cursor += 2
+                    continue
+                if character == "(":
+                    depth += 1
+                elif character == ")":
+                    if depth == 0:
+                        break
+                    depth -= 1
+                elif character.isspace() and depth == 0:
+                    break
+                cursor += 1
+            destination = line[destination_start:cursor]
+        if destination:
+            yield destination
+
+
+def _validate_markdown_link_destination(
+    destination: str, path: str, line_number: int
+) -> None:
+    parsed = urllib.parse.urlsplit(destination)
+    decoded_path = urllib.parse.unquote(parsed.path).casefold()
+    if pathlib.PurePosixPath(decoded_path).suffix in {".md", ".mdx"}:
+        raise ValidationFailure(
+            f"{path}:{line_number} Markdown link destination {destination!r} "
+            "uses a source-file extension; use the extensionless Docusaurus "
+            "route (for example ../../build-modules/), not .md/.mdx"
+        )
+    if not NETWORK_LINK_SCHEME_RE.match(destination) and NUMBERED_ROUTE_PREFIX_RE.search(
+        decoded_path
+    ):
+        raise ValidationFailure(
+            f"{path}:{line_number} Markdown link destination {destination!r} "
+            "contains a numbered route segment; remove the numeric prefix and "
+            "use the extensionless Docusaurus route"
+        )
+
+
+def _validate_table_delimiter_row(line: str, path: str, line_number: int) -> None:
+    stripped = line.strip()
+    if (
+        "|" not in stripped
+        or not stripped.startswith("|")
+        or not stripped.endswith("|")
+    ):
+        return
+    cells = stripped[1:-1].split("|")
+    if len(cells) < 2 or not all(
+        TABLE_DELIMITER_CELL_RE.fullmatch(cell.strip()) for cell in cells
+    ):
+        return
+    expected = " | ".join(
+        "---" for _ in cells
+    )
+    if not all(
+        TABLE_DELIMITER_VALID_CELL_RE.fullmatch(cell.strip())
+        and cell.startswith(" ")
+        and cell.endswith(" ")
+        for cell in cells
+    ):
+        raise ValidationFailure(
+            f"{path}:{line_number} has a malformed Markdown table delimiter row; "
+            f"expected | {expected} |"
+        )
+
+
 def validate_markdown_body(body: str, path: str) -> None:
     fence_character: str | None = None
     fence_length = 0
@@ -1094,6 +1187,8 @@ def validate_markdown_body(body: str, path: str) -> None:
         if fence_character is not None:
             continue
         residual = _mask_inline_code_spans(line)
+        if not (line.startswith("\t") or line.startswith("    ")):
+            _validate_table_delimiter_row(residual, path, line_number)
         if MDX_STATEMENT_RE.match(residual):
             raise ValidationFailure(
                 f"{path}:{line_number} contains executable MDX import/export syntax"
@@ -1110,6 +1205,8 @@ def validate_markdown_body(body: str, path: str) -> None:
             raise ValidationFailure(
                 f"{path}:{line_number} contains a dangerous executable link"
             )
+        for destination in _markdown_link_destinations(residual):
+            _validate_markdown_link_destination(destination, path, line_number)
     if fence_character is not None:
         raise ValidationFailure(f"{path} has an unterminated code fence")
 
@@ -1834,7 +1931,8 @@ Rules:
 - Use only behavior supported by the supplied evidence. Do not invent features or
   imply that code changes have been validated on an engine or hardware setup.
 - Mark update only when user-facing documentation needs a change. Include one
-  specific evidence item or more for every decision.
+  specific evidence item or more for every decision. Prefer the 1-3 best
+  specific evidence items per commit within the enforced maximum of 8.
 - Summary and rationale are published in the wiki's Recent changes section.
   Make them concise, factual, and reader-facing. For rationale, state what
   changed and the practical effect, required action, compatibility limit, or
@@ -1846,8 +1944,21 @@ Rules:
 - Write only paths under docs/ ending in .md. Never delete, rename, or use
   absolute, traversal, backslash, or case-colliding paths.
 - For an existing document, preserve its complete frontmatter byte-for-byte and
-  return the entire document. New frontmatter is strongly discouraged; if used,
-  only simple title/sidebar/navigation/description/tags fields are acceptable.
+  return the entire document. Prefer the supplied existing target wiki document
+  as the update base, and preserve accurate manual clarifications and working
+  links unless changed source evidence contradicts them. Source wiki documents
+  are evidence, not wholesale replacement templates. New frontmatter is strongly
+  discouraged; if used, only simple
+  title/sidebar/navigation/description/tags fields are acceptable.
+- Use spaced Markdown table delimiter rows such as `| --- | --- |`. Keep at
+  least three hyphens per cell, preserve optional alignment colons, and include
+  spaces around every cell; do not emit compact rows such as `|---|---|`.
+- Markdown link destinations must be extensionless Docusaurus routes: omit
+  `.md`/`.mdx`, omit numbered route prefixes such as `/01-`, and make local
+  routes relative to the rendered page. On runtime page
+  `/Software/On-Demand-Firmware-Build/`, link the root build guide as
+  `../../build-modules/`; source-file path `../build-modules` is the wrong
+  runtime path.
 - .md is compiled as MDX. Emit safe Markdown only. Do not emit imports, exports,
   JSX, HTML, MDX expressions, scripts, event handlers, or executable link
   schemes outside fenced code blocks.
