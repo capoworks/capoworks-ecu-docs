@@ -345,6 +345,20 @@ class PathMarkdownAndFrontmatterTests(TempDocs):
         )
         sync.validate_markdown_body(content, "docs/SafeLinks.md")
 
+    def test_malformed_markdown_link_url_fails_body_validation_with_context(
+        self,
+    ) -> None:
+        content = "# Links\n\n[host](https://[bad])\n"
+
+        with self.assertRaises(sync.ValidationFailure) as raised:
+            sync.validate_markdown_body(content, "docs/Generated.md")
+
+        message = str(raised.exception)
+        self.assertIn("docs/Generated.md:3", message)
+        self.assertIn("'https://[bad]'", message)
+        self.assertIn("is malformed", message)
+        self.assertIn("fix the URL syntax", message)
+
     def test_markdown_syntax_after_inline_code_is_still_rejected(self) -> None:
         unsafe_bodies = [
             ("`safe` <script>alert(1)</script>\n", "JSX or raw HTML"),
@@ -2650,6 +2664,11 @@ class ModelTransportTests(unittest.TestCase):
                         f"{total_bytes} UTF-8 bytes",
                         system_flat,
                     )
+                    self.assertIn(
+                        "specific evidence items per commit within the enforced maximum",
+                        system_flat,
+                    )
+                    self.assertNotIn("enforced maximum of 8", system_flat)
                     self.assertNotIn("max_evidence_items", system)
                     self.assertNotIn("777", system)
                     if metadata is not None:
@@ -2690,7 +2709,7 @@ class ModelTransportTests(unittest.TestCase):
         self.assertIn("`../../build-modules/`", trusted_prompt)
         self.assertIn("`../build-modules` is the wrong", trusted_prompt)
         self.assertIn("1-3 best", trusted_prompt)
-        self.assertIn("enforced maximum of 8", trusted_prompt)
+        self.assertIn("within the enforced maximum", trusted_prompt)
         self.assertIn("existing target wiki document", trusted_prompt)
         self.assertIn("not wholesale replacement templates", trusted_prompt)
 
@@ -2986,6 +3005,46 @@ class GenerationRepairTests(TempDocs):
         )
         self.assertEqual(
             sync.read_json(self.work_dir / "result.json")["result"], spaced_table
+        )
+
+    def test_malformed_ipv6_link_repairs_once_to_valid_url(self) -> None:
+        malformed_ipv6 = payload(
+            [
+                {
+                    "path": "docs/Generated.md",
+                    "content": "# Links\n\n[host](https://[bad])\n",
+                }
+            ]
+        )
+        corrected = payload(
+            [
+                {
+                    "path": "docs/Generated.md",
+                    "content": "# Links\n\n[host](https://example.com/)\n",
+                }
+            ]
+        )
+        transport = FakeTransport(
+            [self.response(malformed_ipv6), self.response(corrected)]
+        )
+
+        self.assertEqual(self.generate(self.client(transport)), 0)
+
+        self.assertEqual(len(transport.requests), 2)
+        repair_request = json.loads(transport.requests[1]["body"])
+        repair_user = repair_request["messages"][1]["content"]
+        metadata_json = repair_user.split(
+            "UNTRUSTED_REPAIR_METADATA_JSON_BEGIN\n", 1
+        )[1].split("\nUNTRUSTED_REPAIR_METADATA_JSON_END", 1)[0]
+        metadata = json.loads(metadata_json)
+        self.assertEqual(metadata["rejected_result"], malformed_ipv6)
+        self.assertIn(
+            "docs/Generated.md:3 Markdown link destination 'https://[bad]' "
+            "is malformed",
+            metadata["validation_error"],
+        )
+        self.assertEqual(
+            sync.read_json(self.work_dir / "result.json")["result"], corrected
         )
 
     def test_malformed_table_delimiter_after_repair_fails_closed(self) -> None:

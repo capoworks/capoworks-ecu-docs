@@ -1122,7 +1122,13 @@ def _markdown_link_destinations(line: str) -> Iterable[str]:
 def _validate_markdown_link_destination(
     destination: str, path: str, line_number: int
 ) -> None:
-    parsed = urllib.parse.urlsplit(destination)
+    try:
+        parsed = urllib.parse.urlsplit(destination)
+    except ValueError as exc:
+        raise ValidationFailure(
+            f"{path}:{line_number} Markdown link destination {destination!r} "
+            f"is malformed ({exc}); fix the URL syntax"
+        ) from exc
     decoded_path = urllib.parse.unquote(parsed.path).casefold()
     if pathlib.PurePosixPath(decoded_path).suffix in {".md", ".mdx"}:
         raise ValidationFailure(
@@ -1932,7 +1938,7 @@ Rules:
   imply that code changes have been validated on an engine or hardware setup.
 - Mark update only when user-facing documentation needs a change. Include one
   specific evidence item or more for every decision. Prefer the 1-3 best
-  specific evidence items per commit within the enforced maximum of 8.
+  specific evidence items per commit within the enforced maximum.
 - Summary and rationale are published in the wiki's Recent changes section.
   Make them concise, factual, and reader-facing. For rationale, state what
   changed and the practical effect, required action, compatibility limit, or
