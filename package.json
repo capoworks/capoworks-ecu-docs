@@ -8,8 +8,8 @@
     "build": "docusaurus build",
     "lint": "npm run lint:biome && npm run lint:ts && npm run lint:links && npm run lint:md",
     "lint:code": "npm run lint:biome && npm run lint:ts",
-    "lint:fix": "biome format --write . && biome check --apply .",
-    "lint:fix:unsafe": "biome check . --apply-unsafe .",
+    "lint:fix": "biome check --write .",
+    "lint:fix:unsafe": "biome check --write --unsafe .",
     "lint:ts": "tsc",
     "lint:links": "node scripts/linkValidator.js 'docs/**/*.md?(x)'",
     "lint:md": "markdownlint docs/",
@@ -62,6 +62,6 @@
     ]
   },
   "engines": {
-    "node": ">=18.0"
+    "node": ">=22.16.0"
   }
 }
