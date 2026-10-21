@@ -34,6 +34,20 @@ POLICY_NEW = (
     "protection."
 )
 HISTORY_RE = re.compile(r"^\.ai-docs/history/([0-9a-f]{40})\.json$")
+FAILURE_MARKER_SENTINEL = "<!-- ai-docs-publication-failure:"
+FAILURE_MARKER_PREFIX = "<!-- ai-docs-publication-failure:v1 "
+FAILURE_MARKER_RE = re.compile(
+    r"^<!-- ai-docs-publication-failure:v1 (\{[^\r\n]+\}) -->$"
+)
+FAILURE_MARKER_MAX_BYTES = 1_200
+FAILURE_MARKER_ACTION = (
+    "Action Required: publication validation failed. Fix and review this pull "
+    "request; do not merge while CI is red. For a transient failure, remove "
+    "this marker and retry with workflow_dispatch."
+)
+ACTIVE_WORKFLOW_STATUSES = frozenset(
+    {"queued", "in_progress", "requested", "waiting", "pending"}
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -59,6 +73,14 @@ class ChangedPath:
     status: str
     old_mode: str
     new_mode: str
+
+
+@dataclasses.dataclass(frozen=True)
+class FailedCandidateMarker:
+    base_sha: str
+    head_sha: str
+    run_id: int
+    run_url: str
 
 
 @dataclasses.dataclass(frozen=True)
@@ -233,6 +255,127 @@ def validate_pull_metadata(
     if merge_sha is not None:
         merge_sha = _require_sha(merge_sha, "pull request merge preview")
     return Candidate(number, current_master, head_sha, merge_sha or "")
+
+
+def _require_run_id(value: Any, label: str) -> int:
+    run_id = _require_number(value, label)
+    if run_id > 2**63 - 1:
+        raise SYNC.ValidationFailure(f"{label} exceeds the GitHub id range")
+    return run_id
+
+
+def _failed_run_url(run_id: int) -> str:
+    run_id = _require_run_id(run_id, "workflow run id")
+    return f"https://github.com/{SYNC.TARGET_REPOSITORY}/actions/runs/{run_id}"
+
+
+def _failure_marker_line(
+    *, base_sha: str, head_sha: str, run_id: int
+) -> str:
+    base_sha = _require_sha(base_sha, "failed marker base")
+    head_sha = _require_sha(head_sha, "failed marker head")
+    run_id = _require_run_id(run_id, "failed marker workflow run")
+    payload = json.dumps(
+        {
+            "action": FAILURE_MARKER_ACTION,
+            "base_sha": base_sha,
+            "head_sha": head_sha,
+            "run_id": run_id,
+            "run_url": _failed_run_url(run_id),
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return f"{FAILURE_MARKER_PREFIX}{payload} -->"
+
+
+def _unique_json_object(
+    pairs: Sequence[tuple[str, Any]],
+) -> dict[str, Any]:
+    value: dict[str, Any] = {}
+    for key, item in pairs:
+        if key in value:
+            raise ValueError(f"duplicate JSON key: {key}")
+        value[key] = item
+    return value
+
+
+def parse_failure_marker(body: Any) -> FailedCandidateMarker | None:
+    """Parse at most one strict, non-executable failure marker from a PR body."""
+
+    if not isinstance(body, str):
+        raise SYNC.ValidationFailure("pull request body is malformed")
+    candidates = [
+        line
+        for line in body.splitlines()
+        if line.strip().startswith(FAILURE_MARKER_SENTINEL)
+    ]
+    if not candidates:
+        return None
+    if len(candidates) != 1:
+        raise SYNC.ValidationFailure(
+            "pull request body contains more than one publication failure marker"
+        )
+    line = candidates[0]
+    try:
+        line_bytes = len(line.encode("utf-8"))
+    except UnicodeEncodeError as exc:
+        raise SYNC.ValidationFailure(
+            "publication failure marker is not valid UTF-8"
+        ) from exc
+    if line_bytes > FAILURE_MARKER_MAX_BYTES:
+        raise SYNC.ValidationFailure(
+            "publication failure marker exceeds its byte limit"
+        )
+    match = FAILURE_MARKER_RE.fullmatch(line)
+    if match is None:
+        raise SYNC.ValidationFailure(
+            "publication failure marker is not a strict single-line HTML comment"
+        )
+    try:
+        value = json.loads(
+            match.group(1), object_pairs_hook=_unique_json_object
+        )
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise SYNC.ValidationFailure(
+            "publication failure marker is not valid JSON"
+        ) from exc
+    if not isinstance(value, dict):
+        raise SYNC.ValidationFailure(
+            "publication failure marker JSON must be an object"
+        )
+    SYNC._require_exact_keys(
+        value,
+        {"action", "base_sha", "head_sha", "run_id", "run_url"},
+        "publication failure marker",
+    )
+    if value.get("action") != FAILURE_MARKER_ACTION:
+        raise SYNC.ValidationFailure(
+            "publication failure marker action text is not trusted"
+        )
+    base_sha = _require_sha(value.get("base_sha"), "failed marker base")
+    head_sha = _require_sha(value.get("head_sha"), "failed marker head")
+    run_id = _require_run_id(value.get("run_id"), "failed marker workflow run")
+    run_url = value.get("run_url")
+    if run_url != _failed_run_url(run_id):
+        raise SYNC.ValidationFailure(
+            "publication failure marker run URL is not the trusted workflow run"
+        )
+    return FailedCandidateMarker(base_sha, head_sha, run_id, run_url)
+
+
+def _body_with_failure_marker(body: str, marker_line: str) -> str:
+    lines = [
+        line
+        for line in body.splitlines(keepends=True)
+        if not line.strip().startswith(FAILURE_MARKER_SENTINEL)
+    ]
+    if lines and not lines[-1].endswith(("\n", "\r")):
+        lines[-1] += "\n"
+    if lines and lines[-1].strip():
+        lines.append("\n")
+    lines.append(f"{marker_line}\n")
+    return "".join(lines)
 
 
 def _git_env(token: str) -> dict[str, str]:
@@ -887,6 +1030,37 @@ def select_phase(
         )
     pull = pulls[0]
     number = _require_number(pull.get("number"), "pull request number")
+    metadata = validate_pull_metadata(pull, current_master)
+    failed = parse_failure_marker(pull.get("body"))
+    if (
+        failed is not None
+        and failed.base_sha == metadata.base_sha
+        and failed.head_sha == metadata.head_sha
+    ):
+        message = (
+            f"Action Required: publication validation already failed for PR "
+            f"#{number} at base {failed.base_sha} and head {failed.head_sha}. "
+            f"See {failed.run_url}. Fix and review the pull request; do not merge "
+            "it while CI is red. For a transient failure, explicitly remove the "
+            "publication failure marker from the PR body, then run "
+            f"`gh workflow run ai-docs-sync.yml --repo {SYNC.TARGET_REPOSITORY} "
+            "--ref master` (workflow_dispatch). A new base or head must be "
+            "revalidated and is not blocked by the old marker."
+        )
+        _summary(
+            [
+                f"Action Required: publication validation failed for PR #{number}.",
+                f"Failed run: {failed.run_url}",
+                "Fix and review the candidate; do not merge while CI is red.",
+                (
+                    "For a transient failure, remove the failure marker from the "
+                    "PR body and run `gh workflow run ai-docs-sync.yml "
+                    f"--repo {SYNC.TARGET_REPOSITORY} --ref master`."
+                ),
+                "A changed base or head is revalidated and is not blocked by the old marker.",
+            ]
+        )
+        raise SYNC.ActionRequired(message)
     try:
         candidate = validate_fetched_candidate(
             runner=SYNC.CappedRunner(),
@@ -933,6 +1107,81 @@ def select_phase(
     return candidate
 
 
+def mark_failed_phase(
+    *,
+    github: PublishGitHubClient,
+    pr_number: int,
+    base_sha: str,
+    head_sha: str,
+    run_id: int,
+) -> int:
+    """Mark only the still-selected bot candidate after validation fails."""
+
+    pr_number = _require_number(pr_number, "pull request number")
+    base_sha = _require_sha(base_sha, "selected base")
+    head_sha = _require_sha(head_sha, "selected head")
+    run_id = _require_run_id(run_id, "failing workflow run")
+    current_master = github.branch_sha(SYNC.TARGET_REPOSITORY, SYNC.TARGET_BRANCH)
+    if current_master is None:
+        raise SYNC.ApiFailure("target master branch is missing")
+    pull = github.pull(pr_number)
+    metadata = validate_pull_metadata(pull, current_master)
+    body = pull.get("body")
+    if not isinstance(body, str):
+        raise SYNC.ValidationFailure("pull request body is malformed")
+    existing = parse_failure_marker(body)
+    if metadata.base_sha != base_sha or metadata.head_sha != head_sha:
+        LOG.warning(
+            "skipping stale publication failure marker for PR #%s: "
+            "selected base/head no longer match",
+            pr_number,
+        )
+        _summary(
+            [
+                f"Skipped stale publication failure marker for PR #{pr_number}.",
+                f"Selected base: `{base_sha}`; selected head: `{head_sha}`.",
+                (
+                    f"Current base: `{metadata.base_sha}`; current head: "
+                    f"`{metadata.head_sha}`."
+                ),
+                "No new candidate was marked.",
+            ]
+        )
+        return 0
+
+    marker_line = _failure_marker_line(
+        base_sha=base_sha, head_sha=head_sha, run_id=run_id
+    )
+    if (
+        existing is not None
+        and existing.base_sha == base_sha
+        and existing.head_sha == head_sha
+        and existing.run_id == run_id
+    ):
+        LOG.info("publication failure marker is already current for PR #%s", pr_number)
+        return 0
+    updated = _body_with_failure_marker(body, marker_line)
+    github.update_pull_body(pr_number, updated)
+    run_url = _failed_run_url(run_id)
+    LOG.warning(
+        "marked failed publication candidate for PR #%s at %s: %s",
+        pr_number,
+        head_sha,
+        run_url,
+    )
+    _summary(
+        [
+            f"Recorded publication validation failure for PR #{pr_number}.",
+            f"Failed run: {run_url}",
+            (
+                "The candidate is bounded to its exact base and head. Fix and "
+                "review it before another validation attempt."
+            ),
+        ]
+    )
+    return 0
+
+
 def _canonical_policy_body(body: str) -> str:
     if POLICY_OLD in body:
         return body.replace(POLICY_OLD, POLICY_NEW)
@@ -955,6 +1204,16 @@ def merge_phase(
         raise SYNC.ValidationFailure("target master changed since candidate selection")
     if metadata.head_sha != expected.head_sha:
         raise SYNC.ValidationFailure("pull request head changed since candidate selection")
+    failed = parse_failure_marker(pull.get("body"))
+    if (
+        failed is not None
+        and failed.base_sha == expected.base_sha
+        and failed.head_sha == expected.head_sha
+    ):
+        raise SYNC.ValidationFailure(
+            "candidate is marked with a failed publication validation run; "
+            "fix and review it, or remove the marker before a transient retry"
+        )
     if pull.get("mergeable") is not True:
         raise SYNC.ValidationFailure("pull request is not currently mergeable")
 
@@ -1031,11 +1290,41 @@ def recover_phase(*, root: pathlib.Path, github: PublishGitHubClient) -> int:
         if run.get("head_sha") == current_master and run.get("event") != "pull_request"
     ]
     if any(
-        run.get("status") in {"queued", "in_progress", "requested", "waiting"}
+        run.get("status") in ACTIVE_WORKFLOW_STATUSES
         or run.get("conclusion") == "success"
         for run in matching
     ):
         LOG.info("deploy run already exists for %s", current_master)
+        return 0
+    if matching:
+        failed = matching[0]
+        run_id = _require_run_id(failed.get("id"), "failed deploy workflow run")
+        run_url = _failed_run_url(run_id)
+        LOG.warning(
+            "ACTION REQUIRED: deploy run failed for current master %s at %s; "
+            "automatic deploy retry is suppressed for this commit",
+            current_master,
+            run_url,
+        )
+        _summary(
+            [
+                (
+                    "Action Required: `deploy.yml` has a terminal failed run for "
+                    f"current `master` `{current_master}`."
+                ),
+                f"Failed run: {run_url}",
+                (
+                    "Automatic deploy retry is suppressed for this commit so "
+                    "scheduled runs do not resubmit a known failure."
+                ),
+                (
+                    "Fix the deployment, then retry manually with "
+                    f"`gh workflow run deploy.yml --repo {SYNC.TARGET_REPOSITORY} "
+                    "--ref master`."
+                ),
+                "Documentation generation continues for later commits.",
+            ]
+        )
         return 0
     github.dispatch("deploy.yml")
     LOG.info("retried deploy dispatch for already-merged master %s", current_master)
@@ -1076,6 +1365,12 @@ def build_parser() -> argparse.ArgumentParser:
     merge.add_argument("--base-sha", required=True)
     merge.add_argument("--head-sha", required=True)
     merge.add_argument("--merge-sha", required=True)
+    mark_failed = subparsers.add_parser("mark-failed")
+    mark_failed.add_argument("--root", type=pathlib.Path, default=pathlib.Path.cwd())
+    mark_failed.add_argument("--pr-number", type=int, required=True)
+    mark_failed.add_argument("--base-sha", required=True)
+    mark_failed.add_argument("--head-sha", required=True)
+    mark_failed.add_argument("--run-id", type=int, required=True)
     recover = subparsers.add_parser("recover")
     recover.add_argument("--root", type=pathlib.Path, default=pathlib.Path.cwd())
     return parser
@@ -1103,6 +1398,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
             )
             return merge_phase(root=root, github=github, expected=candidate)
+        if args.command == "mark-failed":
+            return mark_failed_phase(
+                github=github,
+                pr_number=args.pr_number,
+                base_sha=args.base_sha,
+                head_sha=args.head_sha,
+                run_id=args.run_id,
+            )
         if args.command == "recover":
             return recover_phase(root=root, github=github)
         raise AssertionError("unreachable command")

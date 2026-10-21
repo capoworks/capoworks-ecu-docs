@@ -16,6 +16,9 @@ from unittest import mock
 
 PUBLISH_SCRIPT = pathlib.Path(__file__).with_name("ai-docs-publish.py")
 DEPLOY_WORKFLOW = PUBLISH_SCRIPT.parent.parent / ".github" / "workflows" / "deploy.yml"
+SYNC_WORKFLOW = (
+    PUBLISH_SCRIPT.parent.parent / ".github" / "workflows" / "ai-docs-sync.yml"
+)
 spec = importlib.util.spec_from_file_location("ai_docs_publish_test_target", PUBLISH_SCRIPT)
 if spec is None or spec.loader is None:
     raise RuntimeError("could not load publication script")
@@ -468,6 +471,301 @@ class CandidateValidationTests(unittest.TestCase):
             )
 
 
+class FailureMarkerTests(unittest.TestCase):
+    def marker_line(self, *, base: str = "4" * 40, head: str = "5" * 40) -> str:
+        return publish._failure_marker_line(
+            base_sha=base, head_sha=head, run_id=123456
+        )
+
+    def test_strict_marker_round_trip_and_at_most_one(self) -> None:
+        line = self.marker_line()
+        body = f"Summary\n\n{sync.PR_MARKER}\n\n{line}\n"
+        marker = publish.parse_failure_marker(body)
+        self.assertIsNotNone(marker)
+        assert marker is not None
+        self.assertEqual(marker.base_sha, "4" * 40)
+        self.assertEqual(marker.head_sha, "5" * 40)
+        self.assertEqual(marker.run_id, 123456)
+        self.assertEqual(
+            marker.run_url,
+            "https://github.com/capoworks/capoworks-ecu-docs/actions/runs/123456",
+        )
+        with self.assertRaises(sync.SyncFailure):
+            publish.parse_failure_marker(f"{line}\n{line}\n")
+
+    def test_malformed_markers_fail_closed(self) -> None:
+        line = self.marker_line()
+        payload = json.loads(line.removeprefix(publish.FAILURE_MARKER_PREFIX).removesuffix(" -->"))
+        variants = [
+            f" {line}",
+            f"{publish.FAILURE_MARKER_PREFIX}{{not-json}} -->",
+            f'{publish.FAILURE_MARKER_PREFIX}{{"run_id":1,"run_id":1}} -->',
+            f"{publish.FAILURE_MARKER_PREFIX}{json.dumps({**payload, 'extra': 'x'})} -->",
+            f"{publish.FAILURE_MARKER_PREFIX}{json.dumps({**payload, 'run_url': 'https://example.com'})} -->",
+            f"{publish.FAILURE_MARKER_PREFIX}{json.dumps({**payload, 'run_id': True})} -->",
+            f"{publish.FAILURE_MARKER_PREFIX}{'x' * publish.FAILURE_MARKER_MAX_BYTES} -->",
+        ]
+        for variant in variants:
+            with self.subTest(variant=variant[:80]):
+                with self.assertRaises(sync.SyncFailure):
+                    publish.parse_failure_marker(variant)
+
+    def test_replacement_preserves_body_and_keeps_one_marker(self) -> None:
+        original = self.marker_line(base="2" * 40, head="3" * 40)
+        current = self.marker_line()
+        body = f"Summary\n\n{sync.PR_MARKER}\n\n{original}\n"
+        updated = publish._body_with_failure_marker(body, current)
+        self.assertEqual(updated.count(publish.FAILURE_MARKER_SENTINEL), 1)
+        self.assertIn("Summary", updated)
+        self.assertIn(sync.PR_MARKER, updated)
+        marker = publish.parse_failure_marker(updated)
+        assert marker is not None
+        self.assertEqual(marker.base_sha, "4" * 40)
+
+
+class MarkFailedTests(unittest.TestCase):
+    class FakeGitHub:
+        token = "test-token"
+
+        def __init__(self, pull: dict, *, current_master: str) -> None:
+            self.pull_value = pull
+            self.current_master = current_master
+            self.updates: list[tuple[int, str]] = []
+
+        def branch_sha(self, repository, branch):
+            return self.current_master
+
+        def pull(self, number):
+            return copy.deepcopy(self.pull_value)
+
+        def update_pull_body(self, number, body):
+            self.updates.append((number, body))
+
+    def test_marks_only_the_matching_candidate(self) -> None:
+        github = self.FakeGitHub(_pull(current_master="4" * 40), current_master="4" * 40)
+        with mock.patch.object(publish, "_summary") as summary:
+            result = publish.mark_failed_phase(
+                github=github,
+                pr_number=33,
+                base_sha="4" * 40,
+                head_sha="5" * 40,
+                run_id=987654,
+            )
+        self.assertEqual(result, 0)
+        self.assertEqual(len(github.updates), 1)
+        number, body = github.updates[0]
+        self.assertEqual(number, 33)
+        marker = publish.parse_failure_marker(body)
+        assert marker is not None
+        self.assertEqual(marker.base_sha, "4" * 40)
+        self.assertEqual(marker.head_sha, "5" * 40)
+        self.assertEqual(marker.run_id, 987654)
+        self.assertIn(sync.PR_MARKER, body)
+        summary.assert_called_once()
+
+    def test_stale_base_or_head_is_skipped_without_a_write(self) -> None:
+        cases = [
+            (_pull(current_master="9" * 40), "4" * 40, "5" * 40),
+            (_pull(current_master="4" * 40, head={"ref": sync.BOT_BRANCH, "sha": "8" * 40, "repo": {"full_name": sync.TARGET_REPOSITORY}}), "4" * 40, "5" * 40),
+        ]
+        for pull, selected_base, selected_head in cases:
+            with self.subTest(base=pull["base"]["sha"], head=pull["head"]["sha"]):
+                github = self.FakeGitHub(
+                    pull, current_master=str(pull["base"]["sha"])
+                )
+                with mock.patch.object(publish, "_summary") as summary:
+                    result = publish.mark_failed_phase(
+                        github=github,
+                        pr_number=33,
+                        base_sha=selected_base,
+                        head_sha=selected_head,
+                        run_id=987654,
+                    )
+                self.assertEqual(result, 0)
+                self.assertEqual(github.updates, [])
+                self.assertIn("stale", summary.call_args.args[0][0].lower())
+
+    def test_malformed_existing_marker_never_writes(self) -> None:
+        pull = _pull(current_master="4" * 40)
+        pull["body"] = (
+            f"Summary\n\n{sync.PR_MARKER}\n\n"
+            f"{publish.FAILURE_MARKER_PREFIX}not-json -->\n"
+        )
+        github = self.FakeGitHub(pull, current_master="4" * 40)
+        with self.assertRaises(sync.SyncFailure):
+            publish.mark_failed_phase(
+                github=github,
+                pr_number=33,
+                base_sha="4" * 40,
+                head_sha="5" * 40,
+                run_id=987654,
+            )
+        self.assertEqual(github.updates, [])
+
+
+class FailureSelectionTests(unittest.TestCase):
+    class FakeGitHub:
+        token = "test-token"
+
+        def __init__(self, pull: dict, *, current_master: str = "4" * 40) -> None:
+            self.pull_value = pull
+            self.current_master = current_master
+
+        def branch_sha(self, repository, branch):
+            return self.current_master
+
+        def open_automation_pulls(self):
+            return [copy.deepcopy(self.pull_value)]
+
+        def pull(self, number):
+            return copy.deepcopy(self.pull_value)
+
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory(prefix="publish-select-")
+        self.work_dir = pathlib.Path(self.temporary.name)
+        (self.work_dir / "status.json").write_text(
+            '{"status":"ready"}\n', encoding="utf-8"
+        )
+
+    def tearDown(self) -> None:
+        self.temporary.cleanup()
+
+    def test_matching_failure_marker_stops_before_git_or_build_retry(self) -> None:
+        pull = _pull(current_master="4" * 40)
+        marker = publish._failure_marker_line(
+            base_sha="4" * 40, head_sha="5" * 40, run_id=123456
+        )
+        pull["body"] += f"\n{marker}\n"
+        github = self.FakeGitHub(pull)
+        with mock.patch.object(publish, "validate_fetched_candidate") as validate:
+            with mock.patch.object(publish, "_summary") as summary:
+                with self.assertRaises(sync.ActionRequired) as caught:
+                    publish.select_phase(
+                        root=self.work_dir,
+                        work_dir=self.work_dir,
+                        github=github,
+                    )
+        validate.assert_not_called()
+        summary.assert_called_once()
+        message = str(caught.exception)
+        self.assertIn("Action Required", message)
+        self.assertIn("remove the publication failure marker", message)
+        self.assertIn("new base or head", message)
+        self.assertIn("actions/runs/123456", message)
+
+    def test_old_base_or_head_marker_does_not_block_revalidation(self) -> None:
+        markers = [
+            publish._failure_marker_line(
+                base_sha="2" * 40, head_sha="5" * 40, run_id=123456
+            ),
+            publish._failure_marker_line(
+                base_sha="4" * 40, head_sha="3" * 40, run_id=123456
+            ),
+        ]
+        for marker in markers:
+            with self.subTest(marker=marker):
+                pull = _pull(current_master="4" * 40)
+                pull["body"] += f"\n{marker}\n"
+                github = self.FakeGitHub(pull)
+                expected = publish.Candidate(33, "4" * 40, "5" * 40, "6" * 40)
+                with mock.patch.object(
+                    publish, "validate_fetched_candidate", return_value=expected
+                ) as validate:
+                    with mock.patch.object(publish, "_select_outputs"):
+                        with mock.patch.object(publish, "_summary"):
+                            selected = publish.select_phase(
+                                root=self.work_dir,
+                                work_dir=self.work_dir,
+                                github=github,
+                            )
+                validate.assert_called_once()
+                self.assertEqual(selected, expected)
+
+    def test_malformed_marker_fails_closed_before_git(self) -> None:
+        pull = _pull(current_master="4" * 40)
+        pull["body"] += (
+            f"\n{publish.FAILURE_MARKER_PREFIX}not-json -->\n"
+        )
+        github = self.FakeGitHub(pull)
+        with mock.patch.object(publish, "validate_fetched_candidate") as validate:
+            with self.assertRaises(sync.SyncFailure):
+                publish.select_phase(
+                    root=self.work_dir,
+                    work_dir=self.work_dir,
+                    github=github,
+                )
+        validate.assert_not_called()
+
+
+class RecoverTests(unittest.TestCase):
+    class FakeGitHub:
+        def __init__(self, runs: list[dict], *, current_master: str = "7" * 40) -> None:
+            self.runs = runs
+            self.current_master = current_master
+            self.dispatch_calls: list[str] = []
+
+        def branch_sha(self, repository, branch):
+            return self.current_master
+
+        def workflow_runs(self, workflow):
+            return copy.deepcopy(self.runs)
+
+        def dispatch(self, workflow):
+            self.dispatch_calls.append(workflow)
+
+    def _run(self, *, run_id=123456, status="completed", conclusion="failure"):
+        return {
+            "id": run_id,
+            "head_sha": "7" * 40,
+            "event": "workflow_dispatch",
+            "status": status,
+            "conclusion": conclusion,
+        }
+
+    def test_first_missing_deploy_dispatches_once(self) -> None:
+        github = self.FakeGitHub([])
+        with mock.patch.object(publish, "_summary"):
+            result = publish.recover_phase(root=pathlib.Path("."), github=github)
+        self.assertEqual(result, 0)
+        self.assertEqual(github.dispatch_calls, ["deploy.yml"])
+
+    def test_terminal_failure_is_suppressed_with_actionable_summary(self) -> None:
+        github = self.FakeGitHub([self._run()])
+        with self.assertLogs(publish.LOG, level="WARNING") as logs:
+            with mock.patch.object(publish, "_summary") as summary:
+                result = publish.recover_phase(root=pathlib.Path("."), github=github)
+        self.assertEqual(result, 0)
+        self.assertEqual(github.dispatch_calls, [])
+        self.assertTrue(any("ACTION REQUIRED" in line for line in logs.output))
+        lines = summary.call_args.args[0]
+        rendered = "\n".join(lines)
+        self.assertIn("actions/runs/123456", rendered)
+        self.assertIn("gh workflow run deploy.yml", rendered)
+        self.assertIn("generation continues", rendered)
+
+    def test_active_or_successful_deploy_is_left_untouched(self) -> None:
+        cases = [
+            ("queued", None),
+            ("in_progress", None),
+            ("requested", None),
+            ("waiting", None),
+            ("pending", None),
+            ("completed", "success"),
+        ]
+        for status, conclusion in cases:
+            with self.subTest(status=status, conclusion=conclusion):
+                github = self.FakeGitHub(
+                    [self._run(status=status, conclusion=conclusion)]
+                )
+                with mock.patch.object(publish, "_summary") as summary:
+                    result = publish.recover_phase(
+                        root=pathlib.Path("."), github=github
+                    )
+                self.assertEqual(result, 0)
+                self.assertEqual(github.dispatch_calls, [])
+                summary.assert_not_called()
+
+
 class MergeGateTests(unittest.TestCase):
     def setUp(self) -> None:
         self.expected = publish.Candidate(33, "4" * 40, "5" * 40, "6" * 40)
@@ -538,6 +836,20 @@ class MergeGateTests(unittest.TestCase):
             publish.merge_phase(root=pathlib.Path("."), github=github, expected=self.expected)
         self.assertEqual(github.merge_calls, [])
 
+    def test_active_failure_marker_is_refused_before_merge(self) -> None:
+        github = self._github()
+        marker = publish._failure_marker_line(
+            base_sha=self.expected.base_sha,
+            head_sha=self.expected.head_sha,
+            run_id=123456,
+        )
+        self.pull["body"] += f"\n{marker}\n"
+        with self.assertRaises(sync.SyncFailure):
+            publish.merge_phase(
+                root=pathlib.Path("."), github=github, expected=self.expected
+            )
+        self.assertEqual(github.merge_calls, [])
+
     def test_rest_merge_failure_is_surfaced(self) -> None:
         github = self._github()
         github.merge_pull = mock.Mock(side_effect=sync.ApiFailure("branch protection"))
@@ -575,6 +887,37 @@ class MergeGateTests(unittest.TestCase):
                     expected=self.expected,
                 )
         self.assertEqual(github.dispatch_calls, [])
+
+
+class PublicationWorkflowTests(unittest.TestCase):
+    def setUp(self) -> None:
+        text = SYNC_WORKFLOW.read_text(encoding="utf-8")
+        self.failure_job = text.split(
+            "\n  mark-publication-failed:", 1
+        )[1].split("\n  merge-publication:", 1)[0]
+
+    def test_failure_job_only_marks_failed_selected_candidate(self) -> None:
+        job = self.failure_job
+        self.assertIn("needs: [sync, validate-publication]", job)
+        self.assertIn("always()", job)
+        self.assertIn("needs.sync.outputs.publish == 'true'", job)
+        self.assertIn(
+            "needs.validate-publication.result == 'failure'", job
+        )
+        self.assertIn("ref: ${{ needs.sync.outputs.base_sha }}", job)
+        self.assertIn("PR_NUMBER: ${{ needs.sync.outputs.pr_number }}", job)
+        self.assertIn("BASE_SHA: ${{ needs.sync.outputs.base_sha }}", job)
+        self.assertIn("HEAD_SHA: ${{ needs.sync.outputs.head_sha }}", job)
+        self.assertIn("RUN_ID: ${{ github.run_id }}", job)
+        self.assertIn("mark-failed", job)
+
+    def test_failure_job_has_no_model_or_full_build_context(self) -> None:
+        job = self.failure_job
+        self.assertRegex(job, r"(?m)^\s+contents: read$")
+        self.assertRegex(job, r"(?m)^\s+pull-requests: write$")
+        self.assertNotIn("DEEPSEEK", job)
+        self.assertNotIn("npm ci", job)
+        self.assertNotIn("npm run", job)
 
 
 class DeployWorkflowTests(unittest.TestCase):

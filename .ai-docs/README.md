@@ -22,7 +22,8 @@ This directory contains the merged cursor state and operating notes for
    requests. If organization policy restricts the default token, explicitly
    allow the `contents: write`, `pull-requests: write`, and `actions: write`
    permissions requested by the sync and merge jobs. Unit-test and publication
-   validation jobs remain read-only.
+   validation jobs remain read-only. The separate failure-marker job has
+   `contents: read` and `pull-requests: write`, and receives no model secret.
 4. Protect `master` as required. The workflow may merge its own pull request
    after a separate read-only validation job and an exact merge-preview check
    succeed. It uses the normal GitHub merge API and never bypasses branch
@@ -127,6 +128,22 @@ a PR does not advance the checked-in cursor; the publication merge does.
   documentation tests, and the production build. It has no model secret and
   no write token. Pull-request checks created by `GITHUB_TOKEN` are not trusted
   as this gate because GitHub may leave them awaiting approval or expire them.
+- If that read-only validation job fails, a separate job requeries the bot PR
+  and `master`. It writes a failure marker only when the selected PR number,
+  base SHA, and head SHA are still exactly the values that failed. A stale job
+  therefore skips instead of marking a newer candidate.
+- The failure marker is one strict, bounded JSON object on its own HTML comment
+  line. It records the exact base and head SHAs, the failed Actions run id and
+  URL, and fixed Action Required text. It contains no model output or log data,
+  is treated only as data, and is never executed.
+- While that marker is active for the same base and head, selection stops
+  before fetching or validating the candidate again and reports the failed run.
+  Fix and review the PR; do not merge it while CI is red. For a transient
+  runner failure, explicitly remove the marker from the PR body, then run the
+  `workflow_dispatch` path with
+  `gh workflow run ai-docs-sync.yml --repo capoworks/capoworks-ecu-docs --ref master`.
+  A changed base or head is revalidated normally and is not blocked by the old
+  marker.
 - A merge job requeries the PR and `master`, rejects any head, base, membership,
   or preview change, and calls the normal REST merge API with the expected head
   SHA. The merge commit must have exactly the validated base and head as its
@@ -138,7 +155,12 @@ a PR does not advance the checked-in cursor; the publication merge does.
   bounded progress without creating a large combined PR.
 - If deploy dispatch still fails after the merge, the run records the merged
   SHA and failed workflow in its job summary. Later runs check for a deploy run
-  on current `master` and retry the missing dispatch without merging again.
+  on current `master`. An active or successful run is left untouched, and the
+  first completely missing deploy is dispatched once. A terminal failed,
+  cancelled, timed-out, or otherwise unsuccessful run suppresses automatic
+  retries for that same SHA and reports its run URL plus the manual
+  `deploy.yml` retry command. This warning does not stop generation for later
+  source commits.
 - A closed, unmerged bot PR stops the workflow for an explicit human decision.
   It is not treated as an opening to replace the branch.
 - A bot branch with no recognizable PR history, or with commits newer than its
@@ -222,6 +244,11 @@ component-backed pages.
 Model requests use JSON mode, an explicit bounded `max_tokens` value, and
 `thinking: {"type": "disabled"}` so the structured result is not consumed by
 the API's default thinking mode.
+
+Publication failure markers are trusted only through their exact repository,
+base, head, run id, run URL, bounded shape, and fixed action text. Their JSON is
+parsed as inert data. It cannot select a different PR or commit, add commands,
+start model generation, alter validation, or bypass the separate build gate.
 
 ## Preview checks
 
