@@ -2,9 +2,49 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "5a4d0a96111199d8ff92a246af04921dc39a743a",
-  "latest_analyzed_at": "2026-10-22T13:25:58.737550+00:00",
+  "latest_analyzed_commit": "99653553158be194c039c0e699a7194d472effbc",
+  "latest_analyzed_at": "2026-10-22T13:28:23.141523+00:00",
   "entries": [
+    {
+      "commit": "99653553158be194c039c0e699a7194d472effbc",
+      "subject": "Merge pull request #75 from capoworks/fix/pr849-02-spark-skip",
+      "authored_at": "2026-10-22T12:03:32+02:00",
+      "parents": [
+        "5a4d0a96111199d8ff92a246af04921dc39a743a",
+        "6b63c48598d3a114b6ce7e9737746f22a2573725"
+      ],
+      "comment": "Integration merge of the anti-lag spark-skip fix branch. Its child commits are documented separately and the merge adds no further user-facing change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-22T13:28:23.141523+00:00",
+      "integration_batch_commit": "99653553158be194c039c0e699a7194d472effbc"
+    },
+    {
+      "commit": "6b63c48598d3a114b6ce7e9737746f22a2573725",
+      "subject": "style(ignition): apply repository ternary formatting",
+      "authored_at": "2026-10-22T07:59:08+02:00",
+      "parents": [
+        "79bdd855d9f8047b73793dd6bd2e3c0457448f54"
+      ],
+      "comment": "Formatting-only change that reflows the ternary expression introduced by the previous commit. No behavior, configuration, or user-facing effect.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-22T13:28:23.141523+00:00",
+      "integration_batch_commit": "99653553158be194c039c0e699a7194d472effbc"
+    },
+    {
+      "commit": "79bdd855d9f8047b73793dd6bd2e3c0457448f54",
+      "subject": "fix(ignition): gate ALS spark skipping on active anti-lag",
+      "authored_at": "2026-10-22T07:38:25+02:00",
+      "parents": [
+        "bcad6ff1ff5b19ee294788ebca6255bcf72909f5"
+      ],
+      "comment": "Capoworks ECU changed anti-lag soft spark skipping so the configured ALSSkipRatio is applied only when anti-lag is enabled and the anti-lag controller reports an active condition; otherwise the target skip ratio is zero. Drivers and tuners no longer lose sparks to a stale skip ratio when anti-lag is off or not armed, and skipping resumes when anti-lag re-arms. No tune migration is needed, but re-check anti-lag spark behavior on the bench because the change is validated only by unit tests, not on an engine.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-22T13:28:23.141523+00:00",
+      "integration_batch_commit": "99653553158be194c039c0e699a7194d472effbc"
+    },
     {
       "commit": "5a4d0a96111199d8ff92a246af04921dc39a743a",
       "subject": "Merge pull request #74 from capoworks/fix/pr849-01-pedal-etb",
@@ -763,46 +803,6 @@
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-19T22:22:03+00:00",
       "integration_batch_commit": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3"
-    },
-    {
-      "commit": "f20dedfca3a31d5b1552f2a3d967c0a9dd434d65",
-      "subject": "docs: replace inherited README with Capoworks ECU overview",
-      "authored_at": "2026-10-18T20:25:40+02:00",
-      "parents": [
-        "825d7fda5c32b7ec3f755be4897775819e8605d1"
-      ],
-      "comment": "The firmware repository README was rewritten as a Capoworks ECU overview. This changes project documentation only; it does not change engine behavior, TunerStudio settings, tune compatibility, or firmware operation.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3"
-    },
-    {
-      "commit": "825d7fda5c32b7ec3f755be4897775819e8605d1",
-      "subject": "Merge pull request #55 from capoworks/align/pr-30",
-      "authored_at": "2026-10-18T16:59:43+02:00",
-      "parents": [
-        "91b74aedfd7b58da66d95f259c16086c7c3e5093",
-        "8f4fcfb40135fe7e5f15b280f7e05d9863b60f52"
-      ],
-      "comment": "This integration merge carries the VE Analyze update from 8f4fcfb40135fe7e5f15b280f7e05d9863b60f52. It adds no separate firmware behavior or merge-resolution change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "825d7fda5c32b7ec3f755be4897775819e8605d1"
-    },
-    {
-      "commit": "8f4fcfb40135fe7e5f15b280f7e05d9863b60f52",
-      "subject": "feat(tuning): scope VE Analyze filters and publish recovery state",
-      "authored_at": "2026-10-18T00:10:03+02:00",
-      "parents": [
-        "223895c17f82f9fd07bac9e81414661440ac7475"
-      ],
-      "comment": "VE Analyze now applies strategy-specific crank, transient, cut-recovery, launch/anti-lag and lambda filters to Speed Density, Alpha-N and MAF maps, and publishes cranking and cut-recovery state. Review the VE Analyze guide before relying on a filter; qualified SD + Alpha-N endpoints remain a gated special case.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "825d7fda5c32b7ec3f755be4897775819e8605d1"
     }
   ]
 }
