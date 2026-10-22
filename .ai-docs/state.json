@@ -4,7 +4,7 @@
   "source_branch": "master",
   "target_repository": "capoworks/capoworks-ecu-docs",
   "target_branch": "master",
-  "cursor_commit": "10e7ca7ccd2d6fd4cc10d3a6cf63beff72c2aa07",
+  "cursor_commit": "4bcf5e27123f22b9dd55c4905c46bfdb1a14076e",
   "initial_backfill": {
     "through_commit": "be02e3cdaa2c177d05853a41af6dacc9c0766b77",
     "commit_count": 5,
@@ -12,45 +12,52 @@
   },
   "last_sync": {
     "range": {
-      "base_exclusive": "dfeba99a6370af9bc6ff8a17922749a0c5f0cf7e",
-      "head_inclusive": "10e7ca7ccd2d6fd4cc10d3a6cf63beff72c2aa07",
-      "commit_count": 2
+      "base_exclusive": "10e7ca7ccd2d6fd4cc10d3a6cf63beff72c2aa07",
+      "head_inclusive": "4bcf5e27123f22b9dd55c4905c46bfdb1a14076e",
+      "commit_count": 3
     },
     "model": "deepseek-flash",
     "usage": {
-      "prompt_tokens": 60393,
-      "completion_tokens": 1985,
-      "total_tokens": 62378,
-      "prompt_cache_hit_tokens": 3072,
-      "prompt_cache_miss_tokens": 57321
+      "prompt_tokens": 33870,
+      "completion_tokens": 1129,
+      "total_tokens": 34999,
+      "prompt_cache_hit_tokens": 1536,
+      "prompt_cache_miss_tokens": 32334
     },
-    "summary": "Capoworks ECU now enforces the antilag maximum activation duration as a continuous timeout. Antilag stays active only while all arming conditions are met and the elapsed time since arming is below ALSMaxDuration; once the timeout expires it stays off until the arming conditions clear and re-apply. A non-positive ALSMaxDuration now inhibits antilag, and the default duration changed from 3.5 to 3 seconds.",
+    "summary": "Capoworks ECU now invalidates a pending priming-pulse request when the ignition is switched off, so a delayed prime from an earlier key cycle cannot fire after key-off or during a later key cycle. An already-opened priming pulse is still allowed to finish and close normally. The existing Priming Pulse page is updated to describe this behavior.",
     "outcome": "update",
     "decisions": [
       {
-        "commit": "df9a30dfc38cd205357f39d8010f340dd1e0e82f",
+        "commit": "d7d245eef41f2dc3abe658464cb7a74cc4291ab4",
         "decision": "update",
-        "rationale": "Antilag activation is now limited by a continuous timer. The timer starts on a false-to-true transition of the arming conditions and antilag turns off when elapsed time reaches ALSMaxDuration. After a timeout, antilag does not restart while the arming conditions remain true; they must clear and re-apply. Setting ALSMaxDuration to zero or a negative value now prevents antilag from activating, so tuners must use a positive duration. The default ALSMaxDuration changed from 3.5 to 3 seconds; existing tunes keep their stored value. Verify the duration and arming conditions on the bench before relying on antilag.",
+        "rationale": "Capoworks ECU changed priming-pulse scheduling so a key-off invalidates any pending delayed prime. Previously a delayed start could still fire after the ignition was switched off, or a stale request from an earlier key cycle could run during a later one. Now a pending prime is discarded on key-off, and an already-opened pulse still receives its matching close so injectors are not left open. No tune setting changes and no user action is required; the priming delay and prime table behave as before. This is a firmware behavior change, so it applies only to builds that include it.",
         "evidence": [
-          "firmware/controllers/algo/antilag_system.cpp: update() adds durationValid = ALSMaxDuration > 0, resets m_maxDurationTimer on eligible && !m_wasEligible, and sets ALSTimerCondition from elapsed seconds < ALSMaxDuration",
-          "firmware/controllers/algo/antilag_system.h: adds private Timer m_maxDurationTimer and bool m_wasEligible",
-          "firmware/controllers/algo/defaults/default_base_engine.cpp: ALSMaxDuration default changed from 3.5 to 3",
-          "unit_tests/tests/actuators/test_antilag.cpp: new tests for expiry boundary, no re-arm after timeout, re-arm after arming condition clears, non-positive duration inhibits, and disabled inhibits"
+          "prime_injection.cpp: onIgnitionStateChanged now tracks m_isIgnitionOn and increments m_keyCycleGeneration under a critical section, returning early on key-off",
+          "prime_injection.cpp: onPrimeStart, onPrimeOpen and onPrimeEnd take a generation argument and reject callbacks whose generation no longer matches the current key cycle",
+          "prime_injection.h: new members m_isIgnitionOn, m_primeOpened, m_keyCycleGeneration, m_pulseGeneration; adapters changed from PrimeController* to uintptr_t generation",
+          "unit_tests/tests/ignition_injection/test_startOfCrankingPrimingPulse.cpp: new tests keyOffBeforeDelayedStartPreventsPulse, newKeyCycleDoesNotRunStaleDelayedStart, keyOffBetweenStartAndOpenPreventsUnmatchedPulse, keyOffAfterOpenStillClosesAcceptedPulse"
         ]
       },
       {
-        "commit": "10e7ca7ccd2d6fd4cc10d3a6cf63beff72c2aa07",
+        "commit": "eec926320836a54bfdbe7417c9f22c71739e9801",
         "decision": "no-impact",
-        "rationale": "Integration merge of the antilag timeout fix. It adds no user-facing change beyond the child commit already documented.",
+        "rationale": "Formatting-only change that re-wraps one conditional in the priming controller. No behavior, configuration, or user-facing documentation change.",
         "evidence": [
-          "Merge commit 10e7ca7 parents dfeba99a6 and df9a30dfc; changed paths match the child commit's antilag files",
-          "No conflict-resolution changes beyond the child commit's antilag_system.cpp, antilag_system.h, default_base_engine.cpp, and test_antilag.cpp"
+          "prime_injection.cpp: line wrapping of the onPrimeOpen guard condition only; no logic change"
+        ]
+      },
+      {
+        "commit": "4bcf5e27123f22b9dd55c4905c46bfdb1a14076e",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the priming key-off fix. Its child commits are audited separately and the merge adds no additional user-facing change.",
+        "evidence": [
+          "Merge commit 4bcf5e27123f22b9dd55c4905c46bfdb1a14076e has parents 10e7ca7cc and eec926320 with no conflict-resolution diff of its own"
         ]
       }
     ],
     "files_changed": [
-      "docs/07-Advanced-Features/Antilag.md"
+      "docs/06-Basic-Features/Cranking-Control/Cranking-Fuel/Priming-Pulse.md"
     ],
-    "recorded_at": "2026-10-22T18:10:20.011391+00:00"
+    "recorded_at": "2026-10-22T18:12:58.995226+00:00"
   }
 }
