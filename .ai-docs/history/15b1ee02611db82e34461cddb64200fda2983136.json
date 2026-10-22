@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "batch_head": "15b1ee02611db82e34461cddb64200fda2983136",
+  "previous_cursor_commit": "99653553158be194c039c0e699a7194d472effbc",
+  "cursor_commit": "15b1ee02611db82e34461cddb64200fda2983136",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "5a4d0a96111199d8ff92a246af04921dc39a743a",
+      "head_inclusive": "99653553158be194c039c0e699a7194d472effbc",
+      "commit_count": 3
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 111499,
+      "completion_tokens": 2426,
+      "total_tokens": 113925,
+      "prompt_cache_hit_tokens": 3072,
+      "prompt_cache_miss_tokens": 108427
+    },
+    "summary": "Capoworks ECU now applies the anti-lag soft spark-skip ratio only while anti-lag is both enabled and actively engaged. Previously the configured skip ratio could suppress sparks whenever the limiter was evaluated, even with anti-lag disabled or not armed. The change is a firmware behavior fix with unit-test coverage; no tune migration is required, but anti-lag spark skipping should be re-verified on the bench.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "79bdd855d9f8047b73793dd6bd2e3c0457448f54",
+        "decision": "update",
+        "rationale": "Capoworks ECU changed anti-lag soft spark skipping so the configured ALSSkipRatio is applied only when anti-lag is enabled and the anti-lag controller reports an active condition; otherwise the target skip ratio is zero. Drivers and tuners no longer lose sparks to a stale skip ratio when anti-lag is off or not armed, and skipping resumes when anti-lag re-arms. No tune migration is needed, but re-check anti-lag spark behavior on the bench because the change is validated only by unit tests, not on an engine.",
+        "evidence": [
+          "firmware/controllers/engine_cycle/spark_logic.cpp: ALSSkipRatio now computed as antiLagEnabled && antilagController.isAntilagCondition ? ALSSkipRatio : 0.0f and applied via ALSsoftSparkLimiter.setTargetSkipRatio() at the top of onTriggerEventSparkLogic",
+          "firmware/controllers/engine_cycle/spark_logic.cpp: removed the unconditional setTargetSkipRatio(engineConfiguration->ALSSkipRatio) call from the per-event scheduling loop",
+          "unit_tests/tests/ignition_injection/test_ignition_scheduling.cpp: new tests ALSSoftCutIgnoresRatioWhenDisabledOrDisarmed and ALSSoftCutRestoresAndRearmsAfterDisable",
+          "unit_tests/tests/trigger/test_ignition_cycle_profile.cpp: new test IgnitionTimeBudget.ALSSoftCutUsesLiveAntiLagState"
+        ]
+      },
+      {
+        "commit": "6b63c48598d3a114b6ce7e9737746f22a2573725",
+        "decision": "no-impact",
+        "rationale": "Formatting-only change that reflows the ternary expression introduced by the previous commit. No behavior, configuration, or user-facing effect.",
+        "evidence": [
+          "firmware/controllers/engine_cycle/spark_logic.cpp: only whitespace/line-wrapping of the ALSSkipRatio ternary changed"
+        ]
+      },
+      {
+        "commit": "99653553158be194c039c0e699a7194d472effbc",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the anti-lag spark-skip fix branch. Its child commits are documented separately and the merge adds no further user-facing change.",
+        "evidence": [
+          "Merge pull request #75 from capoworks/fix/pr849-02-spark-skip; parents 5a4d0a961 and 6b63c4859",
+          "changed_paths match the child commits' files with no additional conflict-resolution edits"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/11-Ignition/Ignition-Settings/Experimental-Timing.md"
+    ],
+    "recorded_at": "2026-10-22T13:28:23.139900+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "99653553158be194c039c0e699a7194d472effbc",
+      "head_inclusive": "15b1ee02611db82e34461cddb64200fda2983136",
+      "commit_count": 2
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 62321,
+      "completion_tokens": 1474,
+      "total_tokens": 63795,
+      "prompt_cache_hit_tokens": 3072,
+      "prompt_cache_miss_tokens": 59249
+    },
+    "summary": "Boost cut now keeps an active fuel cut when the MAP signal is missing, invalid, or non-finite, instead of releasing fuel. A missing or invalid MAP reading still cannot start a new cut. The existing 20 kPa release hysteresis is unchanged.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "0c7fa687473af958262baeb4c66a304bb04ad9e9",
+        "decision": "update",
+        "rationale": "Boost cut now treats a missing, invalid, or non-finite MAP reading as neither a rising nor a falling event. If the cut is already active, fuel stays cut until a valid MAP reading falls 20 kPa below the configured Boost cut pressure. A missing or invalid MAP reading cannot start a new cut. No setting changes are needed; the existing Boost cut pressure value and its 20 kPa hysteresis still apply. Check MAP sensor wiring and diagnostics if fuel stays cut after boost falls.",
+        "evidence": [
+          "firmware/controllers/limp_manager.cpp updateCutsBoostCut: adds Sensor::get(SensorType::Map), validMap = map && std::isfinite(map.Value), rising/falling booleans, and m_boostCutHysteresis.test(rising, falling)",
+          "unit_tests/tests/test_limp.cpp boostCut: missing and invalid MAP do not create a cut; missing and NaN MAP preserve an active cut; 79 kPa restores fuel"
+        ]
+      },
+      {
+        "commit": "15b1ee02611db82e34461cddb64200fda2983136",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the boost-cut fix. It adds no changes beyond the child commit already documented, so no further documentation change is needed.",
+        "evidence": [
+          "Merge commit 15b1ee0 has parents 9965355 and 0c7fa68 and an empty combined diff; changed paths match the child commit"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/05-Limits-And-Protections/Boost-Cut.md"
+    ],
+    "recorded_at": "2026-10-22T13:30:58.030021+00:00"
+  }
+}

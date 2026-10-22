@@ -2,9 +2,36 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "99653553158be194c039c0e699a7194d472effbc",
-  "latest_analyzed_at": "2026-10-22T13:28:23.141523+00:00",
+  "latest_analyzed_commit": "15b1ee02611db82e34461cddb64200fda2983136",
+  "latest_analyzed_at": "2026-10-22T13:30:58.031833+00:00",
   "entries": [
+    {
+      "commit": "15b1ee02611db82e34461cddb64200fda2983136",
+      "subject": "Merge pull request #76 from capoworks/fix/pr849-03-boost-cut",
+      "authored_at": "2026-10-22T12:03:44+02:00",
+      "parents": [
+        "99653553158be194c039c0e699a7194d472effbc",
+        "0c7fa687473af958262baeb4c66a304bb04ad9e9"
+      ],
+      "comment": "Integration merge of the boost-cut fix. It adds no changes beyond the child commit already documented, so no further documentation change is needed.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-22T13:30:58.031833+00:00",
+      "integration_batch_commit": "15b1ee02611db82e34461cddb64200fda2983136"
+    },
+    {
+      "commit": "0c7fa687473af958262baeb4c66a304bb04ad9e9",
+      "subject": "fix(protection): retain boost cut across invalid MAP samples",
+      "authored_at": "2026-10-22T07:38:25+02:00",
+      "parents": [
+        "bcad6ff1ff5b19ee294788ebca6255bcf72909f5"
+      ],
+      "comment": "Boost cut now treats a missing, invalid, or non-finite MAP reading as neither a rising nor a falling event. If the cut is already active, fuel stays cut until a valid MAP reading falls 20 kPa below the configured Boost cut pressure. A missing or invalid MAP reading cannot start a new cut. No setting changes are needed; the existing Boost cut pressure value and its 20 kPa hysteresis still apply. Check MAP sensor wiring and diagnostics if fuel stays cut after boost falls.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-22T13:30:58.031833+00:00",
+      "integration_batch_commit": "15b1ee02611db82e34461cddb64200fda2983136"
+    },
     {
       "commit": "99653553158be194c039c0e699a7194d472effbc",
       "subject": "Merge pull request #75 from capoworks/fix/pr849-02-spark-skip",
@@ -776,33 +803,6 @@
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-20T16:12:15.116568+00:00",
       "integration_batch_commit": "19b3d53c158fbcd11fa14ecaebbcbb7cbc49552d"
-    },
-    {
-      "commit": "48628aefd9b14e32a6af54a3747e2ebccd917828",
-      "subject": "docs: link recent changes beside the wiki",
-      "authored_at": "2026-10-20T00:59:49+02:00",
-      "parents": [
-        "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3"
-      ],
-      "comment": "The repository README gained a Recent changes link to the wiki. This is a documentation navigation change only; no firmware, tune format, flashing, or builder workflow is affected, so no wiki page needs updating.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T02:27:44.053715+00:00",
-      "integration_batch_commit": "48628aefd9b14e32a6af54a3747e2ebccd917828"
-    },
-    {
-      "commit": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3",
-      "subject": "Merge pull request #56 from capoworks/docs/capoworks-readme",
-      "authored_at": "2026-10-18T20:26:22+02:00",
-      "parents": [
-        "825d7fda5c32b7ec3f755be4897775819e8605d1",
-        "f20dedfca3a31d5b1552f2a3d967c0a9dd434d65"
-      ],
-      "comment": "This integration merge carries the README documentation update from f20dedfca3a31d5b1552f2a3d967c0a9dd434d65. It adds no separate firmware behavior or merge-resolution change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3"
     }
   ]
 }
