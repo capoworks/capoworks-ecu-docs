@@ -2,9 +2,36 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "15b1ee02611db82e34461cddb64200fda2983136",
-  "latest_analyzed_at": "2026-10-22T13:30:58.031833+00:00",
+  "latest_analyzed_commit": "dfeba99a6370af9bc6ff8a17922749a0c5f0cf7e",
+  "latest_analyzed_at": "2026-10-22T18:07:46.343448+00:00",
   "entries": [
+    {
+      "commit": "dfeba99a6370af9bc6ff8a17922749a0c5f0cf7e",
+      "subject": "Merge pull request #77 from capoworks/fix/pr849-04-injector-duty",
+      "authored_at": "2026-10-22T12:03:55+02:00",
+      "parents": [
+        "15b1ee02611db82e34461cddb64200fda2983136",
+        "9695e6e913e170af4a50fa008feb13791be82d30"
+      ],
+      "comment": "Integration merge of the secondary injector duty fix. Its only content is the child commit already documented, and the merge introduces no additional user-facing change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-22T18:07:46.343448+00:00",
+      "integration_batch_commit": "dfeba99a6370af9bc6ff8a17922749a0c5f0cf7e"
+    },
+    {
+      "commit": "9695e6e913e170af4a50fa008feb13791be82d30",
+      "subject": "fix(protection): include active secondary injector duty",
+      "authored_at": "2026-10-22T07:38:25+02:00",
+      "parents": [
+        "bcad6ff1ff5b19ee294788ebca6255bcf72909f5"
+      ],
+      "comment": "The injector duty cycle cut now also watches the secondary injector stage. With staged injection enabled, the higher of the primary and stage 2 duty cycles is used for both the instantaneous and sustained limits, and the cut releases only when both active stages drop below 20 percent duty. Tuners running staged injection should check that the duty limits suit the secondary injectors as well, since a stage 2 excursion can now cut fuel even when the primary stage looks safe. With staged injection disabled, behavior is unchanged. This is a firmware logic change; it has not been validated on an engine.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-22T18:07:46.343448+00:00",
+      "integration_batch_commit": "dfeba99a6370af9bc6ff8a17922749a0c5f0cf7e"
+    },
     {
       "commit": "15b1ee02611db82e34461cddb64200fda2983136",
       "subject": "Merge pull request #76 from capoworks/fix/pr849-03-boost-cut",
@@ -777,32 +804,6 @@
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
       "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "468d04c15df228ea7cf4b17b2e8485ba77178274",
-      "subject": "Build: restore firmware memory budgets and deduplicate CI",
-      "authored_at": "2026-10-20T00:44:50+02:00",
-      "parents": [
-        "bf0d5a7dc445fb7e4ebf9dd8a059c6e9a991cbd3"
-      ],
-      "comment": "F4 boards now place CAN, USB console, and USB mass-storage background objects in ordinary SRAM, and the F407 Lua heap drops from 30,000 to 20,000 bytes, reducing script capacity. The compressed INI drive uses a 16 KiB DEFLATE dictionary, saving 16 KiB RAM. F7 functions use 4-byte alignment. Hardware timing and smaller-heap behavior are unvalidated.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "19b3d53c158fbcd11fa14ecaebbcbb7cbc49552d",
-      "subject": "fix(docs): preserve README line endings",
-      "authored_at": "2026-10-20T01:00:31+02:00",
-      "parents": [
-        "48628aefd9b14e32a6af54a3747e2ebccd917828"
-      ],
-      "comment": "The commit only converts README.md line endings from CRLF to LF. The rendered text, links, tune format, build steps, and firmware behavior are unchanged, so no driver, tuner, installer, or builder action is required.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T16:12:15.116568+00:00",
-      "integration_batch_commit": "19b3d53c158fbcd11fa14ecaebbcbb7cbc49552d"
     }
   ]
 }

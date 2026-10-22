@@ -4,7 +4,7 @@
   "source_branch": "master",
   "target_repository": "capoworks/capoworks-ecu-docs",
   "target_branch": "master",
-  "cursor_commit": "15b1ee02611db82e34461cddb64200fda2983136",
+  "cursor_commit": "dfeba99a6370af9bc6ff8a17922749a0c5f0cf7e",
   "initial_backfill": {
     "through_commit": "be02e3cdaa2c177d05853a41af6dacc9c0766b77",
     "commit_count": 5,
@@ -12,42 +12,43 @@
   },
   "last_sync": {
     "range": {
-      "base_exclusive": "99653553158be194c039c0e699a7194d472effbc",
-      "head_inclusive": "15b1ee02611db82e34461cddb64200fda2983136",
+      "base_exclusive": "15b1ee02611db82e34461cddb64200fda2983136",
+      "head_inclusive": "dfeba99a6370af9bc6ff8a17922749a0c5f0cf7e",
       "commit_count": 2
     },
     "model": "deepseek-flash",
     "usage": {
-      "prompt_tokens": 62321,
-      "completion_tokens": 1474,
-      "total_tokens": 63795,
-      "prompt_cache_hit_tokens": 3072,
-      "prompt_cache_miss_tokens": 59249
+      "prompt_tokens": 31708,
+      "completion_tokens": 804,
+      "total_tokens": 32512,
+      "prompt_cache_hit_tokens": 1536,
+      "prompt_cache_miss_tokens": 30172
     },
-    "summary": "Boost cut now keeps an active fuel cut when the MAP signal is missing, invalid, or non-finite, instead of releasing fuel. A missing or invalid MAP reading still cannot start a new cut. The existing 20 kPa release hysteresis is unchanged.",
+    "summary": "Capoworks ECU now includes the active secondary (stage 2) injector duty cycle in the injector duty cycle cut protection. When staged injection is enabled, the higher of the primary and stage 2 duty cycles is compared against the instantaneous and sustained duty limits, and fuel resumes only once both active stages fall below 20 percent duty. The Injector Duty Cycle Cut page was updated to describe this behavior.",
     "outcome": "update",
     "decisions": [
       {
-        "commit": "0c7fa687473af958262baeb4c66a304bb04ad9e9",
+        "commit": "9695e6e913e170af4a50fa008feb13791be82d30",
         "decision": "update",
-        "rationale": "Boost cut now treats a missing, invalid, or non-finite MAP reading as neither a rising nor a falling event. If the cut is already active, fuel stays cut until a valid MAP reading falls 20 kPa below the configured Boost cut pressure. A missing or invalid MAP reading cannot start a new cut. No setting changes are needed; the existing Boost cut pressure value and its 20 kPa hysteresis still apply. Check MAP sensor wiring and diagnostics if fuel stays cut after boost falls.",
+        "rationale": "The injector duty cycle cut now also watches the secondary injector stage. With staged injection enabled, the higher of the primary and stage 2 duty cycles is used for both the instantaneous and sustained limits, and the cut releases only when both active stages drop below 20 percent duty. Tuners running staged injection should check that the duty limits suit the secondary injectors as well, since a stage 2 excursion can now cut fuel even when the primary stage looks safe. With staged injection disabled, behavior is unchanged. This is a firmware logic change; it has not been validated on an engine.",
         "evidence": [
-          "firmware/controllers/limp_manager.cpp updateCutsBoostCut: adds Sensor::get(SensorType::Map), validMap = map && std::isfinite(map.Value), rising/falling booleans, and m_boostCutHysteresis.test(rising, falling)",
-          "unit_tests/tests/test_limp.cpp boostCut: missing and invalid MAP do not create a cut; missing and NaN MAP preserve an active cut; 79 kPa restores fuel"
+          "firmware/controllers/limp_manager.cpp: updateCutsInjectorDuty now takes std::max(getInjectorDutyCycle(rpm), getInjectorDutyCycleStage2(rpm)) when engineConfiguration->enableStagedInjection is set",
+          "unit_tests/tests/test_limp.cpp: new tests injectorDutyCutIncludesStage2InstantaneousExcursion, injectorDutyStage2SustainedCutRequiresBothStagesToRecover, injectorDutyIgnoresStage2WhenStagingDisabled"
         ]
       },
       {
-        "commit": "15b1ee02611db82e34461cddb64200fda2983136",
+        "commit": "dfeba99a6370af9bc6ff8a17922749a0c5f0cf7e",
         "decision": "no-impact",
-        "rationale": "Integration merge of the boost-cut fix. It adds no changes beyond the child commit already documented, so no further documentation change is needed.",
+        "rationale": "Integration merge of the secondary injector duty fix. Its only content is the child commit already documented, and the merge introduces no additional user-facing change.",
         "evidence": [
-          "Merge commit 15b1ee0 has parents 9965355 and 0c7fa68 and an empty combined diff; changed paths match the child commit"
+          "Merge commit dfeba99a with parents 15b1ee02 and 9695e6e9; changed paths are the same limp_manager.cpp and test_limp.cpp covered by the child commit",
+          "No conflict-resolution changes beyond the child commit's diff"
         ]
       }
     ],
     "files_changed": [
-      "docs/05-Limits-And-Protections/Boost-Cut.md"
+      "docs/05-Limits-And-Protections/Injector-Duty-Cut.md"
     ],
-    "recorded_at": "2026-10-22T13:30:58.030021+00:00"
+    "recorded_at": "2026-10-22T18:07:46.341372+00:00"
   }
 }
