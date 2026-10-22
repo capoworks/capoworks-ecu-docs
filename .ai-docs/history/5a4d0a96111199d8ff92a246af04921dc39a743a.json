@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "batch_head": "5a4d0a96111199d8ff92a246af04921dc39a743a",
+  "previous_cursor_commit": "bcad6ff1ff5b19ee294788ebca6255bcf72909f5",
+  "cursor_commit": "5a4d0a96111199d8ff92a246af04921dc39a743a",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "eb220b087c876be73e297990f3b8e175e4e1ade6",
+      "head_inclusive": "bcad6ff1ff5b19ee294788ebca6255bcf72909f5",
+      "commit_count": 1
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 30738,
+      "completion_tokens": 2717,
+      "total_tokens": 33455,
+      "prompt_cache_hit_tokens": 1536,
+      "prompt_cache_miss_tokens": 29202
+    },
+    "summary": "The repository README now presents the public Capoworks ECU on-demand firmware builder, including how to sign in, select a board, choose opt-in modules and table dimensions, download the matching firmware image and generated TunerStudio INI, and the limit of six builds per user per day. The existing on-demand firmware build wiki page is updated to describe the public builder alongside the manual workflow, with the same profile rules, artifact pairing, and safety boundaries.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "bcad6ff1ff5b19ee294788ebca6255bcf72909f5",
+        "decision": "update",
+        "rationale": "The repository README now advertises the public Capoworks ECU on-demand firmware builder at capoworks.undo.it/firmware and adds a section describing the user flow: sign in, select a supported board, choose opt-in modules and table dimensions, then download the matching firmware image and generated TunerStudio INI. It also states a limit of six builds per user per day. The on-demand firmware build wiki page is updated so readers can use the public builder as well as the manual GitHub Actions workflow, while keeping the same profile rules, the requirement to treat firmware and INI as one matching pair, and the warning that a successful build is not engine or hardware validation.",
+        "evidence": [
+          "README.md: link bar gains 'On-Demand Firmware Builder' pointing to https://capoworks.undo.it/firmware",
+          "README.md: new 'On-Demand Firmware Builder' section describes sign-in, board selection, opt-in modules and table dimensions, downloading the firmware image and generated TunerStudio INI, and a limit of six builds per day",
+          "README.md: section links to https://capoworks.github.io/capoworks-ecu-docs/Software/On-Demand-Firmware-Build/"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/10-Software/On-Demand-Firmware-Build.md"
+    ],
+    "recorded_at": "2026-10-21T13:45:46.204319+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "bcad6ff1ff5b19ee294788ebca6255bcf72909f5",
+      "head_inclusive": "5a4d0a96111199d8ff92a246af04921dc39a743a",
+      "commit_count": 2
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 107932,
+      "completion_tokens": 3062,
+      "total_tokens": 110994,
+      "prompt_cache_hit_tokens": 3072,
+      "prompt_cache_miss_tokens": 104860
+    },
+    "summary": "Anti-lag now requires a valid driver throttle-intent signal before it can arm, and the anti-lag ETB target addition is applied only when anti-lag is enabled and the accelerator-pedal reading is valid. The ETB pedal-target page is updated to describe these conditions.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "03b4833c94a7b1188e21bf89779d3fc39089634d",
+        "decision": "update",
+        "rationale": "Anti-lag arming now fails closed: if the driver throttle-intent signal is missing or non-finite, the anti-lag throttle condition is false and anti-lag does not activate, even if RPM, coolant, and switch conditions are met. The anti-lag ETB target addition is also gated on anti-lag being enabled and on a valid, finite accelerator-pedal reading, so a stale active flag or a failed pedal sensor no longer adds ALSEtbAdd to the throttle target. No tune migration is required; existing anti-lag tunes keep their settings. Check that the pedal and throttle-intent sensors are calibrated and healthy before relying on anti-lag, and treat a lost pedal signal as an anti-lag inhibit rather than a fault to tune around.",
+        "evidence": [
+          "firmware/controllers/algo/antilag_system.cpp: isALSMaxThrottleIntentCondition now returns false when Sensor::get(SensorType::DriverThrottleIntent) is invalid or non-finite",
+          "firmware/controllers/actuators/electronic_throttle.cpp: getSetpointEtbNonTorqueModel adds ALSEtbAdd only if antiLagEnabled and isAntilagCondition and the AcceleratorPedal reading is valid and finite",
+          "unit_tests/tests/actuators/test_antilag.cpp: new AntiLagRequiresValidThrottleIntent test covers invalid, NaN, recovery, and re-arm",
+          "unit_tests/tests/actuators/test_etb.cpp: new antiLagAdderRequiresEnabledAndValidPedal test covers stale flag, invalid pedal, and disabled anti-lag"
+        ]
+      },
+      {
+        "commit": "5a4d0a96111199d8ff92a246af04921dc39a743a",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the anti-lag pedal-intent fix. Its child commit is documented separately and the merge adds no further user-facing change.",
+        "evidence": [
+          "Merge commit 5a4d0a9 has parents bcad6ff1f and 03b4833c9 with no conflict-resolution diff of its own",
+          "Changed paths match the child commit: electronic_throttle.cpp, antilag_system.cpp, test_antilag.cpp, test_etb.cpp"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/07-Advanced-Features/ETB/ETB-Pedal-Target.md"
+    ],
+    "recorded_at": "2026-10-22T13:25:58.735909+00:00"
+  }
+}
