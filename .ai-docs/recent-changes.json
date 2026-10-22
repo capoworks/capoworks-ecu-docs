@@ -2,9 +2,36 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "bcad6ff1ff5b19ee294788ebca6255bcf72909f5",
-  "latest_analyzed_at": "2026-10-21T13:45:46.206590+00:00",
+  "latest_analyzed_commit": "5a4d0a96111199d8ff92a246af04921dc39a743a",
+  "latest_analyzed_at": "2026-10-22T13:25:58.737550+00:00",
   "entries": [
+    {
+      "commit": "5a4d0a96111199d8ff92a246af04921dc39a743a",
+      "subject": "Merge pull request #74 from capoworks/fix/pr849-01-pedal-etb",
+      "authored_at": "2026-10-22T12:02:54+02:00",
+      "parents": [
+        "bcad6ff1ff5b19ee294788ebca6255bcf72909f5",
+        "03b4833c94a7b1188e21bf89779d3fc39089634d"
+      ],
+      "comment": "Integration merge of the anti-lag pedal-intent fix. Its child commit is documented separately and the merge adds no further user-facing change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-22T13:25:58.737550+00:00",
+      "integration_batch_commit": "5a4d0a96111199d8ff92a246af04921dc39a743a"
+    },
+    {
+      "commit": "03b4833c94a7b1188e21bf89779d3fc39089634d",
+      "subject": "fix(antilag): reject invalid pedal intent and inhibit ETB addition",
+      "authored_at": "2026-10-22T07:38:25+02:00",
+      "parents": [
+        "bcad6ff1ff5b19ee294788ebca6255bcf72909f5"
+      ],
+      "comment": "Anti-lag arming now fails closed: if the driver throttle-intent signal is missing or non-finite, the anti-lag throttle condition is false and anti-lag does not activate, even if RPM, coolant, and switch conditions are met. The anti-lag ETB target addition is also gated on anti-lag being enabled and on a valid, finite accelerator-pedal reading, so a stale active flag or a failed pedal sensor no longer adds ALSEtbAdd to the throttle target. No tune migration is required; existing anti-lag tunes keep their settings. Check that the pedal and throttle-intent sensors are calibrated and healthy before relying on anti-lag, and treat a lost pedal signal as an anti-lag inhibit rather than a fault to tune around.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-22T13:25:58.737550+00:00",
+      "integration_batch_commit": "5a4d0a96111199d8ff92a246af04921dc39a743a"
+    },
     {
       "commit": "bcad6ff1ff5b19ee294788ebca6255bcf72909f5",
       "subject": "Present on-demand firmware builder in repository README",
@@ -776,33 +803,6 @@
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-19T22:22:03+00:00",
       "integration_batch_commit": "825d7fda5c32b7ec3f755be4897775819e8605d1"
-    },
-    {
-      "commit": "91b74aedfd7b58da66d95f259c16086c7c3e5093",
-      "subject": "Merge pull request #54 from capoworks/align/pr-29",
-      "authored_at": "2026-10-18T16:59:34+02:00",
-      "parents": [
-        "a9af0bf4ff0ee65fa678cefa6e2c425c9cf104dd",
-        "223895c17f82f9fd07bac9e81414661440ac7475"
-      ],
-      "comment": "This integration merge carries the per-cylinder model trim update from 223895c17f82f9fd07bac9e81414661440ac7475. It adds no separate firmware behavior or merge-resolution change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "91b74aedfd7b58da66d95f259c16086c7c3e5093"
-    },
-    {
-      "commit": "223895c17f82f9fd07bac9e81414661440ac7475",
-      "subject": "feat(fuel): trim cylinders by captured SD and Alpha-N branch masses",
-      "authored_at": "2026-10-18T00:03:23+02:00",
-      "parents": [
-        "eee63c82b531db9bc6fa640c58ad76cf740a2ff0"
-      ],
-      "comment": "Cylinder fuel trims now have separate 16 by 16 Speed Density (MAP/RPM) and Alpha-N (TPS/RPM) tables with neutral defaults. Layout 20032 resets older binary tunes, so back up the old tune and transfer former 4 by 4 trim values manually; Core8 also trades Lua heap space for the larger tables.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-19T22:22:03+00:00",
-      "integration_batch_commit": "91b74aedfd7b58da66d95f259c16086c7c3e5093"
     }
   ]
 }

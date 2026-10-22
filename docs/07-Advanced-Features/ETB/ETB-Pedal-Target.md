@@ -6,6 +6,8 @@ The electronic throttle target is not a copy of throttle-body TPS. Capoworks con
 
 Without the torque model, Capoworks interpolates the table value into an idle-shifted range. The lower endpoint is `ETB idle maximum angle × idle position / 100`; the upper endpoint remains 100%. This compresses the pedal range rather than adding one fixed percentage everywhere. A short-lived Lua adjustment and an active anti-lag addition can then change the target. A 0% table result therefore does not prove that the plate should be physically closed.
 
+The anti-lag addition is applied only when anti-lag is enabled and the anti-lag condition is active, and only while the accelerator-pedal reading is valid and finite. A stale active anti-lag flag, a disabled anti-lag setting, or a failed pedal sensor suppresses the addition, so the target falls back to the idle-shifted table value. Anti-lag itself also requires a valid driver throttle-intent signal; if that signal is missing or non-finite, anti-lag does not arm.
+
 With the torque model enabled, the table value becomes the maximum permitted throttle instead. The final value is the lower of the torque-model throttle request and that pedal-derived cap. This path does not apply the non-torque idle remapping, Lua target adjustment, or anti-lag target addition. Validate torque-model idle behavior independently.
 
 Both paths apply throttle trim, limiting throttle #2 trim to plus or minus 10%, clamp the result to 0-100%, taper it toward zero across the ETB RPM-limit range, then clamp it between **Minimum ETB position** and **Maximum ETB position**. Full rev limiting therefore stops at the configured minimum position, not necessarily an arbitrary physical stop.
