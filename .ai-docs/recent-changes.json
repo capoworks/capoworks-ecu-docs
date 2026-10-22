@@ -2,9 +2,36 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "dfeba99a6370af9bc6ff8a17922749a0c5f0cf7e",
-  "latest_analyzed_at": "2026-10-22T18:07:46.343448+00:00",
+  "latest_analyzed_commit": "10e7ca7ccd2d6fd4cc10d3a6cf63beff72c2aa07",
+  "latest_analyzed_at": "2026-10-22T18:10:20.013527+00:00",
   "entries": [
+    {
+      "commit": "10e7ca7ccd2d6fd4cc10d3a6cf63beff72c2aa07",
+      "subject": "Merge pull request #78 from capoworks/fix/pr849-05-als-timeout",
+      "authored_at": "2026-10-22T12:04:33+02:00",
+      "parents": [
+        "dfeba99a6370af9bc6ff8a17922749a0c5f0cf7e",
+        "df9a30dfc38cd205357f39d8010f340dd1e0e82f"
+      ],
+      "comment": "Integration merge of the antilag timeout fix. It adds no user-facing change beyond the child commit already documented.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-22T18:10:20.013527+00:00",
+      "integration_batch_commit": "10e7ca7ccd2d6fd4cc10d3a6cf63beff72c2aa07"
+    },
+    {
+      "commit": "df9a30dfc38cd205357f39d8010f340dd1e0e82f",
+      "subject": "fix(antilag): enforce continuous activation timeout",
+      "authored_at": "2026-10-22T07:38:25+02:00",
+      "parents": [
+        "03b4833c94a7b1188e21bf89779d3fc39089634d"
+      ],
+      "comment": "Antilag activation is now limited by a continuous timer. The timer starts on a false-to-true transition of the arming conditions and antilag turns off when elapsed time reaches ALSMaxDuration. After a timeout, antilag does not restart while the arming conditions remain true; they must clear and re-apply. Setting ALSMaxDuration to zero or a negative value now prevents antilag from activating, so tuners must use a positive duration. The default ALSMaxDuration changed from 3.5 to 3 seconds; existing tunes keep their stored value. Verify the duration and arming conditions on the bench before relying on antilag.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-22T18:10:20.013527+00:00",
+      "integration_batch_commit": "10e7ca7ccd2d6fd4cc10d3a6cf63beff72c2aa07"
+    },
     {
       "commit": "dfeba99a6370af9bc6ff8a17922749a0c5f0cf7e",
       "subject": "Merge pull request #77 from capoworks/fix/pr849-04-injector-duty",
@@ -775,32 +802,6 @@
       ],
       "comment": "Host-side compression tuning (memLevel) changes only build-time output density, not the decoder window or firmware behavior.",
       "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "80f6ff460e8e0b5bfe97a27f777edc145c2d0c55",
-      "subject": "docs: clarify MCU memory placement and alignment",
-      "authored_at": "2026-10-20T00:49:44+02:00",
-      "parents": [
-        "281634cb33858a1f4a02e84d12a37051f6dc5002"
-      ],
-      "comment": "Comment-only clarification of MCU memory placement and alignment wording; no firmware behavior or user action changes.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "281634cb33858a1f4a02e84d12a37051f6dc5002",
-      "subject": "Build: balance F429 main-loop and Lua memory",
-      "authored_at": "2026-10-20T00:47:45+02:00",
-      "parents": [
-        "468d04c15df228ea7cf4b17b2e8485ba77178274"
-      ],
-      "comment": "On STM32F429 the main loop moves to ordinary SRAM and the non-Ethernet Lua heap drops from 65,000 to 60,000 bytes; the 25,000-byte Ethernet heap is unchanged. F407 keeps its main loop in CCM. Timing and smaller-heap behavior are unvalidated.",
-      "decision": "update",
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
       "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
