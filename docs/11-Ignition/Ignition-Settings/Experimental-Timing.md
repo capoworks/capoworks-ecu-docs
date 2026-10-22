@@ -1,56 +1,85 @@
 # Experimental Ignition Timing
 
-Capoworks ECU includes two independent, opt-in ignition scheduling experiments. Both default to _Legacy_, the established scheduling path. Keep _Legacy_ unless you are prepared to inspect logs, validate timing and dwell on the intended hardware, and change one setting at a time.
-
-The settings are under __Controller > Experimental/Broken__:
-
-- __Ignition scheduling__ edits `ignitionCycleProfile`. Its choices are _Cycle profile (experimental)_ and _Legacy_.
-- __Dwell planning__ edits `ignitionTimeBudget`. Its choices are _Time budget (experimental)_ and _Legacy_.
-
-The controls are independent. Either option may be enabled alone.
+Capoworks ECU exposes two independent experimental ignition scheduling settings
+under Experimental/Broken in TunerStudio. Both default to Legacy behavior and
+should be treated as unvalidated on any particular engine until bench-tested.
 
 ## Cycle profile
 
-_Cycle profile (experimental)_ uses the recent tooth timing profile for the final angle-to-time conversion of ignition charge and firing delays. It does not change the engine RPM estimate or injection scheduling, and it does not change dwell-start angle planning.
+**Ignition scheduling: Legacy / Cycle profile (experimental)** changes only the
+final angle-to-time conversion for ignition charge and firing. RPM, injection,
+global phase interpolation, trailing-angle offsets, and dwell-angle planning
+keep their existing behavior.
 
-The profile requires:
+## Time budget
 
-- A supported four-stroke, single-primary, rising-only missing-tooth crank wheel repeated over 720 degrees. Current support includes 36-2 and 60-2 wheels.
-- Full cam/engine-phase synchronization.
+**Dwell planning: Legacy / Time budget (experimental)** plans charge and fire
+timing from the same bounded causal cycle history. It requires Individual Coils;
+shared-coil and wasted-spark modes remain on Legacy planning. It additionally
+requires a supported four-stroke, single-primary, rising-only missing-tooth
+crank wheel and full cam phase synchronization. Current support includes 36-2
+and 60-2 wheels. Unsupported geometry, unknown phase, direct self stimulation,
+or an unavailable profile falls back to the Legacy conversion.
 
-Any interval outside the validated profile, an unsupported trigger shape, missing profile history, or loss of full synchronization falls back to the existing RPM-based angle conversion. Direct self-stimulation does not build the profile. During spin-up or other periods without full phase synchronization, use of the profile is therefore unavailable.
+## Anti-lag soft spark skip
 
-## Time-budget dwell planning
+When the anti-lag system and launch control are compiled in, the anti-lag soft
+spark limiter uses the configured **ALS skip ratio** only while anti-lag is
+enabled and the anti-lag controller reports an active condition. If anti-lag is
+disabled or not armed, the target skip ratio is zero and no sparks are skipped
+by this limiter. The ratio is re-evaluated on each trigger event, so skipping
+resumes when anti-lag re-arms and stops when it disarms.
 
-_Time budget (experimental)_ plans ignition charge and firing from a bounded causal model of recent tooth timing. It is active only when all of these conditions are met:
+This gating is a Capoworks ECU behavior fix. It does not change the configured
+ratio value, so no tune migration is required. Verify anti-lag spark behavior on
+the bench before relying on it; the change is covered by unit tests but has not
+been validated on an engine.
 
-- __Dwell planning__ is set to _Time budget (experimental)_.
-- The current ignition mode is Individual Coils. Shared-coil and wasted-spark scheduling remain on Legacy planning. Individual Coils also uses wasted-spark behavior during spin-up when full phase information is unavailable.
-- Full cam/engine-phase synchronization is present.
-- Direct self-stimulation is not active.
-- The configured trigger shape produced a supported profile.
+## Configuration migration
 
-If any eligibility condition fails, ignition remains on the Legacy scheduling path. If the overall path is eligible but a bounded profile conversion is temporarily unavailable, the conversion uses the existing RPM-based angle calculation.
+The ignition cycle-profile setting was introduced in flash data version `20028`,
+followed by the time-budget setting in `20029`; later schema additions may
+advance the current version. Use the TunerStudio INI generated for the installed
+firmware and follow the manual tune-transfer instructions.
 
-Each time-budget target is associated with one cylinder TDC occurrence. A new target that is already behind the bounded planning horizon expires instead of being wrapped into a later TDC. While a target remains available, a changed timing command may be retargeted within the feasible interval between the current plan and the new request. An unchanged command is not rescheduled merely because another tooth arrives.
+## Planned timing behavior
 
-The planner uses causal history and looks forward by no more than 180 degrees or 32 tooth references. The retarget window excludes the time required to service the change and the configured physical limits:
+The profile reuses Instant RPM's existing timestamp history and updates it
+before the current tooth timestamp is overwritten. There is no second timestamp
+ring. The causal ETA and inverse conversion are limited to 180 degrees and 32
+references. Missing history uses the existing RPM conversion.
 
-- Before the coil is switched on, the timing window reserves 0.8 times the nominal dwell plus 100 microseconds for planning and timer setup.
-- While charging, a revised firing time cannot occur before 0.8 times the nominal dwell has elapsed.
-- The revised firing time must also finish before the independent physical deadline, less the 100-microsecond service allowance.
-- The physical output guard discharges the coil no later than 1.5 times the nominal dwell after its first HIGH edge. This deadline wins over a later requested firing time.
+When armed, a time-budget target is attached to one cylinder TDC occurrence. A
+newly observed target already behind the bounded horizon is counted as expired
+and is not wrapped into a later occurrence. A retained candidate can accept a
+feasible portion of a changed advance or retard command; an unchanged command
+is not repeatedly rescheduled merely because another tooth arrived.
 
-Before HIGH, a revised firing target can move the pending charge within the same causal window. Once charging has begun, retargeting does not renew the first HIGH time, output ownership, nominal dwell snapshot, or physical deadline. Old HIGH and firing callback generations are invalidated before replacement callbacks are registered, preventing a superseded callback from applying to the newer occurrence.
+Before HIGH, the window reserves 0.8 times nominal dwell plus 100 microseconds
+for planning and timer setup. While charging, a revised LOW must allow physical
+minimum dwell and finish before the immutable 1.5 times nominal-dwell hard
+deadline, less the same service reserve. HIGH and LOW callback generations are
+invalidated before replacement registration. The first HIGH timestamp, output
+ownership, nominal dwell snapshot, and physical deadline do not change when LOW
+is retargeted.
 
-The 100-microsecond allowance is a software planning reserve, not a measured worst-case interrupt or execution bound. The 1.5-times-nominal deadline is a firmware timer guard, not independently clocked hardware current protection.
+## Limits
 
-## Behavior that does not change
+The 100-microsecond reserve is a software planning allowance, not a measured
+worst-case interrupt or execution bound. The 1.5 times nominal-dwell cutoff is a
+firmware timer, not independently clocked hardware current protection. Physical
+TDC, coil current, output propagation delay, cranking behavior, and worst-case
+interrupt latency require hardware validation.
 
-Neither experimental setting changes the RPM policy used by the rest of the engine controller or changes injection scheduling. They alter final ignition timing/dwell planning only. The selected dwell values still must be appropriate for the coils, [Dwell](/Ignition/Ignition-Settings/Dwell/) must remain configured, and [Ignition Mode](/Ignition/Ignition-Settings/Ignition_Mode/) must match the physical outputs.
+Interpolation assumes roughly constant speed within each historical interval.
+Tooth logs do not establish physical TDC or instantaneous speed between edges.
+Low-speed ripple rescaled to high RPM is synthetic stress evidence, and host
+test duration is not STM32 execution time. The planner is bounded but may
+perform multiple conversions when several targets share a tooth; keep it
+experimental pending target builds, replay review, and bench validation.
 
-The profile interpolates between observed tooth timestamps under an approximately constant-speed assumption. Tooth timestamps do not establish physical TDC, coil current, output propagation delay, or worst-case interrupt latency. Cranking behavior and timing accuracy therefore require bench and on-engine validation for the specific trigger, ECU, drivers, and coils.
+## Sources
 
-## Current tune layout
-
-The current tune layout is `20032`. Older binary tunes are not compatible with this layout and reset when the firmware is installed. Use the TunerStudio INI generated for the installed firmware and transfer calibration values manually.
+- [Anti-lag skip-ratio gating in spark scheduling](https://github.com/capoworks/capoworks-ecu/blob/99653553158be194c039c0e699a7194d472effbc/firmware/controllers/engine_cycle/spark_logic.cpp)
+- [Anti-lag soft-cut unit tests](https://github.com/capoworks/capoworks-ecu/blob/99653553158be194c039c0e699a7194d472effbc/unit_tests/tests/ignition_injection/test_ignition_scheduling.cpp)
+- [Time-budget anti-lag state test](https://github.com/capoworks/capoworks-ecu/blob/99653553158be194c039c0e699a7194d472effbc/unit_tests/tests/trigger/test_ignition_cycle_profile.cpp)
