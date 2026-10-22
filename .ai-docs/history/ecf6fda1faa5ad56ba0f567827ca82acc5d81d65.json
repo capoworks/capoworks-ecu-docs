@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "batch_head": "ecf6fda1faa5ad56ba0f567827ca82acc5d81d65",
+  "previous_cursor_commit": "4bcf5e27123f22b9dd55c4905c46bfdb1a14076e",
+  "cursor_commit": "ecf6fda1faa5ad56ba0f567827ca82acc5d81d65",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "10e7ca7ccd2d6fd4cc10d3a6cf63beff72c2aa07",
+      "head_inclusive": "4bcf5e27123f22b9dd55c4905c46bfdb1a14076e",
+      "commit_count": 3
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 33870,
+      "completion_tokens": 1129,
+      "total_tokens": 34999,
+      "prompt_cache_hit_tokens": 1536,
+      "prompt_cache_miss_tokens": 32334
+    },
+    "summary": "Capoworks ECU now invalidates a pending priming-pulse request when the ignition is switched off, so a delayed prime from an earlier key cycle cannot fire after key-off or during a later key cycle. An already-opened priming pulse is still allowed to finish and close normally. The existing Priming Pulse page is updated to describe this behavior.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "d7d245eef41f2dc3abe658464cb7a74cc4291ab4",
+        "decision": "update",
+        "rationale": "Capoworks ECU changed priming-pulse scheduling so a key-off invalidates any pending delayed prime. Previously a delayed start could still fire after the ignition was switched off, or a stale request from an earlier key cycle could run during a later one. Now a pending prime is discarded on key-off, and an already-opened pulse still receives its matching close so injectors are not left open. No tune setting changes and no user action is required; the priming delay and prime table behave as before. This is a firmware behavior change, so it applies only to builds that include it.",
+        "evidence": [
+          "prime_injection.cpp: onIgnitionStateChanged now tracks m_isIgnitionOn and increments m_keyCycleGeneration under a critical section, returning early on key-off",
+          "prime_injection.cpp: onPrimeStart, onPrimeOpen and onPrimeEnd take a generation argument and reject callbacks whose generation no longer matches the current key cycle",
+          "prime_injection.h: new members m_isIgnitionOn, m_primeOpened, m_keyCycleGeneration, m_pulseGeneration; adapters changed from PrimeController* to uintptr_t generation",
+          "unit_tests/tests/ignition_injection/test_startOfCrankingPrimingPulse.cpp: new tests keyOffBeforeDelayedStartPreventsPulse, newKeyCycleDoesNotRunStaleDelayedStart, keyOffBetweenStartAndOpenPreventsUnmatchedPulse, keyOffAfterOpenStillClosesAcceptedPulse"
+        ]
+      },
+      {
+        "commit": "eec926320836a54bfdbe7417c9f22c71739e9801",
+        "decision": "no-impact",
+        "rationale": "Formatting-only change that re-wraps one conditional in the priming controller. No behavior, configuration, or user-facing documentation change.",
+        "evidence": [
+          "prime_injection.cpp: line wrapping of the onPrimeOpen guard condition only; no logic change"
+        ]
+      },
+      {
+        "commit": "4bcf5e27123f22b9dd55c4905c46bfdb1a14076e",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the priming key-off fix. Its child commits are audited separately and the merge adds no additional user-facing change.",
+        "evidence": [
+          "Merge commit 4bcf5e27123f22b9dd55c4905c46bfdb1a14076e has parents 10e7ca7cc and eec926320 with no conflict-resolution diff of its own"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/06-Basic-Features/Cranking-Control/Cranking-Fuel/Priming-Pulse.md"
+    ],
+    "recorded_at": "2026-10-22T18:12:58.995226+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "4bcf5e27123f22b9dd55c4905c46bfdb1a14076e",
+      "head_inclusive": "ecf6fda1faa5ad56ba0f567827ca82acc5d81d65",
+      "commit_count": 2
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 54591,
+      "completion_tokens": 2734,
+      "total_tokens": 57325,
+      "prompt_cache_hit_tokens": 3072,
+      "prompt_cache_miss_tokens": 51519
+    },
+    "summary": "Fuel-pump startup priming is now gated on the ignition being on. Previously the timed prime request could remain active after the ignition was switched off, holding the low-pressure pump on until the prime duration expired. With this change the prime stops on the next controller update after key-off, and each ignition-on transition starts a fresh prime interval. The recent-trigger hold and the forced-on bench request are unchanged, so Fuel pump off is still not an emergency fuel cut.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "b74186ddce333e10b4b3d2edd6b25954e56ef19f",
+        "decision": "update",
+        "rationale": "Capoworks ECU now requires the ignition to be on for the timed startup prime, so the low-pressure pump no longer stays primed after key-off. Each ignition-on transition restarts the prime interval, and the prime still ends when the configured Prime duration expires. The recent-trigger hold and the forced-on bench request are unchanged, so a recent trigger can still run the pump with the ignition off, and Fuel pump off still only clears the manual request. No tune setting or migration is required; use a build that includes this change and do not assume older or differently branded binaries behave the same way.",
+        "evidence": [
+          "firmware/controllers/modules/fuel_pump/fuel_pump.cpp: isPrime now requires ignitionOn in addition to the elapsed-time window against startUpFuelPumpDuration",
+          "unit_tests/tests/actuators/test_fuel_pump.cpp: new assertions that the pump turns off on the first slow callback after onIgnitionStateChanged(false) and that re-enabling ignition starts a fresh prime interval",
+          "unit_tests/tests/actuators/test_fuel_pump.cpp: comment states the recent-trigger coast policy is unchanged and only the timed startup prime is gated"
+        ]
+      },
+      {
+        "commit": "ecf6fda1faa5ad56ba0f567827ca82acc5d81d65",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the fuel-pump prime fix. The merge introduces no changes beyond the child commit already documented, so no additional documentation change is needed.",
+        "evidence": [
+          "Merge commit ecf6fda1faa5ad56ba0f567827ca82acc5d81d65 has parents 4bcf5e271 and b74186ddc and touches only fuel_pump.cpp and test_fuel_pump.cpp",
+          "Merge message: Merge pull request #80 from capoworks/fix/pr849-07-pump-prime"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/06-Basic-Features/Fuel-Pump-Relay.md"
+    ],
+    "recorded_at": "2026-10-22T18:15:41.603814+00:00"
+  }
+}

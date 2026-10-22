@@ -11,12 +11,17 @@ interval as universal, because it is part of the calibration.
 ## Prime, run, and shutdown
 
 At ignition-on, Capoworks starts the prime timer and requests the pump for the
-configured duration. When that request ends, the pump stays on only while a
-crank or cam trigger event has been seen recently, or while a forced-on bench
-request is active. The recent-motion window is calculated from the trigger
-pattern and low-RPM threshold rather than a single fixed delay. Builds without
-shaft-position input cannot use the recent-trigger hold term, although the
-configured prime request still applies.
+configured duration. The timed prime request requires the ignition to remain on:
+if the ignition is switched off before the prime duration expires, the prime
+request ends on the next controller update instead of holding the pump on. Each
+ignition-on transition restarts the prime interval.
+
+When the prime request ends, the pump stays on only while a crank or cam trigger
+event has been seen recently, or while a forced-on bench request is active. The
+recent-motion window is calculated from the trigger pattern and low-RPM
+threshold rather than a single fixed delay. Builds without shaft-position input
+cannot use the recent-trigger hold term, although the configured prime request
+still applies.
 
 When none of those conditions remains true, the controller drives the output
 off. If pump power is supplied through the main relay, main-relay shutdown also
