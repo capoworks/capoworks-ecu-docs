@@ -2,9 +2,49 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "10e7ca7ccd2d6fd4cc10d3a6cf63beff72c2aa07",
-  "latest_analyzed_at": "2026-10-22T18:10:20.013527+00:00",
+  "latest_analyzed_commit": "4bcf5e27123f22b9dd55c4905c46bfdb1a14076e",
+  "latest_analyzed_at": "2026-10-22T18:12:58.996973+00:00",
   "entries": [
+    {
+      "commit": "4bcf5e27123f22b9dd55c4905c46bfdb1a14076e",
+      "subject": "Merge pull request #79 from capoworks/fix/pr849-06-prime-keyoff",
+      "authored_at": "2026-10-22T12:04:45+02:00",
+      "parents": [
+        "10e7ca7ccd2d6fd4cc10d3a6cf63beff72c2aa07",
+        "eec926320836a54bfdbe7417c9f22c71739e9801"
+      ],
+      "comment": "Integration merge of the priming key-off fix. Its child commits are audited separately and the merge adds no additional user-facing change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-22T18:12:58.996973+00:00",
+      "integration_batch_commit": "4bcf5e27123f22b9dd55c4905c46bfdb1a14076e"
+    },
+    {
+      "commit": "eec926320836a54bfdbe7417c9f22c71739e9801",
+      "subject": "style: apply repository formatting to corrective change",
+      "authored_at": "2026-10-22T08:05:38+02:00",
+      "parents": [
+        "d7d245eef41f2dc3abe658464cb7a74cc4291ab4"
+      ],
+      "comment": "Formatting-only change that re-wraps one conditional in the priming controller. No behavior, configuration, or user-facing documentation change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-22T18:12:58.996973+00:00",
+      "integration_batch_commit": "4bcf5e27123f22b9dd55c4905c46bfdb1a14076e"
+    },
+    {
+      "commit": "d7d245eef41f2dc3abe658464cb7a74cc4291ab4",
+      "subject": "fix(fuel): invalidate pending prime requests on ignition off",
+      "authored_at": "2026-10-22T07:38:25+02:00",
+      "parents": [
+        "bcad6ff1ff5b19ee294788ebca6255bcf72909f5"
+      ],
+      "comment": "Capoworks ECU changed priming-pulse scheduling so a key-off invalidates any pending delayed prime. Previously a delayed start could still fire after the ignition was switched off, or a stale request from an earlier key cycle could run during a later one. Now a pending prime is discarded on key-off, and an already-opened pulse still receives its matching close so injectors are not left open. No tune setting changes and no user action is required; the priming delay and prime table behave as before. This is a firmware behavior change, so it applies only to builds that include it.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-22T18:12:58.996973+00:00",
+      "integration_batch_commit": "4bcf5e27123f22b9dd55c4905c46bfdb1a14076e"
+    },
     {
       "commit": "10e7ca7ccd2d6fd4cc10d3a6cf63beff72c2aa07",
       "subject": "Merge pull request #78 from capoworks/fix/pr849-05-als-timeout",
@@ -763,45 +803,6 @@
       ],
       "comment": "Tune images now carry a static configuration-layout identity. Binary tunes with an incompatible layout are rejected and defaults restored; export and re-import values with matching definitions because binary migration is not provided. Module selection is compile-time via FOME_MODULES.",
       "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "0bc31eab6a05cae53393da03da7001558d3d780d",
-      "subject": "Build: size Ethernet TCP buffers to the interface MTU",
-      "authored_at": "2026-10-20T01:03:11+02:00",
-      "parents": [
-        "73a6eb9ee1573f6a0ecd2c8787c934603a1c5024"
-      ],
-      "comment": "Ethernet TCP MSS is now fixed at 1460 bytes for a standard 1500-byte MTU instead of scaling with the TunerStudio block size. No hardware testing was performed.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "73a6eb9ee1573f6a0ecd2c8787c934603a1c5024",
-      "subject": "Build: preserve F429 Ethernet main-loop placement",
-      "authored_at": "2026-10-20T00:56:51+02:00",
-      "parents": [
-        "c08fee825499d1b73351e492671aa311aefa89bb"
-      ],
-      "comment": "Only non-Ethernet STM32F429 builds move the main loop to ordinary SRAM; Ethernet-console F429 builds keep the main loop in CCM. This refines the earlier F429 memory-placement note.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "c08fee825499d1b73351e492671aa311aefa89bb",
-      "subject": "Build: improve embedded INI compression density",
-      "authored_at": "2026-10-20T00:50:22+02:00",
-      "parents": [
-        "80f6ff460e8e0b5bfe97a27f777edc145c2d0c55"
-      ],
-      "comment": "Host-side compression tuning (memLevel) changes only build-time output density, not the decoder window or firmware behavior.",
-      "decision": "no-impact",
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
       "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
