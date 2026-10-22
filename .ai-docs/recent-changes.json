@@ -2,9 +2,49 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "ecf6fda1faa5ad56ba0f567827ca82acc5d81d65",
-  "latest_analyzed_at": "2026-10-22T18:15:41.605964+00:00",
+  "latest_analyzed_commit": "776881beac8ecfb148244b1aa4452cd1123952e1",
+  "latest_analyzed_at": "2026-10-22T18:18:29.743503+00:00",
   "entries": [
+    {
+      "commit": "776881beac8ecfb148244b1aa4452cd1123952e1",
+      "subject": "Merge pull request #81 from capoworks/fix/pr849-08-vvt-delay",
+      "authored_at": "2026-10-22T12:05:09+02:00",
+      "parents": [
+        "ecf6fda1faa5ad56ba0f567827ca82acc5d81d65",
+        "4e361c9d5591d2dc8b0922f75c3265f8c7e6559c"
+      ],
+      "comment": "Integration merge of the VVT activation delay fix. Its child commits are audited separately and the merge introduces no additional user-facing change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-22T18:18:29.743503+00:00",
+      "integration_batch_commit": "776881beac8ecfb148244b1aa4452cd1123952e1"
+    },
+    {
+      "commit": "4e361c9d5591d2dc8b0922f75c3265f8c7e6559c",
+      "subject": "style: apply repository formatting to corrective change",
+      "authored_at": "2026-10-22T08:05:45+02:00",
+      "parents": [
+        "07003f94c434ca46301cfab512e602894099f2a3"
+      ],
+      "comment": "Formatting-only change to the VVT unit test file: include ordering and comment alignment. No firmware behavior, configuration, or user-facing documentation changes.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-22T18:18:29.743503+00:00",
+      "integration_batch_commit": "776881beac8ecfb148244b1aa4452cd1123952e1"
+    },
+    {
+      "commit": "07003f94c434ca46301cfab512e602894099f2a3",
+      "subject": "fix(vvt): preserve fractional activation delay",
+      "authored_at": "2026-10-22T07:38:25+02:00",
+      "parents": [
+        "bcad6ff1ff5b19ee294788ebca6255bcf72909f5"
+      ],
+      "comment": "Capoworks ECU fixed the VVT activation delay comparison in VvtController::onFastCallback. The configured vvtActivationDelayMs is now divided by a float MS_PER_SECOND, so fractional delays are preserved instead of being truncated by integer division. Practical effect: VVT output stays inhibited until the engine has run longer than the configured delay, and the delay now matches the value entered in TunerStudio. No tune migration is needed; existing delay values remain valid. Recheck VVT arming behavior after updating if a non-whole-millisecond delay was configured.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-22T18:18:29.743503+00:00",
+      "integration_batch_commit": "776881beac8ecfb148244b1aa4452cd1123952e1"
+    },
     {
       "commit": "ecf6fda1faa5ad56ba0f567827ca82acc5d81d65",
       "subject": "Merge pull request #80 from capoworks/fix/pr849-07-pump-prime",
@@ -764,45 +804,6 @@
         "9704a2ccac329e2a7017b9627b82b14185b3f9c0"
       ],
       "comment": "Boost control becomes an optional build module covering its configuration, tables, telemetry, Lua hooks, and TunerStudio controls. Overboost fuel cut and the generic DC/ETB wastegate path remain available without it.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "9704a2ccac329e2a7017b9627b82b14185b3f9c0",
-      "subject": "Build: keep Hella OPS-T opt-in by default",
-      "authored_at": "2026-10-20T00:53:52+02:00",
-      "parents": [
-        "568143dd8403162a692a9cc665bf158fc5e32bfc"
-      ],
-      "comment": "Hella OPS+T is excluded from the default module profile, so it must be selected explicitly with FOME_MODULES.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "568143dd8403162a692a9cc665bf158fc5e32bfc",
-      "subject": "feat: make Hella OPS-T support optional at build time",
-      "authored_at": "2026-10-20T00:52:08+02:00",
-      "parents": [
-        "379b57b8e0499ff013a69300be105c4cb09a4173"
-      ],
-      "comment": "Hella OPS+T support becomes an optional build module. When selected it provides the combined oil pressure and temperature sensor input; existing providers keep priority. It is not in the default profile.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "379b57b8e0499ff013a69300be105c4cb09a4173",
-      "subject": "feat: compose persistent tables and contextual tuner fragments",
-      "authored_at": "2026-10-20T00:52:08+02:00",
-      "parents": [
-        "67d3a98c7e7b43d7d02f0e3d5889712c5686a9f1"
-      ],
-      "comment": "Modules can now contribute persistent calibration tables and contextual TunerStudio fragments. Builders adding module fragments must use the documented anchors and named INI contexts; malformed or misplaced markers fail generation.",
       "decision": "update",
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-20T17:12:47.056249+00:00",

@@ -4,7 +4,7 @@
   "source_branch": "master",
   "target_repository": "capoworks/capoworks-ecu-docs",
   "target_branch": "master",
-  "cursor_commit": "ecf6fda1faa5ad56ba0f567827ca82acc5d81d65",
+  "cursor_commit": "776881beac8ecfb148244b1aa4452cd1123952e1",
   "initial_backfill": {
     "through_commit": "be02e3cdaa2c177d05853a41af6dacc9c0766b77",
     "commit_count": 5,
@@ -12,44 +12,50 @@
   },
   "last_sync": {
     "range": {
-      "base_exclusive": "4bcf5e27123f22b9dd55c4905c46bfdb1a14076e",
-      "head_inclusive": "ecf6fda1faa5ad56ba0f567827ca82acc5d81d65",
-      "commit_count": 2
+      "base_exclusive": "ecf6fda1faa5ad56ba0f567827ca82acc5d81d65",
+      "head_inclusive": "776881beac8ecfb148244b1aa4452cd1123952e1",
+      "commit_count": 3
     },
     "model": "deepseek-flash",
     "usage": {
-      "prompt_tokens": 54591,
-      "completion_tokens": 2734,
-      "total_tokens": 57325,
-      "prompt_cache_hit_tokens": 3072,
-      "prompt_cache_miss_tokens": 51519
+      "prompt_tokens": 28721,
+      "completion_tokens": 1286,
+      "total_tokens": 30007,
+      "prompt_cache_hit_tokens": 1536,
+      "prompt_cache_miss_tokens": 27185
     },
-    "summary": "Fuel-pump startup priming is now gated on the ignition being on. Previously the timed prime request could remain active after the ignition was switched off, holding the low-pressure pump on until the prime duration expired. With this change the prime stops on the next controller update after key-off, and each ignition-on transition starts a fresh prime interval. The recent-trigger hold and the forced-on bench request are unchanged, so Fuel pump off is still not an emergency fuel cut.",
+    "summary": "Capoworks ECU corrected the VVT activation delay so that fractional millisecond settings are honored instead of being truncated by integer division. The change affects when VVT control is allowed to start after engine start; no tune migration is required.",
     "outcome": "update",
     "decisions": [
       {
-        "commit": "b74186ddce333e10b4b3d2edd6b25954e56ef19f",
+        "commit": "07003f94c434ca46301cfab512e602894099f2a3",
         "decision": "update",
-        "rationale": "Capoworks ECU now requires the ignition to be on for the timed startup prime, so the low-pressure pump no longer stays primed after key-off. Each ignition-on transition restarts the prime interval, and the prime still ends when the configured Prime duration expires. The recent-trigger hold and the forced-on bench request are unchanged, so a recent trigger can still run the pump with the ignition off, and Fuel pump off still only clears the manual request. No tune setting or migration is required; use a build that includes this change and do not assume older or differently branded binaries behave the same way.",
+        "rationale": "Capoworks ECU fixed the VVT activation delay comparison in VvtController::onFastCallback. The configured vvtActivationDelayMs is now divided by a float MS_PER_SECOND, so fractional delays are preserved instead of being truncated by integer division. Practical effect: VVT output stays inhibited until the engine has run longer than the configured delay, and the delay now matches the value entered in TunerStudio. No tune migration is needed; existing delay values remain valid. Recheck VVT arming behavior after updating if a non-whole-millisecond delay was configured.",
         "evidence": [
-          "firmware/controllers/modules/fuel_pump/fuel_pump.cpp: isPrime now requires ignitionOn in addition to the elapsed-time window against startUpFuelPumpDuration",
-          "unit_tests/tests/actuators/test_fuel_pump.cpp: new assertions that the pump turns off on the first slow callback after onIgnitionStateChanged(false) and that re-enabling ignition starts a fresh prime interval",
-          "unit_tests/tests/actuators/test_fuel_pump.cpp: comment states the recent-trigger coast policy is unchanged and only the timed startup prime is gated"
+          "firmware/controllers/actuators/vvt.cpp: vvtActivationDelayMs / static_cast<float>(MS_PER_SECOND) replaces integer division",
+          "unit_tests/tests/actuators/test_vvt.cpp: new VvtActivationDelayTest parameterized over 500, 1000, 1500 ms asserting PWM stays at 0 through the delay"
         ]
       },
       {
-        "commit": "ecf6fda1faa5ad56ba0f567827ca82acc5d81d65",
+        "commit": "4e361c9d5591d2dc8b0922f75c3265f8c7e6559c",
         "decision": "no-impact",
-        "rationale": "Integration merge of the fuel-pump prime fix. The merge introduces no changes beyond the child commit already documented, so no additional documentation change is needed.",
+        "rationale": "Formatting-only change to the VVT unit test file: include ordering and comment alignment. No firmware behavior, configuration, or user-facing documentation changes.",
         "evidence": [
-          "Merge commit ecf6fda1faa5ad56ba0f567827ca82acc5d81d65 has parents 4bcf5e271 and b74186ddc and touches only fuel_pump.cpp and test_fuel_pump.cpp",
-          "Merge message: Merge pull request #80 from capoworks/fix/pr849-07-pump-prime"
+          "unit_tests/tests/actuators/test_vvt.cpp: reordered using declarations and tab-aligned comments only"
+        ]
+      },
+      {
+        "commit": "776881beac8ecfb148244b1aa4452cd1123952e1",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the VVT activation delay fix. Its child commits are audited separately and the merge introduces no additional user-facing change.",
+        "evidence": [
+          "Merge commit 776881b with parents ecf6fda1f and 4e361c9d5; no conflict-resolution content beyond the child commits"
         ]
       }
     ],
     "files_changed": [
-      "docs/06-Basic-Features/Fuel-Pump-Relay.md"
+      "docs/07-Advanced-Features/Variable-Cam-Timing/On-Off-VVT.md"
     ],
-    "recorded_at": "2026-10-22T18:15:41.603814+00:00"
+    "recorded_at": "2026-10-22T18:18:29.741312+00:00"
   }
 }
