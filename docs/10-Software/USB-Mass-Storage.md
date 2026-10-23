@@ -9,7 +9,7 @@ TunerStudio INI that matches the firmware, so a build can provide this drive wit
 logging or the target-side FatFS stack.
 
 This guide is pinned to firmware source commit
-`8f4fcfb40135fe7e5f15b280f7e05d9863b60f52`. Branch heads move, so check the flags and artifacts from
+`a15846a97f9700d979365e9e03db04f9864de7b1`. Branch heads move, so check the flags and artifacts from
 the source revision that produced your firmware.
 
 :::note
@@ -66,8 +66,19 @@ When SD logging is compiled in, changing `EFI_USB_MSD` does not itself change lo
 `EFI_FILE_LOGGING` still controls the SD driver and logger, and a build with both features continues to
 expose two LUNs. An INI-only build has no SD filesystem to expose at all.
 
-The image generator uses one 512-byte sector per cluster for the small FAT image. USB mass-storage
-sectors are also fixed at 512 bytes, including when SD support is absent.
+## Block sizing
+
+The embedded INI drive and the SD-card LUN are sized independently:
+
+- The INI drive uses a fixed 512-byte block size (`dma_buffers::IniBlockSize`), whether or not SD
+  support is compiled in. The image generator also uses one 512-byte sector per cluster for the small
+  FAT image.
+- The SD-card USB block buffer is sized from the SD driver's block size (`MMCSD_BLOCK_SIZE`), not from
+  the INI drive's constant.
+
+This split means an INI-only build keeps 512-byte USB sectors without pulling in SD sizing, and a
+logging build sizes its SD-card buffer to match the SD driver. It is a firmware build detail; there is
+no TunerStudio setting for it and no tune migration is required.
 
 ## TunerStudio settings are not build switches
 
@@ -113,10 +124,13 @@ signature and tune layout.
 
 These links are pinned to the firmware revision used for this page:
 
-- [Mass-storage initialization and LUN layout](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/hw_layer/mass_storage/mass_storage_init.cpp)
-- [Mass-storage interface guards](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/hw_layer/mass_storage/mass_storage_init.h)
-- [USB MSD, LUN count and HAL conditions](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/hw_layer/ports/rusefi_halconf.h)
-- [STM32F4 defaults for logging, USB MSD and the embedded INI](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/hw_layer/ports/stm32/stm32f4/efifeatures.h)
-- [Embedded FAT image generator](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/hw_layer/mass_storage/create_ini_image.sh)
+- [Mass-storage initialization and LUN layout](https://github.com/capoworks/capoworks-ecu/blob/a15846a97f9700d979365e9e03db04f9864de7b1/firmware/hw_layer/mass_storage/mass_storage_init.cpp)
+- [Mass-storage interface guards](https://github.com/capoworks/capoworks-ecu/blob/a15846a97f9700d979365e9e03db04f9864de7b1/firmware/hw_layer/mass_storage/mass_storage_init.h)
+- [DMA buffer declarations and INI block size](https://github.com/capoworks/capoworks-ecu/blob/a15846a97f9700d979365e9e03db04f9864de7b1/firmware/hw_layer/dma_buffers.h)
+- [SD-card block buffer sizing](https://github.com/capoworks/capoworks-ecu/blob/a15846a97f9700d979365e9e03db04f9864de7b1/firmware/hw_layer/dma_buffers.cpp)
+- [USB MSD, LUN count and HAL conditions](https://github.com/capoworks/capoworks-ecu/blob/a15846a97f9700d979365e9e03db04f9864de7b1/firmware/hw_layer/ports/rusefi_halconf.h)
+- [STM32F4 defaults for logging, USB MSD and the embedded INI](https://github.com/capoworks/capoworks-ecu/blob/a15846a97f9700d979365e9e03db04f9864de7b1/firmware/hw_layer/ports/stm32/stm32f4/efifeatures.h)
+- [Embedded FAT image generator](https://github.com/capoworks/capoworks-ecu/blob/a15846a97f9700d979365e9e03db04f9864de7b1/firmware/hw_layer/mass_storage/create_ini_image.sh)
 - [Decoupling change `17a70bec`](https://github.com/capoworks/capoworks-ecu/commit/17a70bec29072107d2a77ec918c453097bf8da21)
 - [512-byte cluster change `7202950e`](https://github.com/capoworks/capoworks-ecu/commit/7202950e5e5c7860f02869bd9804fa3c312c725b)
+- [INI/SD block-sizing fix `32808bc9`](https://github.com/capoworks/capoworks-ecu/commit/32808bc99504a2dbcef4af2756cab7ffecf57381)

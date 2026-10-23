@@ -4,7 +4,7 @@
   "source_branch": "master",
   "target_repository": "capoworks/capoworks-ecu-docs",
   "target_branch": "master",
-  "cursor_commit": "776881beac8ecfb148244b1aa4452cd1123952e1",
+  "cursor_commit": "a15846a97f9700d979365e9e03db04f9864de7b1",
   "initial_backfill": {
     "through_commit": "be02e3cdaa2c177d05853a41af6dacc9c0766b77",
     "commit_count": 5,
@@ -12,50 +12,45 @@
   },
   "last_sync": {
     "range": {
-      "base_exclusive": "ecf6fda1faa5ad56ba0f567827ca82acc5d81d65",
-      "head_inclusive": "776881beac8ecfb148244b1aa4452cd1123952e1",
-      "commit_count": 3
+      "base_exclusive": "776881beac8ecfb148244b1aa4452cd1123952e1",
+      "head_inclusive": "a15846a97f9700d979365e9e03db04f9864de7b1",
+      "commit_count": 2
     },
     "model": "deepseek-flash",
     "usage": {
-      "prompt_tokens": 28721,
-      "completion_tokens": 1286,
-      "total_tokens": 30007,
+      "prompt_tokens": 49674,
+      "completion_tokens": 2992,
+      "total_tokens": 52666,
       "prompt_cache_hit_tokens": 1536,
-      "prompt_cache_miss_tokens": 27185
+      "prompt_cache_miss_tokens": 48138
     },
-    "summary": "Capoworks ECU corrected the VVT activation delay so that fractional millisecond settings are honored instead of being truncated by integer division. The change affects when VVT control is allowed to start after engine start; no tune migration is required.",
+    "summary": "Capoworks ECU now keeps the embedded INI drive's USB block size independent of the SD driver, while SD-card USB buffers are sized from the SD driver's own block size. The existing USB Mass Storage page is updated to describe this split and to pin its source references to the new revision. No tune, calibration, or TunerStudio setting changes are required.",
     "outcome": "update",
     "decisions": [
       {
-        "commit": "07003f94c434ca46301cfab512e602894099f2a3",
+        "commit": "32808bc99504a2dbcef4af2756cab7ffecf57381",
         "decision": "update",
-        "rationale": "Capoworks ECU fixed the VVT activation delay comparison in VvtController::onFastCallback. The configured vvtActivationDelayMs is now divided by a float MS_PER_SECOND, so fractional delays are preserved instead of being truncated by integer division. Practical effect: VVT output stays inhibited until the engine has run longer than the configured delay, and the delay now matches the value entered in TunerStudio. No tune migration is needed; existing delay values remain valid. Recheck VVT arming behavior after updating if a non-whole-millisecond delay was configured.",
+        "rationale": "Capoworks ECU separated the USB block sizing of the embedded INI drive from the SD driver. The INI drive keeps a fixed 512-byte block size whether or not SD support is compiled in, and the SD-card USB buffer is now sized from the SD driver's block size instead of a shared constant. This matters for builders of INI-only mass-storage firmware and for boards whose SD driver uses a different block size; no TunerStudio setting or tune migration is involved. The existing USB Mass Storage page is updated to describe the split and to pin its source links to this revision.",
         "evidence": [
-          "firmware/controllers/actuators/vvt.cpp: vvtActivationDelayMs / static_cast<float>(MS_PER_SECOND) replaces integer division",
-          "unit_tests/tests/actuators/test_vvt.cpp: new VvtActivationDelayTest parameterized over 500, 1000, 1500 ms asserting PWM stays at 0 through the delay"
+          "firmware/hw_layer/dma_buffers.h: MsdBlockSize replaced by IniBlockSize = 512 with a comment that the embedded INI drive uses 512-byte blocks independently of SD support",
+          "firmware/hw_layer/dma_buffers.cpp: sdBlockBuffer now declared as uint8_t sdBlockBuffer[MMCSD_BLOCK_SIZE] instead of dma_buffers::MsdBlockSize",
+          "firmware/hw_layer/mass_storage/mass_storage_init.cpp: blkbufIni uses dma_buffers::IniBlockSize and the ramdisk blockSize constant now uses dma_buffers::IniBlockSize",
+          "firmware/CHANGELOG.md: new Fixed entry 'Keep the embedded INI drive's USB block size independent of the SD driver, while sizing SD-card USB buffers from the driver's block size.'"
         ]
       },
       {
-        "commit": "4e361c9d5591d2dc8b0922f75c3265f8c7e6559c",
+        "commit": "a15846a97f9700d979365e9e03db04f9864de7b1",
         "decision": "no-impact",
-        "rationale": "Formatting-only change to the VVT unit test file: include ordering and comment alignment. No firmware behavior, configuration, or user-facing documentation changes.",
+        "rationale": "Integration merge of the USB INI/SD block-sizing fix. The merge introduces no changes beyond the child commit already documented, so no additional documentation change is needed.",
         "evidence": [
-          "unit_tests/tests/actuators/test_vvt.cpp: reordered using declarations and tab-aligned comments only"
-        ]
-      },
-      {
-        "commit": "776881beac8ecfb148244b1aa4452cd1123952e1",
-        "decision": "no-impact",
-        "rationale": "Integration merge of the VVT activation delay fix. Its child commits are audited separately and the merge introduces no additional user-facing change.",
-        "evidence": [
-          "Merge commit 776881b with parents ecf6fda1f and 4e361c9d5; no conflict-resolution content beyond the child commits"
+          "Merge commit a15846a9 has parents 776881be and 32808bc9 and merges pull request #82 'fix(usb): separate INI and SD block sizing'",
+          "Changed paths match the child commit exactly: firmware/CHANGELOG.md, firmware/hw_layer/dma_buffers.cpp, firmware/hw_layer/dma_buffers.h, firmware/hw_layer/mass_storage/mass_storage_init.cpp"
         ]
       }
     ],
     "files_changed": [
-      "docs/07-Advanced-Features/Variable-Cam-Timing/On-Off-VVT.md"
+      "docs/10-Software/USB-Mass-Storage.md"
     ],
-    "recorded_at": "2026-10-22T18:18:29.741312+00:00"
+    "recorded_at": "2026-10-23T21:41:09.810293+00:00"
   }
 }
