@@ -2,9 +2,88 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "a15846a97f9700d979365e9e03db04f9864de7b1",
-  "latest_analyzed_at": "2026-10-23T21:41:09.812492+00:00",
+  "latest_analyzed_commit": "09394f14eb42fcf65f819c05ab75abd2007bfd02",
+  "latest_analyzed_at": "2026-10-24T04:31:35.961537+00:00",
   "entries": [
+    {
+      "commit": "09394f14eb42fcf65f819c05ab75abd2007bfd02",
+      "subject": "Merge pull request #84 from capoworks/feature/sd-card-module",
+      "authored_at": "2026-10-24T01:06:33+02:00",
+      "parents": [
+        "a15846a97f9700d979365e9e03db04f9864de7b1",
+        "695ceedb038e8cc27fab041a3fa6d45a86b7b5ee"
+      ],
+      "comment": "This is the integration merge of the SD-card module branch. Its child commits are audited separately and the merge adds no distinct user-facing firmware, setup, flashing, or tune-migration change beyond them.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-24T04:31:35.961537+00:00",
+      "integration_batch_commit": "09394f14eb42fcf65f819c05ab75abd2007bfd02"
+    },
+    {
+      "commit": "695ceedb038e8cc27fab041a3fa6d45a86b7b5ee",
+      "subject": "fix(codegen): emit Java boolean constants for module flags",
+      "authored_at": "2026-10-23T23:14:27+02:00",
+      "parents": [
+        "a7aae5e3d582f31aee184168a25ba72f6c942955"
+      ],
+      "comment": "This changes the Java configuration generator so boolean definitions such as FOME_SD_CARD_ENABLED are emitted as typed Java boolean constants instead of strings, with a compile-checking test. It is internal code generation and test work; no firmware behavior, flashing step, tune migration, or builder workflow changes for users.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-24T04:31:35.961537+00:00",
+      "integration_batch_commit": "09394f14eb42fcf65f819c05ab75abd2007bfd02"
+    },
+    {
+      "commit": "a7aae5e3d582f31aee184168a25ba72f6c942955",
+      "subject": "fix(builder): record SD selection in manifests and correct profile tests",
+      "authored_at": "2026-10-23T22:18:33+02:00",
+      "parents": [
+        "35e904b2dff3bc11ae912ab4691b4e3c649a1112"
+      ],
+      "comment": "Packaged firmware manifests now record the requested sd_card selection separately from the normalized features string and preserve resolved required_modules. The documentation clarifies that sd_card is default-on only on supported boards and that nucleo_f767 and small-can-board declare it unsupported. Consumers of the manifest should read requested.sd_card and resolved.required_modules rather than inferring SD logging from the features field.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-24T04:31:35.961537+00:00",
+      "integration_batch_commit": "09394f14eb42fcf65f819c05ab75abd2007bfd02"
+    },
+    {
+      "commit": "35e904b2dff3bc11ae912ab4691b4e3c649a1112",
+      "subject": "feat(builder): expose default SD selection and board-required modules",
+      "authored_at": "2026-10-23T22:13:26+02:00",
+      "parents": [
+        "3c035a5450f2651221ab4c0ecace4d4b7c244099"
+      ],
+      "comment": "The web custom-firmware build gains a dedicated sd_card boolean input, default true, separate from the features list. The resolver rejects sd_card=false combined with sd_card in features, rejects disabling a board-required module such as Atlas sd_card, and reports required_modules per board. The resource calibration plan now treats board-required modules as part of the mandatory baseline and emits sd_card separately from features. Builders using the catalog or calibration tools should pass --sd-card and read required_modules to lock required selections.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-24T04:31:35.961537+00:00",
+      "integration_batch_commit": "09394f14eb42fcf65f819c05ab75abd2007bfd02"
+    },
+    {
+      "commit": "3c035a5450f2651221ab4c0ecace4d4b7c244099",
+      "subject": "fix(firmware): preserve legacy SD and USB exclusions on reduced boards",
+      "authored_at": "2026-10-23T22:10:20+02:00",
+      "parents": [
+        "68e67ba81a7c46be2b395c22c4c56d846380c467"
+      ],
+      "comment": "Reduced boards keep their previous exclusions. nucleo_f767 and small-can-board declare sd_card unsupported and keep EFI_FILE_LOGGING and EFI_USB_MSD disabled. The main firmware Makefile now strips board-level EFI_FILE_LOGGING definitions before applying the module-derived value, so the module profile controls file logging in the application while the bootloader keeps its own board value. Builders of these boards cannot enable sd_card through FOME_MODULES.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-24T04:31:35.961537+00:00",
+      "integration_batch_commit": "09394f14eb42fcf65f819c05ab75abd2007bfd02"
+    },
+    {
+      "commit": "68e67ba81a7c46be2b395c22c4c56d846380c467",
+      "subject": "feat(firmware): add default-enabled SD card module and Atlas requirement",
+      "authored_at": "2026-10-23T22:09:09+02:00",
+      "parents": [
+        "32808bc99504a2dbcef4af2756cab7ffecf57381"
+      ],
+      "comment": "SD-card file logging becomes a build module named sd_card. It is in the default profile, Atlas requires it, and the main firmware Makefile now derives USE_FATFS and EFI_FILE_LOGGING from the resolved module list. Builders who set USE_FATFS explicitly must remove it, because a conflicting value now fails configuration. Explicit FOME_MODULES profiles must include sd_card to keep card logging. USB mass storage and the embedded INI drive are now independent of SD logging. The TunerStudio SD Card Logger menu, indicators, and SD CS pin field appear only when the module is built.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-24T04:31:35.961537+00:00",
+      "integration_batch_commit": "09394f14eb42fcf65f819c05ab75abd2007bfd02"
+    },
     {
       "commit": "a15846a97f9700d979365e9e03db04f9864de7b1",
       "subject": "Merge pull request #82 from capoworks/fix/usb-ini-block-size",
@@ -727,84 +806,6 @@
         "73e3ac9ef165efef9d1fb6ba543d7a0106cec6cf"
       ],
       "comment": "Documents MCU resource budgets: Lua heap sizes per MCU, F4 SRAM/CCM placement, 16 KiB DEFLATE dictionary, and F7 4-byte alignment, noting these are compile-time defaults and not validated hardware margins.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "73e3ac9ef165efef9d1fb6ba543d7a0106cec6cf",
-      "subject": "build: set module defaults and forbid Lua on Hellen128",
-      "authored_at": "2026-10-20T00:56:04+02:00",
-      "parents": [
-        "5312a145319cc43173543df574eab29910f37d98"
-      ],
-      "comment": "Default module profile now includes boost, engine_sniffer, lua, and cylinder_fuel_trim, omits hella_opst, emp_pump, and shock_preload, and removes lua on hellen128. Explicitly selecting lua on hellen128 is a Make error.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "5312a145319cc43173543df574eab29910f37d98",
-      "subject": "Build: keep shock preload opt-in by default",
-      "authored_at": "2026-10-20T00:54:03+02:00",
-      "parents": [
-        "df4db7df337552685a34c18b6a76d0b09d8272d1"
-      ],
-      "comment": "Shock preload is excluded from the default module profile and must be selected explicitly with FOME_MODULES.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "df4db7df337552685a34c18b6a76d0b09d8272d1",
-      "subject": "feat: port shock preload as an optional build module",
-      "authored_at": "2026-10-20T00:54:03+02:00",
-      "parents": [
-        "f6408c6d01663399ff6ec973f1304ac217b75fbf"
-      ],
-      "comment": "Adds an optional Caponord electronic shock preload controller on CAN2 with preset, position, target, alarm and current telemetry, service controls, and a default-off enableShockPreload setting. CAN read and write must be enabled.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "f6408c6d01663399ff6ec973f1304ac217b75fbf",
-      "subject": "Build: keep native EMP pump opt-in by default",
-      "authored_at": "2026-10-20T00:54:02+02:00",
-      "parents": [
-        "266395705e4e137e410c07266a60080722e34fbf"
-      ],
-      "comment": "The EMP pump is excluded from the default module profile and must be selected explicitly with FOME_MODULES.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "266395705e4e137e410c07266a60080722e34fbf",
-      "subject": "feat: port EMP pump as an optional build module",
-      "authored_at": "2026-10-20T00:54:02+02:00",
-      "parents": [
-        "e29fffab367b27587d2b6af73834c0a6af9259ca"
-      ],
-      "comment": "Adds an optional EMP coolant pump module with Caponord J1939 state machine, configuration and fallback tables, telemetry, service controls, after-run power hold, and CAN TX-thread queue. It is disabled at runtime by enableEmpPump and requires the fan module.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "e29fffab367b27587d2b6af73834c0a6af9259ca",
-      "subject": "feat: make Lua code, tune data and editor schema optional",
-      "authored_at": "2026-10-20T00:53:53+02:00",
-      "parents": [
-        "be4f0d0d6e127f553db4bf25f040a2f67878eb8c"
-      ],
-      "comment": "Lua becomes a build module; when not selected its VM, tune fields, gauges, bench outputs, and digital inputs are omitted. The console Lua editor now resolves the luaScript field from the active INI and rejects mismatched signatures or oversized scripts.",
       "decision": "update",
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
