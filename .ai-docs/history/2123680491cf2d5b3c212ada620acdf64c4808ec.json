@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "batch_head": "2123680491cf2d5b3c212ada620acdf64c4808ec",
+  "previous_cursor_commit": "ee135347ba03889191f3dbf53f9092d259674455",
+  "cursor_commit": "2123680491cf2d5b3c212ada620acdf64c4808ec",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "09394f14eb42fcf65f819c05ab75abd2007bfd02",
+      "head_inclusive": "ee135347ba03889191f3dbf53f9092d259674455",
+      "commit_count": 2
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 306129,
+      "completion_tokens": 8878,
+      "total_tokens": 315007,
+      "prompt_cache_hit_tokens": 2560,
+      "prompt_cache_miss_tokens": 303569
+    },
+    "summary": "Capoworks ECU corrected the MAF VE Analyze definition so it targets the MAF Trim table, and added a build-time check that every VE Analyze table reference exists in the Table Editor. Tuners using MAF Air Charge should confirm VE Analyze now edits MAF Trim, and builders should regenerate the TunerStudio INI from the updated template.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "2c6f66ea1b1765a9aea6624616d7189abb212db8",
+        "decision": "update",
+        "rationale": "Capoworks ECU changed the MAF VE Analyze definition so its analyzed table is the MAF Trim table instead of the VE table. With MAF Air Charge selected, VE Analyze corrections are now applied to MAF Trim, matching the separate MAF trim table in the current tune layout. No action is needed for Speed Density or Alpha-N users, whose definitions are unchanged. Use the TunerStudio INI generated from this firmware; an older INI still points MAF analysis at the VE table. As before, analysis is admitted only while the air-mass model status is healthy and Idle VE is not in use, and the default filters do not compensate exhaust transport delay or validate fuel pressure.",
+        "evidence": [
+          "firmware/tunerstudio/tunerstudio.template.ini: veAnalyzeMap for the MAF block changed from mafTableTbl to mafTrimTableTbl",
+          "firmware/tunerstudio/tunerstudio.template.ini: [TableEditor] declares table = mafTrimTableTbl, mafTrimTableMap, \"MAF Trim Table\"",
+          "java_tools/configuration_definition/src/test/java/com/rusefi/test/newParse/TsVeAnalyzeReferenceTest.java: new test asserts every veAnalyzeMap primary and target table is declared in [TableEditor]"
+        ]
+      },
+      {
+        "commit": "ee135347ba03889191f3dbf53f9092d259674455",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the MAF VE Analyze fix. The merge introduces no changes beyond the child commit already documented, so no additional documentation change is required.",
+        "evidence": [
+          "Merge commit ee135347 has parents 09394f14 and 2c6f66ea and an empty combined diff",
+          "Changed paths are the same tunerstudio.template.ini and TsVeAnalyzeReferenceTest.java covered by commit 2c6f66ea"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/08-Fuel/Fuel-Settings/VE-Analyze.md"
+    ],
+    "recorded_at": "2026-10-26T23:31:51.898470+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "ee135347ba03889191f3dbf53f9092d259674455",
+      "head_inclusive": "2123680491cf2d5b3c212ada620acdf64c4808ec",
+      "commit_count": 2
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 298117,
+      "completion_tokens": 4524,
+      "total_tokens": 302641,
+      "prompt_cache_hit_tokens": 3200,
+      "prompt_cache_miss_tokens": 294917
+    },
+    "summary": "Capoworks ECU moved the derived model-default load-axis helper into the TunerStudio output channels so table Y-axis labels resolve correctly, and added a regression test that keeps the helper defined once and bound through the load-axis label list. No tune layout, calibration value, or flashing procedure changes.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "cd84c4d0c698251c6ff1769356b9e7fb504cff37",
+        "decision": "update",
+        "rationale": "Capoworks ECU relocated the modelDefaultLoadAxis helper from the PcVariables section to OutputChannels in the TunerStudio template, so the derived default load-axis label used by table Y axes is now declared as an output channel. The helper still resolves to Fuel Load for Speed Density, TPS for standalone Alpha-N, and Cylinder filling otherwise, and the loadAxisLabels list stays in PcVariables. Practical effect is limited to the generated TunerStudio definition: table axis labels for ignition, lambda, VVT, knock, trim, staged injection, HPFP and similar tables follow the active fuel model as intended. No calibration offsets, tune layout, or flashing steps change, so no tune migration is required; regenerate or reinstall the matching INI for the firmware build and confirm the Y-axis label on a load-source table after connecting. A new test enforces the single definition and the label binding, but this has not been validated on hardware.",
+        "evidence": [
+          "firmware/tunerstudio/tunerstudio.template.ini: modelDefaultLoadAxis definition removed from [PcVariables] and added under [OutputChannels]",
+          "firmware/tunerstudio/tunerstudio.template.ini: loadAxisLabels bits enum remains in [PcVariables]",
+          "java_tools/configuration_definition/src/test/java/com/rusefi/test/newParse/TsDerivedLoadAxisTest.java: asserts one definition in OutputChannels, none in PcVariables, and xyLabels references bound via bitStringValue(loadAxisLabels"
+        ]
+      },
+      {
+        "commit": "2123680491cf2d5b3c212ada620acdf64c4808ec",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the derived load-axis fix. The merge introduces no conflict-resolution changes beyond the child commit already documented, so it adds no separate user-facing documentation impact.",
+        "evidence": [
+          "Merge commit 2123680491cf2d5b3c212ada620acdf64c4808ec has parents ee135347b and cd84c4d0c with an empty combined diff",
+          "Changed paths are the same two files covered by child commit cd84c4d0c"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/08-Fuel/Fuel-Settings/Load-Sources.md"
+    ],
+    "recorded_at": "2026-10-26T23:34:58.540721+00:00"
+  }
+}
