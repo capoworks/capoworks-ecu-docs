@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "batch_head": "ee135347ba03889191f3dbf53f9092d259674455",
+  "previous_cursor_commit": "09394f14eb42fcf65f819c05ab75abd2007bfd02",
+  "cursor_commit": "ee135347ba03889191f3dbf53f9092d259674455",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "a15846a97f9700d979365e9e03db04f9864de7b1",
+      "head_inclusive": "09394f14eb42fcf65f819c05ab75abd2007bfd02",
+      "commit_count": 6
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 326625,
+      "completion_tokens": 8792,
+      "total_tokens": 335417,
+      "prompt_cache_hit_tokens": 326400,
+      "prompt_cache_miss_tokens": 225
+    },
+    "summary": "Capoworks ECU adds SD-card file logging as a first-class build module. It is included by default on supported boards, can be disabled on non-Atlas boards, and is required on Atlas. SD logging is now independent of USB mass storage and the embedded TunerStudio INI drive. The web build catalog gains a dedicated sd_card boolean input and per-board required-module metadata, and the resource calibration and packaging tools account for board-required modules. Builders must stop setting USE_FATFS directly and must include sd_card in explicit FOME_MODULES profiles where card logging is wanted.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "68e67ba81a7c46be2b395c22c4c56d846380c467",
+        "decision": "update",
+        "rationale": "SD-card file logging becomes a build module named sd_card. It is in the default profile, Atlas requires it, and the main firmware Makefile now derives USE_FATFS and EFI_FILE_LOGGING from the resolved module list. Builders who set USE_FATFS explicitly must remove it, because a conflicting value now fails configuration. Explicit FOME_MODULES profiles must include sd_card to keep card logging. USB mass storage and the embedded INI drive are now independent of SD logging. The TunerStudio SD Card Logger menu, indicators, and SD CS pin field appear only when the module is built.",
+        "evidence": [
+          "firmware/Makefile: USE_FATFS is derived from FOME_MODULES_RESOLVED and a conflicting explicit USE_FATFS raises an error; DDEFS adds -DEFI_FILE_LOGGING from the sd_card selection",
+          "firmware/controllers/modules/module_profile.mk: FOME_MODULE_CATALOG gains sd_card; FOME_MODULES_BOARD_REQUIRED validation added",
+          "firmware/config/boards/atlas/board.mk: override FOME_MODULES_BOARD_REQUIRED += sd_card",
+          "firmware/hw_layer/ports/stm32/stm32f4/efifeatures.h: EFI_USB_MSD default changed from EFI_FILE_LOGGING to TRUE",
+          "firmware/tunerstudio/tunerstudio.template.ini: SD Card Logger menu, indicators, and fields gated by @@if_FOME_SD_CARD_ENABLED"
+        ]
+      },
+      {
+        "commit": "3c035a5450f2651221ab4c0ecace4d4b7c244099",
+        "decision": "update",
+        "rationale": "Reduced boards keep their previous exclusions. nucleo_f767 and small-can-board declare sd_card unsupported and keep EFI_FILE_LOGGING and EFI_USB_MSD disabled. The main firmware Makefile now strips board-level EFI_FILE_LOGGING definitions before applying the module-derived value, so the module profile controls file logging in the application while the bootloader keeps its own board value. Builders of these boards cannot enable sd_card through FOME_MODULES.",
+        "evidence": [
+          "firmware/Makefile: DDEFS := $(filter-out -DEFI_FILE_LOGGING=%,$(DDEFS)) before adding the module-derived EFI_FILE_LOGGING",
+          "firmware/config/boards/nucleo_f767/board.mk and firmware/config/boards/hellen/small-can-board/board.mk: add -DEFI_FILE_LOGGING=FALSE, -DEFI_USB_MSD=FALSE, and override FOME_MODULES_BOARD_UNSUPPORTED += sd_card"
+        ]
+      },
+      {
+        "commit": "35e904b2dff3bc11ae912ab4691b4e3c649a1112",
+        "decision": "update",
+        "rationale": "The web custom-firmware build gains a dedicated sd_card boolean input, default true, separate from the features list. The resolver rejects sd_card=false combined with sd_card in features, rejects disabling a board-required module such as Atlas sd_card, and reports required_modules per board. The resource calibration plan now treats board-required modules as part of the mandatory baseline and emits sd_card separately from features. Builders using the catalog or calibration tools should pass --sd-card and read required_modules to lock required selections.",
+        "evidence": [
+          ".github/workflows/custom-firmware-build.yaml: new sd_card boolean input default true, forwarded as --sd-card",
+          "misc/firmware_builder/catalog.py: DEFAULT_OPTIONAL_MODULES, parameters.sd_card, required_modules metadata, and sd_card contradiction and required-module checks in resolve",
+          "misc/firmware_builder/calibration.py: _required_modules, _board_modules, and sd_card-aware profile specs and records",
+          "docs/build-modules.md and docs/build-resources.md updated with sd_card selection and board-required baseline behavior"
+        ]
+      },
+      {
+        "commit": "a7aae5e3d582f31aee184168a25ba72f6c942955",
+        "decision": "update",
+        "rationale": "Packaged firmware manifests now record the requested sd_card selection separately from the normalized features string and preserve resolved required_modules. The documentation clarifies that sd_card is default-on only on supported boards and that nucleo_f767 and small-can-board declare it unsupported. Consumers of the manifest should read requested.sd_card and resolved.required_modules rather than inferring SD logging from the features field.",
+        "evidence": [
+          "misc/firmware_builder/pipeline.py: manifest requested.features excludes sd_card, requested.sd_card added, resolved.required_modules added",
+          "docs/build-modules.md: sd_card default-on only on supported boards; unsupported on nucleo_f767 and small-can-board",
+          "firmware/CHANGELOG.md: sd_card entry reworded to included by default in firmware and web builds"
+        ]
+      },
+      {
+        "commit": "695ceedb038e8cc27fab041a3fa6d45a86b7b5ee",
+        "decision": "no-impact",
+        "rationale": "This changes the Java configuration generator so boolean definitions such as FOME_SD_CARD_ENABLED are emitted as typed Java boolean constants instead of strings, with a compile-checking test. It is internal code generation and test work; no firmware behavior, flashing step, tune migration, or builder workflow changes for users.",
+        "evidence": [
+          "java_tools/configuration_definition/src/main/java/com/rusefi/newparse/outputs/JavaFieldsWriter.java: isBoolean branch emits boolean constants",
+          "java_tools/configuration_definition/src/main/java/com/rusefi/newparse/parsing/Definition.java: isBoolean added",
+          "java_tools/configuration_definition/src/test/java/com/rusefi/test/newParse/ModuleProfileGenerationTest.java: generated Java compile test"
+        ]
+      },
+      {
+        "commit": "09394f14eb42fcf65f819c05ab75abd2007bfd02",
+        "decision": "no-impact",
+        "rationale": "This is the integration merge of the SD-card module branch. Its child commits are audited separately and the merge adds no distinct user-facing firmware, setup, flashing, or tune-migration change beyond them.",
+        "evidence": [
+          "Merge commit 09394f14 with parents a15846a9 and 695ceedb; changed paths match the audited child commits",
+          "No conflict-resolution content beyond the child commit diffs"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/build-modules.md",
+      "docs/build-resources.md"
+    ],
+    "recorded_at": "2026-10-24T04:31:35.959384+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "09394f14eb42fcf65f819c05ab75abd2007bfd02",
+      "head_inclusive": "ee135347ba03889191f3dbf53f9092d259674455",
+      "commit_count": 2
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 306129,
+      "completion_tokens": 8878,
+      "total_tokens": 315007,
+      "prompt_cache_hit_tokens": 2560,
+      "prompt_cache_miss_tokens": 303569
+    },
+    "summary": "Capoworks ECU corrected the MAF VE Analyze definition so it targets the MAF Trim table, and added a build-time check that every VE Analyze table reference exists in the Table Editor. Tuners using MAF Air Charge should confirm VE Analyze now edits MAF Trim, and builders should regenerate the TunerStudio INI from the updated template.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "2c6f66ea1b1765a9aea6624616d7189abb212db8",
+        "decision": "update",
+        "rationale": "Capoworks ECU changed the MAF VE Analyze definition so its analyzed table is the MAF Trim table instead of the VE table. With MAF Air Charge selected, VE Analyze corrections are now applied to MAF Trim, matching the separate MAF trim table in the current tune layout. No action is needed for Speed Density or Alpha-N users, whose definitions are unchanged. Use the TunerStudio INI generated from this firmware; an older INI still points MAF analysis at the VE table. As before, analysis is admitted only while the air-mass model status is healthy and Idle VE is not in use, and the default filters do not compensate exhaust transport delay or validate fuel pressure.",
+        "evidence": [
+          "firmware/tunerstudio/tunerstudio.template.ini: veAnalyzeMap for the MAF block changed from mafTableTbl to mafTrimTableTbl",
+          "firmware/tunerstudio/tunerstudio.template.ini: [TableEditor] declares table = mafTrimTableTbl, mafTrimTableMap, \"MAF Trim Table\"",
+          "java_tools/configuration_definition/src/test/java/com/rusefi/test/newParse/TsVeAnalyzeReferenceTest.java: new test asserts every veAnalyzeMap primary and target table is declared in [TableEditor]"
+        ]
+      },
+      {
+        "commit": "ee135347ba03889191f3dbf53f9092d259674455",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the MAF VE Analyze fix. The merge introduces no changes beyond the child commit already documented, so no additional documentation change is required.",
+        "evidence": [
+          "Merge commit ee135347 has parents 09394f14 and 2c6f66ea and an empty combined diff",
+          "Changed paths are the same tunerstudio.template.ini and TsVeAnalyzeReferenceTest.java covered by commit 2c6f66ea"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/08-Fuel/Fuel-Settings/VE-Analyze.md"
+    ],
+    "recorded_at": "2026-10-26T23:31:51.898470+00:00"
+  }
+}
