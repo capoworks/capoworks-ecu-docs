@@ -470,11 +470,11 @@ def _public_git_env() -> dict[str, str]:
 def _is_local_git_source(source_url: str) -> bool:
     """Return whether Git would apply its hard-linking local clone shortcut."""
 
+    if re.match(r"^[A-Za-z]:[\\/]", source_url):
+        return True
     parsed = urllib.parse.urlsplit(source_url)
     if parsed.scheme or source_url.startswith("//"):
         return False
-    if re.match(r"^[A-Za-z]:[\\/]", source_url):
-        return True
     return not re.match(r"^[^/\\:]+:", source_url)
 
 

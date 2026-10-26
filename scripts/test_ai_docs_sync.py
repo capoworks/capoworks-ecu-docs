@@ -1964,6 +1964,22 @@ class SourceSafetyTests(unittest.TestCase):
         self.assertIn("--filter=blob:none", args)
         self.assertEqual(args[-2:], [str(local_source), str(source.repo_path)])
 
+    def test_local_git_source_detection_matches_clone_forms(self) -> None:
+        cases = [
+            ("/srv/git/source.git", True),
+            ("./source.git", True),
+            ("../source.git", True),
+            (r"C:\work\source.git", True),
+            ("C:/work/source.git", True),
+            ("https://example.com/source.git", False),
+            ("ssh://git@example.com/source.git", False),
+            ("file:///srv/git/source.git", False),
+            ("git@example.com:capoworks/source.git", False),
+        ]
+        for source, expected in cases:
+            with self.subTest(source=source):
+                self.assertIs(sync._is_local_git_source(source), expected)
+
     def test_known_large_source_files_fit_caps_but_oversize_fails(self) -> None:
         known_sizes = {
             "firmware/tunerstudio/tunerstudio.template.ini": 262_086,

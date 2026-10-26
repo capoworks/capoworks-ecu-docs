@@ -20,6 +20,11 @@ const cases = [
     expected: false,
   },
   {
+    name: 'rejects an internal Markdown link after an external Markdown link',
+    line: '[Notes](https://example.com/CHANGELOG.md) and [Legacy](/software/legacy.md)',
+    expected: true,
+  },
+  {
     name: 'rejects an internal Markdown link anywhere on the line',
     line: '[Guide](/software/guide) and [Legacy](/software/legacy.md)',
     expected: true,
@@ -42,6 +47,26 @@ const cases = [
   {
     name: 'rejects percent-encoded Markdown extensions',
     line: '[Guide](/software/guide%2Emd?plain=1)',
+    expected: true,
+  },
+  {
+    name: 'rejects protocol-relative Markdown links',
+    line: '[Guide](//example.com/guide.md)',
+    expected: true,
+  },
+  {
+    name: 'rejects non-HTTP scheme Markdown links',
+    line: '[Guide](ssh://git@example.com/guide.md)',
+    expected: true,
+  },
+  {
+    name: 'rejects file URL Markdown links',
+    line: '[Guide](file:///srv/guide.md)',
+    expected: true,
+  },
+  {
+    name: 'rejects HTTP Markdown links without a host',
+    line: '[Guide](https:///guide.md)',
     expected: true,
   },
   {

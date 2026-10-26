@@ -14,10 +14,10 @@ const red = (text) => `\x1b[31m${text}\x1b[0m`;
 /** @type {Array<{ errType: string, fileName: string, lineContent: string, lineNo: number }>} */
 const errors = [];
 
-// Internal Docusaurus routes must omit source extensions. URLs with a scheme (or
-// protocol-relative URLs) point to external files and are intentionally exempt.
+// Internal Docusaurus routes must omit source extensions. Absolute HTTP(S) URLs
+// with a host point to external files and are intentionally exempt.
 const regexPatternInternalMdLink =
-  /\(\s*(?![a-z][a-z0-9+.-]*:|\/\/)[^()\s?#]*(?:\.|%2e)(?:md|mdx)(?:[?#][^)]*)?\s*\)/i;
+  /\(\s*(?!(?:https?):\/\/[^/?#\s)]+(?:[/?#]|$))[^()\s?#]*(?:\.|%2e)(?:md|mdx)(?:[?#][^)]*)?\s*\)/i;
 
 /**
  * Check whether a line contains an internal Markdown link with a source extension.
