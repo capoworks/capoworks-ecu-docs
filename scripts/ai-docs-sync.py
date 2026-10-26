@@ -467,6 +467,17 @@ def _public_git_env() -> dict[str, str]:
     return env
 
 
+def _is_local_git_source(source_url: str) -> bool:
+    """Return whether Git would apply its hard-linking local clone shortcut."""
+
+    if re.match(r"^[A-Za-z]:[\\/]", source_url):
+        return True
+    parsed = urllib.parse.urlsplit(source_url)
+    if parsed.scheme or source_url.startswith("//"):
+        return False
+    return not re.match(r"^[^/\\:]+:", source_url)
+
+
 class SourceRepository:
     def __init__(
         self,
@@ -518,20 +529,22 @@ class SourceRepository:
         if self.repo_path.exists():
             shutil.rmtree(self.repo_path)
         self.repo_path.parent.mkdir(parents=True, exist_ok=True)
+        clone_args = [
+            "git",
+            "clone",
+            "--quiet",
+            "--bare",
+            "--filter=blob:none",
+            "--single-branch",
+            "--branch",
+            SOURCE_BRANCH,
+            "--no-tags",
+        ]
+        if _is_local_git_source(self.source_url):
+            clone_args.append("--no-local")
+        clone_args.extend([self.source_url, str(self.repo_path)])
         self.runner.run(
-            [
-                "git",
-                "clone",
-                "--quiet",
-                "--bare",
-                "--filter=blob:none",
-                "--single-branch",
-                "--branch",
-                SOURCE_BRANCH,
-                "--no-tags",
-                self.source_url,
-                str(self.repo_path),
-            ],
+            clone_args,
             env=_public_git_env(),
             max_output_bytes=65_536,
             timeout=300,
@@ -1394,7 +1407,13 @@ def _validate_markdown_link_destination(
             f"is malformed ({exc}); fix the URL syntax"
         ) from exc
     decoded_path = urllib.parse.unquote(parsed.path).casefold()
-    if pathlib.PurePosixPath(decoded_path).suffix in {".md", ".mdx"}:
+    external_http_link = (
+        parsed.scheme.casefold() in {"http", "https"} and bool(parsed.netloc)
+    )
+    if (
+        not external_http_link
+        and pathlib.PurePosixPath(decoded_path).suffix in {".md", ".mdx"}
+    ):
         raise ValidationFailure(
             f"{path}:{line_number} Markdown link destination {destination!r} "
             "uses a source-file extension; use the extensionless Docusaurus "
@@ -2340,9 +2359,10 @@ Rules:
 - Use spaced Markdown table delimiter rows such as `| --- | --- |`. Keep at
   least three hyphens per cell, preserve optional alignment colons, and include
   spaces around every cell; do not emit compact rows such as `|---|---|`.
-- Markdown link destinations must be extensionless Docusaurus routes: omit
-  `.md`/`.mdx`, omit numbered route prefixes such as `/01-`, and make local
-  routes relative to the rendered page. On runtime page
+- Internal Markdown link destinations must be extensionless Docusaurus routes:
+  omit `.md`/`.mdx`, omit numbered route prefixes such as `/01-`, and make
+  local routes relative to the rendered page. External http(s) source URLs may
+  retain `.md`/`.mdx`, query strings, and fragments. On runtime page
   `/Software/On-Demand-Firmware-Build/`, link the root build guide as
   `../../build-modules/`; source-file path `../build-modules` is the wrong
   runtime path.

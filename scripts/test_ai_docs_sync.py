@@ -320,7 +320,9 @@ class PathMarkdownAndFrontmatterTests(TempDocs):
     def test_non_code_markdown_links_follow_repository_route_policy(self) -> None:
         bad_destinations = (
             "guide.md",
+            "guide.md?plain=1",
             "../guide.mdx#section",
+            "/guide.mdx?plain=1#section",
             "/01-guide",
             "nested/02-guide",
         )
@@ -344,6 +346,22 @@ class PathMarkdownAndFrontmatterTests(TempDocs):
             "```\n"
         )
         sync.validate_markdown_body(content, "docs/SafeLinks.md")
+
+    def test_external_http_source_links_allow_markdown_extensions_and_suffixes(
+        self,
+    ) -> None:
+        destinations = (
+            "https://github.com/capoworks/capoworks-ecu/blob/"
+            "8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/"
+            "CHANGELOG.md?plain=1",
+            "http://example.com/docs/CHANGELOG.md",
+            "https://example.com/docs/guide.mdx#migration",
+            "https://example.com/docs/guide.md?download=1#section",
+        )
+        for destination in destinations:
+            with self.subTest(destination=destination):
+                content = f"[Source]({destination})\n"
+                sync.validate_markdown_body(content, "docs/SafeExternal.md")
 
     def test_root_forward_link_to_new_document_uses_rendered_route(self) -> None:
         (self.docs / "build-modules.md").write_text("# Build modules\n", encoding="utf-8")
@@ -1909,6 +1927,7 @@ class SourceSafetyTests(unittest.TestCase):
     def test_clone_uses_blobless_partial_clone(self) -> None:
         def handler(args: list[str], cwd: object, maximum: int) -> object:
             self.assertIn("--filter=blob:none", args)
+            self.assertNotIn("--no-local", args)
             self.assertNotIn("--depth", args)
             return sync.CommandResult(stdout=b"", stderr=b"")
 
@@ -1918,10 +1937,48 @@ class SourceSafetyTests(unittest.TestCase):
                 runner,
                 pathlib.Path(temporary),
                 sync.Limits(),
-                source_url="public",
+                source_url="https://example.com/source.git",
             )
             source.clone()
         self.assertEqual(len(runner.calls), 1)
+
+    def test_local_clone_uses_transport_to_avoid_object_hard_links(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            local_source = root / "local-source.git"
+            source = sync.SourceRepository(
+                ScriptedRunner(
+                    lambda args, cwd, maximum: sync.CommandResult(
+                        stdout=b"", stderr=b""
+                    )
+                ),
+                root / "work",
+                sync.Limits(),
+                source_url=str(local_source),
+            )
+
+            source.clone()
+
+        args = source.runner.calls[0][0]
+        self.assertIn("--no-local", args)
+        self.assertIn("--filter=blob:none", args)
+        self.assertEqual(args[-2:], [str(local_source), str(source.repo_path)])
+
+    def test_local_git_source_detection_matches_clone_forms(self) -> None:
+        cases = [
+            ("/srv/git/source.git", True),
+            ("./source.git", True),
+            ("../source.git", True),
+            (r"C:\work\source.git", True),
+            ("C:/work/source.git", True),
+            ("https://example.com/source.git", False),
+            ("ssh://git@example.com/source.git", False),
+            ("file:///srv/git/source.git", False),
+            ("git@example.com:capoworks/source.git", False),
+        ]
+        for source, expected in cases:
+            with self.subTest(source=source):
+                self.assertIs(sync._is_local_git_source(source), expected)
 
     def test_known_large_source_files_fit_caps_but_oversize_fails(self) -> None:
         known_sizes = {
@@ -2856,6 +2913,10 @@ class ModelTransportTests(unittest.TestCase):
         self.assertIn("spaced Markdown table delimiter rows", trusted_prompt)
         self.assertIn("`| --- | --- |`", trusted_prompt)
         self.assertIn("extensionless Docusaurus routes", trusted_prompt)
+        self.assertIn("External http(s) source URLs may", trusted_prompt)
+        self.assertIn(
+            "retain `.md`/`.mdx`, query strings, and fragments", trusted_prompt
+        )
         self.assertIn(
             "`/Software/On-Demand-Firmware-Build/`", trusted_prompt
         )

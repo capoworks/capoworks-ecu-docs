@@ -8,12 +8,26 @@
  */
 
 const fs = require('fs');
-const glob = require('glob');
 
 const red = (text) => `\x1b[31m${text}\x1b[0m`;
 
 /** @type {Array<{ errType: string, fileName: string, lineContent: string, lineNo: number }>} */
 const errors = [];
+
+// Internal Docusaurus routes must omit source extensions. Absolute HTTP(S) URLs
+// with a host point to external files and are intentionally exempt.
+const regexPatternInternalMdLink =
+  /\(\s*(?!(?:https?):\/\/[^/?#\s)]+(?:[/?#]|$))[^()\s?#]*(?:\.|%2e)(?:md|mdx)(?:[?#][^)]*)?\s*\)/i;
+
+/**
+ * Check whether a line contains an internal Markdown link with a source extension.
+ * @param {string} line - Markdown line to check
+ * @returns {boolean} Whether an internal .md/.mdx link was found
+ */
+const hasInternalMdLink = (line) => {
+  const lineOutsideInlineCode = line.replace(/(`+).*?\1/g, '');
+  return regexPatternInternalMdLink.test(lineOutsideInlineCode);
+};
 
 /**
  * Check whether links are adhering to custom rules
@@ -34,8 +48,6 @@ const validateDocRules = (files) => {
   // hint: test static regex via https://regex101.com
   // * Check whether links are not using a "numbered prefix" like "(/01-blah)"
   const regexPatternStatNumPrefix = /\((?![a-z][a-z0-9+.-]*:\/\/)[^)]*\/\d+-[^)]*\)/i;
-  // * Check whether links are not markdown links, meaning ending with .md or .mdx like "(/01-blah.md)"
-  const regexPatternStatMdLink = /\(.*\.(md|mdx)\)/i;
 
   files.forEach((fileName) => {
     const lines = fs.readFileSync(fileName, 'utf8').split('\n');
@@ -49,7 +61,7 @@ const validateDocRules = (files) => {
           lineNo: lines.indexOf(line) + 1,
         });
       }
-      if (regexPatternStatMdLink.test(line)) {
+      if (hasInternalMdLink(line)) {
         errors.push({
           errType: 'MdLink',
           fileName,
@@ -75,6 +87,7 @@ const validateDocRules = (files) => {
 const main = () => {
   // TODO: add try + catch?
   const args = process.argv.slice(2);
+  const glob = require('glob');
   const files = glob.sync(args[0]);
 
   // process
@@ -98,5 +111,8 @@ const main = () => {
   process.exit(2);
 };
 
-// main
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = { hasInternalMdLink };
