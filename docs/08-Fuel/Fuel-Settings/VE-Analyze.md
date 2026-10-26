@@ -6,9 +6,10 @@ table. The final Capoworks ECU template gives Speed Density, Alpha-N, and MAF
 Air Charge their own analysis definitions and filters.
 
 This page describes the TunerStudio configuration template and firmware
-behavior inspected at Capoworks commit `8f4fcfb4`. It does not claim that the
-default filters make every log valid or that the result is suitable for an
-engine without other checks.
+behavior inspected at Capoworks commit `8f4fcfb4`, with the MAF table reference
+corrected at commit `2c6f66ea`. It does not claim that the default filters make
+every log valid or that the result is suitable for an engine without other
+checks.
 
 ## Which table is analyzed
 
@@ -28,6 +29,20 @@ closed-loop correction channel. The latter is calculated as
 VE Analyze is disabled in the template while `Use idle VE table` is enabled.
 The separate Idle VE table has its own load source and is outside these
 analysis definitions.
+
+## MAF Trim analysis
+
+With MAF Air Charge selected, VE Analyze now edits the **MAF Trim** table
+(`mafTrimTableTbl`), not the VE table. The MAF Trim table is the separate 8x8
+trim described on the [MAF fuelling page](/Fuel/Fuel-Algorithms/MAF/); its
+cells are percentages applied to the calculated cylinder airmass, so a
+correction written by VE Analyze changes the trim percentage rather than a VE
+cell. Start from a trim table at 100 percent and review each accepted change
+against steady-state RPM and airflow.
+
+Use the TunerStudio INI generated from this firmware. An INI generated before
+this correction still points MAF analysis at the VE table, so corrections would
+be written to the wrong table.
 
 ## Healthy status is required
 
@@ -212,12 +227,16 @@ layout.
 This page was checked against Capoworks firmware commit
 [`8f4fcfb4`](https://github.com/capoworks/capoworks-ecu/commit/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52),
 which finalized strategy-specific filters and recovery-state publication. The
-qualified blended endpoint builds on
+MAF analysis table reference was corrected to the MAF Trim table in
+[`2c6f66ea`](https://github.com/capoworks/capoworks-ecu/commit/2c6f66ea1b1765a9aea6624616d7189abb212db8).
+The qualified blended endpoint builds on
 [`eee63c82`](https://github.com/capoworks/capoworks-ecu/commit/eee63c82b531db9bc6fa640c58ad76cf740a2ff0)
 and captured consumer coordinates from
 [`45298b90`](https://github.com/capoworks/capoworks-ecu/commit/45298b9020a52059c278d3d0ba16bae89b7e6a7f).
 
 - [Final TunerStudio VE Analyze definitions and filters](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/tunerstudio/tunerstudio.template.ini)
+- [MAF VE Analyze table reference correction](https://github.com/capoworks/capoworks-ecu/commit/2c6f66ea1b1765a9aea6624616d7189abb212db8)
+- [VE Analyze table-reference test](https://github.com/capoworks/capoworks-ecu/blob/2c6f66ea1b1765a9aea6624616d7189abb212db8/java_tools/configuration_definition/src/test/java/com/rusefi/test/newParse/TsVeAnalyzeReferenceTest.java)
 - [Cranking and cut-recovery telemetry](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/console/status_loop.cpp)
 - [Output-channel declarations and offsets](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/console/binary/output_channels.txt)
 - [Whole-table endpoint qualification](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/controllers/algo/airmass/airmass.cpp)
