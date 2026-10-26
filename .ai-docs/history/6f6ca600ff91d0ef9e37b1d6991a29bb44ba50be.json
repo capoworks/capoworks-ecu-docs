@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "batch_head": "6f6ca600ff91d0ef9e37b1d6991a29bb44ba50be",
+  "previous_cursor_commit": "2123680491cf2d5b3c212ada620acdf64c4808ec",
+  "cursor_commit": "6f6ca600ff91d0ef9e37b1d6991a29bb44ba50be",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "ee135347ba03889191f3dbf53f9092d259674455",
+      "head_inclusive": "2123680491cf2d5b3c212ada620acdf64c4808ec",
+      "commit_count": 2
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 298117,
+      "completion_tokens": 4524,
+      "total_tokens": 302641,
+      "prompt_cache_hit_tokens": 3200,
+      "prompt_cache_miss_tokens": 294917
+    },
+    "summary": "Capoworks ECU moved the derived model-default load-axis helper into the TunerStudio output channels so table Y-axis labels resolve correctly, and added a regression test that keeps the helper defined once and bound through the load-axis label list. No tune layout, calibration value, or flashing procedure changes.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "cd84c4d0c698251c6ff1769356b9e7fb504cff37",
+        "decision": "update",
+        "rationale": "Capoworks ECU relocated the modelDefaultLoadAxis helper from the PcVariables section to OutputChannels in the TunerStudio template, so the derived default load-axis label used by table Y axes is now declared as an output channel. The helper still resolves to Fuel Load for Speed Density, TPS for standalone Alpha-N, and Cylinder filling otherwise, and the loadAxisLabels list stays in PcVariables. Practical effect is limited to the generated TunerStudio definition: table axis labels for ignition, lambda, VVT, knock, trim, staged injection, HPFP and similar tables follow the active fuel model as intended. No calibration offsets, tune layout, or flashing steps change, so no tune migration is required; regenerate or reinstall the matching INI for the firmware build and confirm the Y-axis label on a load-source table after connecting. A new test enforces the single definition and the label binding, but this has not been validated on hardware.",
+        "evidence": [
+          "firmware/tunerstudio/tunerstudio.template.ini: modelDefaultLoadAxis definition removed from [PcVariables] and added under [OutputChannels]",
+          "firmware/tunerstudio/tunerstudio.template.ini: loadAxisLabels bits enum remains in [PcVariables]",
+          "java_tools/configuration_definition/src/test/java/com/rusefi/test/newParse/TsDerivedLoadAxisTest.java: asserts one definition in OutputChannels, none in PcVariables, and xyLabels references bound via bitStringValue(loadAxisLabels"
+        ]
+      },
+      {
+        "commit": "2123680491cf2d5b3c212ada620acdf64c4808ec",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the derived load-axis fix. The merge introduces no conflict-resolution changes beyond the child commit already documented, so it adds no separate user-facing documentation impact.",
+        "evidence": [
+          "Merge commit 2123680491cf2d5b3c212ada620acdf64c4808ec has parents ee135347b and cd84c4d0c with an empty combined diff",
+          "Changed paths are the same two files covered by child commit cd84c4d0c"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/08-Fuel/Fuel-Settings/Load-Sources.md"
+    ],
+    "recorded_at": "2026-10-26T23:34:58.540721+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "2123680491cf2d5b3c212ada620acdf64c4808ec",
+      "head_inclusive": "6f6ca600ff91d0ef9e37b1d6991a29bb44ba50be",
+      "commit_count": 2
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 325541,
+      "completion_tokens": 8106,
+      "total_tokens": 333647,
+      "prompt_cache_hit_tokens": 3200,
+      "prompt_cache_miss_tokens": 322341
+    },
+    "summary": "Capoworks ECU now labels the Model default table axis as Effective MAP for the SD + Alpha-N fuel strategy, matching the runtime native load coordinate. The Load Sources page is updated to remove the previously documented label discrepancy; no tune migration or calibration change is required.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "54019cb7711125a71d7b1b1d31cc4fd6becca209",
+        "decision": "update",
+        "rationale": "In Capoworks ECU, the Model default table axis label for the SD + Alpha-N fuel strategy now shows Effective MAP instead of Cylinder filling, matching the runtime native load coordinate. Tables that use Model default (for example target lambda, main ignition, injection phase, trims and knock) now display the correct Y-axis unit. No tune migration, reflash of calibration values, or breakpoint retune is required; the change is display-only and does not alter calibration offsets or the runtime load coordinate. Use the generated TunerStudio INI that matches the installed firmware so the corrected label appears.",
+        "evidence": [
+          "firmware/tunerstudio/tunerstudio.template.ini: modelDefaultLoadAxis now selects index 5 (Effective MAP kPa) when fuelAlgorithm is LM_SPEED_DENSITY or LM_SD_ALPHA_N, index 2 (TPS %) for LM_ALPHA_N, otherwise index 4",
+          "firmware/CHANGELOG.md: added Fixed entry 'Correct the Model default table axis label for SD + Alpha-N so it shows Effective MAP instead of Cylinder filling.'",
+          "java_tools/configuration_definition/src/test/java/com/rusefi/test/newParse/TsDerivedLoadAxisTest.java: DEFINITION updated to expect the LM_SD_ALPHA_N branch in modelDefaultLoadAxis"
+        ]
+      },
+      {
+        "commit": "6f6ca600ff91d0ef9e37b1d6991a29bb44ba50be",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the SD + Alpha-N axis-label fix. Its child commit is audited separately and the merge introduces no additional user-facing firmware, setup, flashing or tune-migration change.",
+        "evidence": [
+          "Merge commit 6f6ca600 has parents 212368049 and 54019cb77 and changed paths identical to the child commit (firmware/CHANGELOG.md, firmware/tunerstudio/tunerstudio.template.ini, TsDerivedLoadAxisTest.java)",
+          "No conflict-resolution content beyond the child commit's changes is present in the merge diff"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/08-Fuel/Fuel-Settings/Load-Sources.md"
+    ],
+    "recorded_at": "2026-10-26T23:38:10.837501+00:00"
+  }
+}

@@ -44,12 +44,13 @@ The runtime resolves `Model default` as follows:
 | MAF Air Charge | Pre-trim MAF cylinder filling in percent |
 | SD + Alpha-N | Effective MAP in kPa |
 
-The final template helper labels have one source-level discrepancy worth
-knowing: outside the standalone Speed Density and Alpha-N modes, its
-`modelDefaultLoadAxis` helper currently renders `Cylinder filling %`. For an
-SD + Alpha-N calculation, the runtime native coordinate is effective MAP. Use
-the table's live cursor and the source fields rather than treating that helper
-label as a selector value change.
+The template helper label `modelDefaultLoadAxis` now matches these runtime
+coordinates: it renders `Effective MAP kPa` for Speed Density and for
+SD + Alpha-N, `TPS %` for standalone Alpha-N, and `Cylinder filling %` for the
+remaining modes. Tables that use `Model default` therefore show the same
+coordinate the runtime uses. This is a display-label correction only; it does
+not change calibration offsets, the tune layout, or the runtime load
+coordinate, and no breakpoint retune is required.
 
 Capoworks ECU declares that `modelDefaultLoadAxis` helper in the TunerStudio
 `[OutputChannels]` section, not in `[PcVariables]`. The `loadAxisLabels` list
@@ -230,6 +231,9 @@ with later final-layout and fallback changes folded into the pinned revision.
 The `modelDefaultLoadAxis` output-channel placement was made in Capoworks ECU
 commit
 [`cd84c4d0`](https://github.com/capoworks/capoworks-ecu/commit/cd84c4d0c698251c6ff1769356b9e7fb504cff37).
+The SD + Alpha-N `Model default` label was corrected to Effective MAP in
+Capoworks ECU commit
+[`54019cb7`](https://github.com/capoworks/capoworks-ecu/commit/54019cb7711125a71d7b1b1d31cc4fd6becca209).
 
 - [Selector fields and final defaults](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/integration/fome_config.txt)
 - [Exact TunerStudio labels, menus and table cursor bindings](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/tunerstudio/tunerstudio.template.ini)
@@ -239,4 +243,4 @@ commit
 - [Diagnostic output-channel names](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/console/binary/output_channels.txt)
 - [Load-resolution tests](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/unit_tests/tests/ignition_injection/test_airmass_load_resolution.cpp)
 - [Consumer-publication tests](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/unit_tests/tests/ignition_injection/test_airmass_consumer_infrastructure.cpp)
-- [Derived load-axis template regression test](https://github.com/capoworks/capoworks-ecu/blob/cd84c4d0c698251c6ff1769356b9e7fb504cff37/java_tools/configuration_definition/src/test/java/com/rusefi/test/newParse/TsDerivedLoadAxisTest.java)
+- [Derived load-axis template regression test](https://github.com/capoworks/capoworks-ecu/blob/54019cb7711125a71d7b1b1d31cc4fd6becca209/java_tools/configuration_definition/src/test/java/com/rusefi/test/newParse/TsDerivedLoadAxisTest.java)

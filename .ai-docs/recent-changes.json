@@ -2,9 +2,36 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "2123680491cf2d5b3c212ada620acdf64c4808ec",
-  "latest_analyzed_at": "2026-10-26T23:34:58.543190+00:00",
+  "latest_analyzed_commit": "6f6ca600ff91d0ef9e37b1d6991a29bb44ba50be",
+  "latest_analyzed_at": "2026-10-26T23:38:10.839801+00:00",
   "entries": [
+    {
+      "commit": "6f6ca600ff91d0ef9e37b1d6991a29bb44ba50be",
+      "subject": "Merge pull request #87 from capoworks/fix/review-blend-axis-label",
+      "authored_at": "2026-10-26T00:55:32+01:00",
+      "parents": [
+        "2123680491cf2d5b3c212ada620acdf64c4808ec",
+        "54019cb7711125a71d7b1b1d31cc4fd6becca209"
+      ],
+      "comment": "Integration merge of the SD + Alpha-N axis-label fix. Its child commit is audited separately and the merge introduces no additional user-facing firmware, setup, flashing or tune-migration change.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-26T23:38:10.839801+00:00",
+      "integration_batch_commit": "6f6ca600ff91d0ef9e37b1d6991a29bb44ba50be"
+    },
+    {
+      "commit": "54019cb7711125a71d7b1b1d31cc4fd6becca209",
+      "subject": "fix: label blended model load as effective MAP",
+      "authored_at": "2026-10-25T21:29:05+01:00",
+      "parents": [
+        "2123680491cf2d5b3c212ada620acdf64c4808ec"
+      ],
+      "comment": "In Capoworks ECU, the Model default table axis label for the SD + Alpha-N fuel strategy now shows Effective MAP instead of Cylinder filling, matching the runtime native load coordinate. Tables that use Model default (for example target lambda, main ignition, injection phase, trims and knock) now display the correct Y-axis unit. No tune migration, reflash of calibration values, or breakpoint retune is required; the change is display-only and does not alter calibration offsets or the runtime load coordinate. Use the generated TunerStudio INI that matches the installed firmware so the corrected label appears.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-26T23:38:10.839801+00:00",
+      "integration_batch_commit": "6f6ca600ff91d0ef9e37b1d6991a29bb44ba50be"
+    },
     {
       "commit": "2123680491cf2d5b3c212ada620acdf64c4808ec",
       "subject": "Merge pull request #86 from capoworks/fix/tunerstudio-derived-load-axis",
@@ -780,34 +807,6 @@
         "69fd4a3d957be2a4b6db4caf3474f0016eabeb4e"
       ],
       "comment": "Integration merge of the shock preload branch; child commits are audited separately and the merge adds no distinct user-facing change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "69fd4a3d957be2a4b6db4caf3474f0016eabeb4e",
-      "subject": "Merge pull request #66 from capoworks/modularity/08-board-module-policy",
-      "authored_at": "2026-10-20T10:31:21+02:00",
-      "parents": [
-        "5312a145319cc43173543df574eab29910f37d98",
-        "b143c3040bf47b4ba6a204f3e4c6e0913cd8e23b"
-      ],
-      "comment": "Integration merge of the board module policy branch; child commits are audited separately and the merge adds no distinct user-facing change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "b143c3040bf47b4ba6a204f3e4c6e0913cd8e23b",
-      "subject": "Merge pull request #68 from capoworks/modularity/09-cylinder-fuel-trim",
-      "authored_at": "2026-10-20T10:29:53+02:00",
-      "parents": [
-        "530330507e930eb8b1a6d0a4579b3478b648fa52",
-        "e5c84bb88f725b9ca85b92a17d454e1b2a0d00a0"
-      ],
-      "comment": "Integration merge of the cylinder fuel trim branch; child commits are audited separately and the merge adds no distinct user-facing change.",
       "decision": "no-impact",
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
