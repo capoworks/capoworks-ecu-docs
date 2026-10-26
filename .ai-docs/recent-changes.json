@@ -2,9 +2,36 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "ee135347ba03889191f3dbf53f9092d259674455",
-  "latest_analyzed_at": "2026-10-26T23:31:51.900704+00:00",
+  "latest_analyzed_commit": "2123680491cf2d5b3c212ada620acdf64c4808ec",
+  "latest_analyzed_at": "2026-10-26T23:34:58.543190+00:00",
   "entries": [
+    {
+      "commit": "2123680491cf2d5b3c212ada620acdf64c4808ec",
+      "subject": "Merge pull request #86 from capoworks/fix/tunerstudio-derived-load-axis",
+      "authored_at": "2026-10-25T17:17:03+01:00",
+      "parents": [
+        "ee135347ba03889191f3dbf53f9092d259674455",
+        "cd84c4d0c698251c6ff1769356b9e7fb504cff37"
+      ],
+      "comment": "Integration merge of the derived load-axis fix. The merge introduces no conflict-resolution changes beyond the child commit already documented, so it adds no separate user-facing documentation impact.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-26T23:34:58.543190+00:00",
+      "integration_batch_commit": "2123680491cf2d5b3c212ada620acdf64c4808ec"
+    },
+    {
+      "commit": "cd84c4d0c698251c6ff1769356b9e7fb504cff37",
+      "subject": "fix(tunerstudio): declare the derived load axis as an output channel",
+      "authored_at": "2026-10-25T16:44:25+01:00",
+      "parents": [
+        "09394f14eb42fcf65f819c05ab75abd2007bfd02"
+      ],
+      "comment": "Capoworks ECU relocated the modelDefaultLoadAxis helper from the PcVariables section to OutputChannels in the TunerStudio template, so the derived default load-axis label used by table Y axes is now declared as an output channel. The helper still resolves to Fuel Load for Speed Density, TPS for standalone Alpha-N, and Cylinder filling otherwise, and the loadAxisLabels list stays in PcVariables. Practical effect is limited to the generated TunerStudio definition: table axis labels for ignition, lambda, VVT, knock, trim, staged injection, HPFP and similar tables follow the active fuel model as intended. No calibration offsets, tune layout, or flashing steps change, so no tune migration is required; regenerate or reinstall the matching INI for the firmware build and confirm the Y-axis label on a load-source table after connecting. A new test enforces the single definition and the label binding, but this has not been validated on hardware.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-26T23:34:58.543190+00:00",
+      "integration_batch_commit": "2123680491cf2d5b3c212ada620acdf64c4808ec"
+    },
     {
       "commit": "ee135347ba03889191f3dbf53f9092d259674455",
       "subject": "Merge pull request #85 from capoworks/fix/tunerstudio-ini-references",
@@ -782,32 +809,6 @@
       ],
       "comment": "Integration merge of the cylinder fuel trim branch; child commits are audited separately and the merge adds no distinct user-facing change.",
       "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "e5c84bb88f725b9ca85b92a17d454e1b2a0d00a0",
-      "subject": "test: cover six cylinder defaults and full engine capacity",
-      "authored_at": "2026-10-20T06:12:11+02:00",
-      "parents": [
-        "b852c8d82eeae83acf3366e99ba1dde718c69dbb"
-      ],
-      "comment": "Test-only change adding a 6-cylinder CI matrix entry and a unit-test default of 12; it does not change firmware defaults or user-facing behavior.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "b852c8d82eeae83acf3366e99ba1dde718c69dbb",
-      "subject": "build: enable six cylinder fuel trim tables by default",
-      "authored_at": "2026-10-20T06:09:05+02:00",
-      "parents": [
-        "a2cfe90ad4f91071805e2da6d8b50cc350665d61"
-      ],
-      "comment": "Cylinder fuel trim is now default-on with capacity 6; FOME_CYLINDER_TRIM_COUNT is optional and defaults to 6. Engines with more than 6 cylinders must raise the count or omit the module.",
-      "decision": "update",
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
       "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"

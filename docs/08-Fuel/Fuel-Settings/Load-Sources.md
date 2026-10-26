@@ -51,6 +51,13 @@ SD + Alpha-N calculation, the runtime native coordinate is effective MAP. Use
 the table's live cursor and the source fields rather than treating that helper
 label as a selector value change.
 
+Capoworks ECU declares that `modelDefaultLoadAxis` helper in the TunerStudio
+`[OutputChannels]` section, not in `[PcVariables]`. The `loadAxisLabels` list
+that the helper indexes remains a `[PcVariables]` entry, and the table Y-axis
+labels bind to it through `bitStringValue(loadAxisLabels, ...)`. This placement
+only affects how the generated definition resolves the label; it does not
+change calibration offsets, the tune layout, or the runtime load coordinate.
+
 Legacy Lua and mock modes keep a compatibility path that resolves consumer
 coordinates from the live historical fuel load. The captured publication
 identity and model-validity gate described below are used by the revised Speed
@@ -220,6 +227,9 @@ and its generated definition. The independent consumer selectors were
 introduced in commit
 [`45298b90`](https://github.com/capoworks/capoworks-ecu/commit/45298b9020a52059c278d3d0ba16bae89b7e6a7f),
 with later final-layout and fallback changes folded into the pinned revision.
+The `modelDefaultLoadAxis` output-channel placement was made in Capoworks ECU
+commit
+[`cd84c4d0`](https://github.com/capoworks/capoworks-ecu/commit/cd84c4d0c698251c6ff1769356b9e7fb504cff37).
 
 - [Selector fields and final defaults](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/integration/fome_config.txt)
 - [Exact TunerStudio labels, menus and table cursor bindings](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/tunerstudio/tunerstudio.template.ini)
@@ -229,3 +239,4 @@ with later final-layout and fallback changes folded into the pinned revision.
 - [Diagnostic output-channel names](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/console/binary/output_channels.txt)
 - [Load-resolution tests](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/unit_tests/tests/ignition_injection/test_airmass_load_resolution.cpp)
 - [Consumer-publication tests](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/unit_tests/tests/ignition_injection/test_airmass_consumer_infrastructure.cpp)
+- [Derived load-axis template regression test](https://github.com/capoworks/capoworks-ecu/blob/cd84c4d0c698251c6ff1769356b9e7fb504cff37/java_tools/configuration_definition/src/test/java/com/rusefi/test/newParse/TsDerivedLoadAxisTest.java)
