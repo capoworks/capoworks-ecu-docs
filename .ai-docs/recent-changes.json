@@ -2,9 +2,36 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "8a9878bd55d31d648b42a4504a7eac35928238da",
-  "latest_analyzed_at": "2026-10-27T08:07:34.268943+00:00",
+  "latest_analyzed_commit": "b80159b4b537f92849d1742f8c315f7403defdbb",
+  "latest_analyzed_at": "2026-10-27T08:10:39.407076+00:00",
   "entries": [
+    {
+      "commit": "b80159b4b537f92849d1742f8c315f7403defdbb",
+      "subject": "Merge pull request #93 from capoworks/ci/trim-matrix-on-relevant-changes",
+      "authored_at": "2026-10-27T06:03:43+01:00",
+      "parents": [
+        "8a9878bd55d31d648b42a4504a7eac35928238da",
+        "eb97f6eb9f0d24d5d35eb28babc11470b3a7a45b"
+      ],
+      "comment": "Integration merge of pull request #93. Its only child commit is audited separately and the merge introduces no additional file changes, so there is no separate user-facing effect to document.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-27T08:10:39.407076+00:00",
+      "integration_batch_commit": "b80159b4b537f92849d1742f8c315f7403defdbb"
+    },
+    {
+      "commit": "eb97f6eb9f0d24d5d35eb28babc11470b3a7a45b",
+      "subject": "ci: limit extra fuel trim builds to relevant changes",
+      "authored_at": "2026-10-27T05:37:19+01:00",
+      "parents": [
+        "8a9878bd55d31d648b42a4504a7eac35928238da"
+      ],
+      "comment": "Maintainer-only CI change. The Unit Tests workflow gains a changes job that decides whether the extra cylinder fuel trim jobs run, and the two trim jobs now depend on it. This affects only when automated test builds execute; firmware behavior, calibration layout, flashing, and build inputs are unchanged, so no reader-facing documentation needs revision.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-27T08:10:39.407076+00:00",
+      "integration_batch_commit": "b80159b4b537f92849d1742f8c315f7403defdbb"
+    },
     {
       "commit": "8a9878bd55d31d648b42a4504a7eac35928238da",
       "subject": "Merge pull request #92 from capoworks/integrate/idle-stepper-enable-timeout",
@@ -782,33 +809,6 @@
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-21T13:20:00.522905+00:00",
       "integration_batch_commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4"
-    },
-    {
-      "commit": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12",
-      "subject": "Merge pull request #71 from capoworks/feat/build-time-table-profiles",
-      "authored_at": "2026-10-20T22:50:06+02:00",
-      "parents": [
-        "caf060b87c40d3c4c75f06836b684064a0dbec57",
-        "3060ccd5873a89e6499c9ade5756338ab7c529fd"
-      ],
-      "comment": "Integration merge of the build-time table profile branch. Its child commit is documented separately and the merge adds no conflict-resolution changes of its own, so no additional user-facing documentation is needed.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-21T01:00:50.555060+00:00",
-      "integration_batch_commit": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12"
-    },
-    {
-      "commit": "3060ccd5873a89e6499c9ade5756338ab7c529fd",
-      "subject": "Add build-time fuel table dimensions and engine preset selection",
-      "authored_at": "2026-10-20T22:33:03+02:00",
-      "parents": [
-        "caf060b87c40d3c4c75f06836b684064a0dbec57"
-      ],
-      "comment": "Capoworks ECU adds two build-profile options. FOME_VE_RPM_COUNT accepts 16 or 32 and sets the RPM points of the Speed Density VE and Alpha-N tables; FOME_AIRMASS_BLEND_SIZE accepts 8 or 16 and sets both axes of the SD + Alpha-N authority table. Defaults stay at 16 and 8, so existing builds are unchanged. FOME_ENGINE_PRESETS accepts all, none, or exact engine_type_e symbol names and filters which preset dispatch code is compiled; omitting it keeps all presets at default dimensions but includes none when either dimension is expanded, and an explicit symbol list is rejected in expanded builds. Changing either dimension changes the persistent layout, so binary tunes from a differently sized build are rejected and reset; export values with the matching generated TunerStudio INI and re-import them manually. On STM32F7 a new static assertion rejects a persistent record larger than the 32 KiB copy slot, so expanded tables plus a high cylinder-trim count can fail to compile. Builders should set the options on the compile command, not as compiler defines, and rebuild without a clean build.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-21T01:00:50.555060+00:00",
-      "integration_batch_commit": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12"
     }
   ]
 }
