@@ -4,7 +4,7 @@
   "source_branch": "master",
   "target_repository": "capoworks/capoworks-ecu-docs",
   "target_branch": "master",
-  "cursor_commit": "8a9878bd55d31d648b42a4504a7eac35928238da",
+  "cursor_commit": "b80159b4b537f92849d1742f8c315f7403defdbb",
   "initial_backfill": {
     "through_commit": "be02e3cdaa2c177d05853a41af6dacc9c0766b77",
     "commit_count": 5,
@@ -12,55 +12,42 @@
   },
   "last_sync": {
     "range": {
-      "base_exclusive": "29c5db284be586200df3d5d74e00f909c19cbef4",
-      "head_inclusive": "8a9878bd55d31d648b42a4504a7eac35928238da",
-      "commit_count": 3
+      "base_exclusive": "8a9878bd55d31d648b42a4504a7eac35928238da",
+      "head_inclusive": "b80159b4b537f92849d1742f8c315f7403defdbb",
+      "commit_count": 2
     },
     "model": "deepseek-flash",
     "usage": {
-      "prompt_tokens": 109660,
-      "completion_tokens": 3829,
-      "total_tokens": 113489,
-      "prompt_cache_hit_tokens": 3200,
-      "prompt_cache_miss_tokens": 106460
+      "prompt_tokens": 34359,
+      "completion_tokens": 435,
+      "total_tokens": 34794,
+      "prompt_cache_hit_tokens": 1536,
+      "prompt_cache_miss_tokens": 32823
     },
-    "summary": "Capoworks ECU now keeps STEP/DIR idle stepper drivers enabled between steps, waits a fixed 2 ms after enabling before the first STEP edge, and releases the driver after five seconds without movement or when main-relay power or battery voltage is unavailable. The idle hardware page documents the new timing and power-loss behavior.",
-    "outcome": "update",
+    "summary": "Both commits in this range are CI-only changes to the Unit Tests workflow. The extra cylinder fuel trim build jobs now run on master pushes, manual dispatches, and pull requests that touch trim-related files, instead of on every push and pull request. No firmware behavior, tune layout, flashing procedure, or builder workflow changes, so no wiki page needs an update.",
+    "outcome": "no-impact",
     "decisions": [
       {
-        "commit": "0a37638d7e9a02937f94998242304d47b41ba323",
-        "decision": "update",
-        "rationale": "Capoworks ECU changes STEP/DIR idle stepper behavior. The driver enable output now stays asserted between steps instead of being released after every pulse, a fixed 2 ms settle delay follows each enable before the first STEP edge, and the driver is released after five seconds without movement. The driver is also released, and no step is taken, when main-relay power is off or battery voltage is below the minimum stepper voltage, including during the 2 ms enable delay. No tune fields or calibration layout change, so no tune migration is needed. Verify the enable polarity and wiring for the installed board, and confirm the minimum stepper voltage setting matches the hardware before relying on the power-loss release.",
+        "commit": "eb97f6eb9f0d24d5d35eb28babc11470b3a7a45b",
+        "decision": "no-impact",
+        "rationale": "Maintainer-only CI change. The Unit Tests workflow gains a changes job that decides whether the extra cylinder fuel trim jobs run, and the two trim jobs now depend on it. This affects only when automated test builds execute; firmware behavior, calibration layout, flashing, and build inputs are unchanged, so no reader-facing documentation needs revision.",
         "evidence": [
-          "firmware/hw_layer/stepper.cpp: new isStepperPowered() checks engine->isMainRelayEnabled() and BatteryVoltage >= minStepperVoltage",
-          "firmware/hw_layer/stepper.cpp: StepDirectionStepper::pulse() enables only when m_enablePin.getLogicValue(), waits MS2US(2), rechecks power, and no longer disables after each pulse",
-          "firmware/hw_layer/stepper.cpp: StepDirectionStepper::sleep() disables after idleTimeoutSeconds = 5.0f using m_lastStep",
-          "firmware/hw_layer/stepper.cpp: doIteration() calls m_hw->disable() when power is unavailable",
-          "firmware/CHANGELOG.md: Fixed entry describing retained enable, 2 ms delay, five-second release, and power-loss release",
-          "unit_tests/tests/actuators/test_stepper.cpp: tests for enable delay, timeout, inverted enable mode, and power loss during enable delay"
+          "`.github/workflows/build-unit-tests.yaml`: new `changes` job with `actions/github-script@v8` sets output `run_trim`",
+          "`cylinder-fuel-trim` and `cylinder-fuel-trim-arm` jobs gain `needs: changes` and `if: ${{ needs.changes.outputs.run_trim == 'true' }}`",
+          "Trigger changed from `on: [push,pull_request]` to push/pull_request/workflow_dispatch; no firmware source paths touched"
         ]
       },
       {
-        "commit": "5c735a8201fc40c28bf1f39241aaa6ef0e343a21",
+        "commit": "b80159b4b537f92849d1742f8c315f7403defdbb",
         "decision": "no-impact",
-        "rationale": "Whitespace-only change to the continuation line of the stepper power check. No behavior, configuration, or user-facing documentation changes.",
+        "rationale": "Integration merge of pull request #93. Its only child commit is audited separately and the merge introduces no additional file changes, so there is no separate user-facing effect to document.",
         "evidence": [
-          "firmware/hw_layer/stepper.cpp: indentation of the Sensor::getOrZero(SensorType::BatteryVoltage) line inside isStepperPowered() changed only"
-        ]
-      },
-      {
-        "commit": "8a9878bd55d31d648b42a4504a7eac35928238da",
-        "decision": "no-impact",
-        "rationale": "Integration merge of the idle stepper enable-timeout branch. Its child commits are audited separately and the merge adds no conflict-resolution changes, so there is no additional user-facing effect.",
-        "evidence": [
-          "Merge commit 8a9878bd55d31d648b42a4504a7eac35928238da has parents 29c5db284 and 5c735a820 with no combined diff content",
-          "Changed paths match the child commits: firmware/CHANGELOG.md, firmware/hw_layer/stepper.cpp, firmware/hw_layer/stepper.h, unit_tests/tests/actuators/test_stepper.cpp"
+          "Merge commit parents 8a9878bd5 and eb97f6eb9; changed_paths lists only `.github/workflows/build-unit-tests.yaml`",
+          "Merge message: \"ci: limit extra fuel trim builds to relevant changes\"; no conflict-resolution content in the diff"
         ]
       }
     ],
-    "files_changed": [
-      "docs/06-Basic-Features/Idle-Control/Idle-Hardware.md"
-    ],
-    "recorded_at": "2026-10-27T08:07:34.266884+00:00"
+    "files_changed": [],
+    "recorded_at": "2026-10-27T08:10:39.404720+00:00"
   }
 }
