@@ -2,9 +2,50 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "8ff37add6146ac2f485bfce5ef2877ae7efde580",
-  "latest_analyzed_at": "2026-10-27T02:20:23.200338+00:00",
+  "latest_analyzed_commit": "92c9c2ae0039225933c55d41eeda2e73987e0775",
+  "latest_analyzed_at": "2026-10-27T02:23:45.101202+00:00",
   "entries": [
+    {
+      "commit": "92c9c2ae0039225933c55d41eeda2e73987e0775",
+      "subject": "Merge pull request #89 from capoworks/fix/review-boost-blend-menu",
+      "authored_at": "2026-10-26T00:57:26+01:00",
+      "parents": [
+        "8ff37add6146ac2f485bfce5ef2877ae7efde580",
+        "8e413d5bd095bc39988b2880793f76bd70120dca"
+      ],
+      "comment": "Pull-request merge that brings the already audited boost blend menu fix into master. It adds no user-facing change beyond the child commit, so no further documentation change is required.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-27T02:23:45.101202+00:00",
+      "integration_batch_commit": "92c9c2ae0039225933c55d41eeda2e73987e0775"
+    },
+    {
+      "commit": "8e413d5bd095bc39988b2880793f76bd70120dca",
+      "subject": "Merge branch 'master' into fix/review-boost-blend-menu",
+      "authored_at": "2026-10-26T00:57:08+01:00",
+      "parents": [
+        "1b71a2ace5e5653227c2f8a697df897947602cdd",
+        "8ff37add6146ac2f485bfce5ef2877ae7efde580"
+      ],
+      "comment": "Integration merge of master into the boost blend menu branch. Its child commits are audited separately, and the only conflict resolution was in the changelog text, which adds no new user-facing firmware behavior beyond the already documented fixes.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-27T02:23:45.101202+00:00",
+      "integration_batch_commit": "92c9c2ae0039225933c55d41eeda2e73987e0775"
+    },
+    {
+      "commit": "1b71a2ace5e5653227c2f8a697df897947602cdd",
+      "subject": "fix: open the correct closed loop boost blend table",
+      "authored_at": "2026-10-25T21:29:05+01:00",
+      "parents": [
+        "2123680491cf2d5b3c212ada620acdf64c4808ec"
+      ],
+      "comment": "Capoworks ECU corrected the Boost blend tables menu: the \"Closed loop 1 adder\" entry now opens the first closed-loop blend table (boostClosedBlend1Table) instead of the second. Previously, selecting that menu item showed the wrong table, so edits could be made to the wrong blend. No tune values change and no migration is needed; regenerate or use the TunerStudio INI that matches the installed firmware, then verify which blend table each menu entry opens before editing.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-27T02:23:45.101202+00:00",
+      "integration_batch_commit": "92c9c2ae0039225933c55d41eeda2e73987e0775"
+    },
     {
       "commit": "8ff37add6146ac2f485bfce5ef2877ae7efde580",
       "subject": "Merge pull request #88 from capoworks/fix/review-trim-defaults",
@@ -763,48 +804,6 @@
         "0bc31eab6a05cae53393da03da7001558d3d780d"
       ],
       "comment": "CI infrastructure only: adds an isolated ephemeral self-hosted runner and JOBS validation. It does not change firmware, flashing, or tune behavior.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "2099f11a649138f11c138fc21562e6288210da20",
-      "subject": "Merge pull request #57 from capoworks/modularity/01-static-composition",
-      "authored_at": "2026-10-20T10:32:35+02:00",
-      "parents": [
-        "0bc31eab6a05cae53393da03da7001558d3d780d",
-        "da1f76475d1991628d56ebde3ecfc6d2480e8ba0"
-      ],
-      "comment": "Integration merge of the static composition branch; child commits are audited separately and the merge adds no distinct user-facing change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "da1f76475d1991628d56ebde3ecfc6d2480e8ba0",
-      "subject": "Merge pull request #58 from capoworks/modularity/02-hella-opst",
-      "authored_at": "2026-10-20T10:32:27+02:00",
-      "parents": [
-        "379b57b8e0499ff013a69300be105c4cb09a4173",
-        "d73a32e99faead20ef00ef373228d554fc66c33e"
-      ],
-      "comment": "Integration merge of the Hella OPS-T branch; child commits are audited separately and the merge adds no distinct user-facing change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "d73a32e99faead20ef00ef373228d554fc66c33e",
-      "subject": "Merge pull request #59 from capoworks/modularity/03-boost",
-      "authored_at": "2026-10-20T10:32:21+02:00",
-      "parents": [
-        "9704a2ccac329e2a7017b9627b82b14185b3f9c0",
-        "beda34e75aa0599f9b67be5348caf54347c2752f"
-      ],
-      "comment": "Integration merge of the Boost branch; child commits are audited separately and the merge adds no distinct user-facing change.",
       "decision": "no-impact",
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
