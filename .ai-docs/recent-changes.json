@@ -2,9 +2,49 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "29c5db284be586200df3d5d74e00f909c19cbef4",
-  "latest_analyzed_at": "2026-10-27T02:29:51.963801+00:00",
+  "latest_analyzed_commit": "8a9878bd55d31d648b42a4504a7eac35928238da",
+  "latest_analyzed_at": "2026-10-27T08:07:34.268943+00:00",
   "entries": [
+    {
+      "commit": "8a9878bd55d31d648b42a4504a7eac35928238da",
+      "subject": "Merge pull request #92 from capoworks/integrate/idle-stepper-enable-timeout",
+      "authored_at": "2026-10-27T03:35:15+01:00",
+      "parents": [
+        "29c5db284be586200df3d5d74e00f909c19cbef4",
+        "5c735a8201fc40c28bf1f39241aaa6ef0e343a21"
+      ],
+      "comment": "Integration merge of the idle stepper enable-timeout branch. Its child commits are audited separately and the merge adds no conflict-resolution changes, so there is no additional user-facing effect.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-27T08:07:34.268943+00:00",
+      "integration_batch_commit": "8a9878bd55d31d648b42a4504a7eac35928238da"
+    },
+    {
+      "commit": "5c735a8201fc40c28bf1f39241aaa6ef0e343a21",
+      "subject": "style: align stepper power check continuation",
+      "authored_at": "2026-10-26T18:07:45+01:00",
+      "parents": [
+        "0a37638d7e9a02937f94998242304d47b41ba323"
+      ],
+      "comment": "Whitespace-only change to the continuation line of the stepper power check. No behavior, configuration, or user-facing documentation changes.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-27T08:07:34.268943+00:00",
+      "integration_batch_commit": "8a9878bd55d31d648b42a4504a7eac35928238da"
+    },
+    {
+      "commit": "0a37638d7e9a02937f94998242304d47b41ba323",
+      "subject": "fix: retain idle stepper enable between movements",
+      "authored_at": "2026-10-26T18:05:59+01:00",
+      "parents": [
+        "29c5db284be586200df3d5d74e00f909c19cbef4"
+      ],
+      "comment": "Capoworks ECU changes STEP/DIR idle stepper behavior. The driver enable output now stays asserted between steps instead of being released after every pulse, a fixed 2 ms settle delay follows each enable before the first STEP edge, and the driver is released after five seconds without movement. The driver is also released, and no step is taken, when main-relay power is off or battery voltage is below the minimum stepper voltage, including during the 2 ms enable delay. No tune fields or calibration layout change, so no tune migration is needed. Verify the enable polarity and wiring for the installed board, and confirm the minimum stepper voltage setting matches the hardware before relying on the power-loss release.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-27T08:07:34.268943+00:00",
+      "integration_batch_commit": "8a9878bd55d31d648b42a4504a7eac35928238da"
+    },
     {
       "commit": "29c5db284be586200df3d5d74e00f909c19cbef4",
       "subject": "Merge pull request #91 from capoworks/fix/review-lambda-load-units",
@@ -769,46 +809,6 @@
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-21T01:00:50.555060+00:00",
       "integration_batch_commit": "9a6fb7c5a604c209d2a5b118d94b257b205b2e12"
-    },
-    {
-      "commit": "caf060b87c40d3c4c75f06836b684064a0dbec57",
-      "subject": "Add validated on-demand firmware build workflow",
-      "authored_at": "2026-10-20T20:52:05+02:00",
-      "parents": [
-        "1734a4b70c11ff811885c4ee75e58cabef8b2af5"
-      ],
-      "comment": "Capoworks ECU adds a manual GitHub Actions workflow, Custom firmware build, that builds firmware for one selected board from the current master source. The request must supply a request_id of letters, digits, underscores, and hyphens, a board from the fixed list, and optionally a comma-separated list of opt-in modules. The workflow always includes the base modules fan, fuel_pump, gear_detector, tachometer, trip_odometer, and map_averaging, and rejects base modules, unknown or duplicate tokens, empty tokens, and over-long input. It rejects lua on hellen128 and shock_preload on boards other than core8, atlas, proteus_f4, proteus_f7, and proteus_h7. It also fails if the workflow's module list no longer matches the firmware module catalog. The build uses the repository's own compile script for the board, so the resulting binary and generated INI must be treated as one matching pair. Artifacts are retained for 14 days and include fome.bin, fome_update.srec when produced, the board INI when produced, and a manifest.json with SHA-256 hashes and the source commit. This is a build convenience only: it does not flash hardware, and a successful build is not engine or hardware validation.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T20:14:30.041764+00:00",
-      "integration_batch_commit": "caf060b87c40d3c4c75f06836b684064a0dbec57"
-    },
-    {
-      "commit": "1734a4b70c11ff811885c4ee75e58cabef8b2af5",
-      "subject": "Merge pull request #70 from capoworks/fix/ci-configs-windows-simulator",
-      "authored_at": "2026-10-20T13:37:18+02:00",
-      "parents": [
-        "728292632f3c1ae1fb4a1747d7809cfd23204658",
-        "95d6e40b34ec625e49eb25c32490bb89ae6c18e7"
-      ],
-      "comment": "Integration merge of pull request #70 with no conflict-resolution changes beyond the child commit already documented. No additional user-facing documentation change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:21:16.832280+00:00",
-      "integration_batch_commit": "1734a4b70c11ff811885c4ee75e58cabef8b2af5"
-    },
-    {
-      "commit": "95d6e40b34ec625e49eb25c32490bb89ae6c18e7",
-      "subject": "fix: restore Frankenso config generation and Windows simulator build",
-      "authored_at": "2026-10-20T13:23:55+02:00",
-      "parents": [
-        "728292632f3c1ae1fb4a1747d7809cfd23204658"
-      ],
-      "comment": "Capoworks ECU restored Frankenso configuration generation: gen_config_board.sh now resolves the host-only module profile against the f407-discovery board metadata when the board directory is config/boards/frankenso, because Frankenso has no board.mk of its own. Config generation itself still uses the Frankenso board directory. Builders generating Frankenso configuration no longer need a manual workaround; no tune, flashing, or runtime behavior changes. The simulator's SleepExecutor batch-order test now casts its expected and actual callback counts to int for the firmwareError format, so the Windows simulator build compiles. This is a test-only change with no effect on simulator or ECU behavior.",
-      "decision": "update",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:21:16.832280+00:00",
-      "integration_batch_commit": "1734a4b70c11ff811885c4ee75e58cabef8b2af5"
     }
   ]
 }
