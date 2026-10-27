@@ -2,9 +2,50 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "92c9c2ae0039225933c55d41eeda2e73987e0775",
-  "latest_analyzed_at": "2026-10-27T02:23:45.101202+00:00",
+  "latest_analyzed_commit": "630d332a4776b5143686c2785dfc5337f0b1a95a",
+  "latest_analyzed_at": "2026-10-27T02:26:53.285752+00:00",
   "entries": [
+    {
+      "commit": "630d332a4776b5143686c2785dfc5337f0b1a95a",
+      "subject": "Merge pull request #90 from capoworks/fix/review-knock-axis-range",
+      "authored_at": "2026-10-26T00:57:58+01:00",
+      "parents": [
+        "92c9c2ae0039225933c55d41eeda2e73987e0775",
+        "f7896854283ebdd3e2c05dabc45935cdd2e89c34"
+      ],
+      "comment": "Pull-request merge that brings the already audited knock load-bin change into master. The merge itself adds no conflict-resolution or behavioral change beyond the child commit, so the documentation impact is fully described by that commit.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-27T02:26:53.285752+00:00",
+      "integration_batch_commit": "630d332a4776b5143686c2785dfc5337f0b1a95a"
+    },
+    {
+      "commit": "f7896854283ebdd3e2c05dabc45935cdd2e89c34",
+      "subject": "Merge branch 'master' into fix/review-knock-axis-range",
+      "authored_at": "2026-10-26T00:57:49+01:00",
+      "parents": [
+        "45627ba30adf3f7ac015c51b92924a3fbf26714f",
+        "92c9c2ae0039225933c55d41eeda2e73987e0775"
+      ],
+      "comment": "Integration merge of master into the knock-axis branch. Its child commits are audited separately, and the combined diff only reconciles changelog lines already covered by those commits. No additional user-facing firmware, setup, flashing, or tune-migration change is introduced here.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-27T02:26:53.285752+00:00",
+      "integration_batch_commit": "630d332a4776b5143686c2785dfc5337f0b1a95a"
+    },
+    {
+      "commit": "45627ba30adf3f7ac015c51b92924a3fbf26714f",
+      "subject": "fix: support high-pressure knock retard load bins",
+      "authored_at": "2026-10-25T21:35:44+01:00",
+      "parents": [
+        "2123680491cf2d5b3c212ada620acdf64c4808ec"
+      ],
+      "comment": "Capoworks ECU changed the maximum knock retard load bins from 8-bit percent values capped at 250 to 16-bit values from 0 to 1000 with no fixed unit. Pressure-based loads above 250 kPa are now distinguishable, and loads above the final bin clamp to the final table row. This changes the tune layout and advances the flash data version to 20033, so older binary tunes reset; record the knock table and its load/RPM axes before flashing and recreate them with the matching generated TunerStudio INI. The change is covered by unit tests only and has not been validated on an engine.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-27T02:26:53.285752+00:00",
+      "integration_batch_commit": "630d332a4776b5143686c2785dfc5337f0b1a95a"
+    },
     {
       "commit": "92c9c2ae0039225933c55d41eeda2e73987e0775",
       "subject": "Merge pull request #89 from capoworks/fix/review-boost-blend-menu",
@@ -767,47 +808,6 @@
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-20T17:18:35.352752+00:00",
       "integration_batch_commit": "728292632f3c1ae1fb4a1747d7809cfd23204658"
-    },
-    {
-      "commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50",
-      "subject": "Merge pull request #67 from capoworks/build/firmware-memory-budget",
-      "authored_at": "2026-10-20T10:33:03+02:00",
-      "parents": [
-        "19b3d53c158fbcd11fa14ecaebbcbb7cbc49552d",
-        "0207f7e1006530dc80cb85d0215b404b602ca909"
-      ],
-      "comment": "Integration merge of the firmware memory budget branch; child commits are audited separately and the merge adds no distinct user-facing change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "0207f7e1006530dc80cb85d0215b404b602ca909",
-      "subject": "Merge pull request #63 from capoworks/ci/ephemeral-runner",
-      "authored_at": "2026-10-20T10:32:39+02:00",
-      "parents": [
-        "2099f11a649138f11c138fc21562e6288210da20",
-        "ac2da247fe24c316afb73eb9565814ca12582dc8"
-      ],
-      "comment": "Integration merge of the ephemeral runner branch; the only conflict resolution is a PCH cleanup line in common_make.sh, which is build tooling with no firmware or user-facing effect.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-    },
-    {
-      "commit": "ac2da247fe24c316afb73eb9565814ca12582dc8",
-      "subject": "CI: add an isolated ephemeral self-hosted runner",
-      "authored_at": "2026-10-19T20:42:09+02:00",
-      "parents": [
-        "0bc31eab6a05cae53393da03da7001558d3d780d"
-      ],
-      "comment": "CI infrastructure only: adds an isolated ephemeral self-hosted runner and JOBS validation. It does not change firmware, flashing, or tune behavior.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:12:47.056249+00:00",
-      "integration_batch_commit": "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
     }
   ]
 }
