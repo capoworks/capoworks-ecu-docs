@@ -77,3 +77,13 @@ For example, if _D Gain_ is set to 0.2 and the boost is rising at 10kPa per seco
 The _min adjustment_ and _max adjustment_ settings define the maximum duty cycle that can be subtracted from or added to the boost control open loop position.
 
 Once the P, I and D terms are added together, the PID controller output is limited by the _min adjustment_ and _max adjustment_ values and then added to the boost control open loop value for the final output. For example, if _max adjustment_ is set to 20, even with a very high gain or a very large error the maximum final duty cycle will be whatever is in the open loop table + 20%.
+
+## Boost blend tables
+
+Under _Advanced > Boost blend tables_, Capoworks ECU provides two open-loop and two closed-loop blend entries. Each pair has a bias configuration entry and an adder table entry. The bias table controls how much of the blend table is mixed into the base boost table, and the adder table holds the per-cell blend values.
+
+The closed-loop entries are shown only when boost control is enabled and the control mode is closed loop. Each adder entry is shown only when its blend parameter is set to a nonzero value.
+
+Capoworks ECU corrected the menu wiring so that **Closed loop 1 adder** opens the first closed-loop blend table (`Boost closed loop blend 1`), matching its bias entry. Before this fix, that menu entry opened the second closed-loop blend table, so edits made from it landed in the wrong blend.
+
+No tune values change and no migration is required. Use the TunerStudio INI generated for the installed firmware; an older INI keeps the previous menu wiring. After updating, confirm which table each blend menu entry opens before editing, and recheck any closed-loop blend values that were entered through the mislabeled entry.
