@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "batch_head": "120668e3972fe2262cea8f73d9c3ee8efadd9a68",
+  "previous_cursor_commit": "b80159b4b537f92849d1742f8c315f7403defdbb",
+  "cursor_commit": "120668e3972fe2262cea8f73d9c3ee8efadd9a68",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "8a9878bd55d31d648b42a4504a7eac35928238da",
+      "head_inclusive": "b80159b4b537f92849d1742f8c315f7403defdbb",
+      "commit_count": 2
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 34359,
+      "completion_tokens": 435,
+      "total_tokens": 34794,
+      "prompt_cache_hit_tokens": 1536,
+      "prompt_cache_miss_tokens": 32823
+    },
+    "summary": "Both commits in this range are CI-only changes to the Unit Tests workflow. The extra cylinder fuel trim build jobs now run on master pushes, manual dispatches, and pull requests that touch trim-related files, instead of on every push and pull request. No firmware behavior, tune layout, flashing procedure, or builder workflow changes, so no wiki page needs an update.",
+    "outcome": "no-impact",
+    "decisions": [
+      {
+        "commit": "eb97f6eb9f0d24d5d35eb28babc11470b3a7a45b",
+        "decision": "no-impact",
+        "rationale": "Maintainer-only CI change. The Unit Tests workflow gains a changes job that decides whether the extra cylinder fuel trim jobs run, and the two trim jobs now depend on it. This affects only when automated test builds execute; firmware behavior, calibration layout, flashing, and build inputs are unchanged, so no reader-facing documentation needs revision.",
+        "evidence": [
+          "`.github/workflows/build-unit-tests.yaml`: new `changes` job with `actions/github-script@v8` sets output `run_trim`",
+          "`cylinder-fuel-trim` and `cylinder-fuel-trim-arm` jobs gain `needs: changes` and `if: ${{ needs.changes.outputs.run_trim == 'true' }}`",
+          "Trigger changed from `on: [push,pull_request]` to push/pull_request/workflow_dispatch; no firmware source paths touched"
+        ]
+      },
+      {
+        "commit": "b80159b4b537f92849d1742f8c315f7403defdbb",
+        "decision": "no-impact",
+        "rationale": "Integration merge of pull request #93. Its only child commit is audited separately and the merge introduces no additional file changes, so there is no separate user-facing effect to document.",
+        "evidence": [
+          "Merge commit parents 8a9878bd5 and eb97f6eb9; changed_paths lists only `.github/workflows/build-unit-tests.yaml`",
+          "Merge message: \"ci: limit extra fuel trim builds to relevant changes\"; no conflict-resolution content in the diff"
+        ]
+      }
+    ],
+    "files_changed": [],
+    "recorded_at": "2026-10-27T08:10:39.404720+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "b80159b4b537f92849d1742f8c315f7403defdbb",
+      "head_inclusive": "120668e3972fe2262cea8f73d9c3ee8efadd9a68",
+      "commit_count": 3
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 279894,
+      "completion_tokens": 2443,
+      "total_tokens": 282337,
+      "prompt_cache_hit_tokens": 1536,
+      "prompt_cache_miss_tokens": 278358
+    },
+    "summary": "Capoworks ECU now makes battery-voltage divider calibration an explicit opt-in on fixed-divider boards. A new \"Override battery divider coefficient (advanced)\" checkbox defaults off, so each board applies its nominal divider; enabling it allows rare manual calibration against a voltmeter, and clearing it restores the board nominal. The stored tune version advances to 20034, so back up and transfer tunes using matching TunerStudio definitions.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "18ec4d69e5b0e4e93ac137709c7759958bd19528",
+        "decision": "update",
+        "rationale": "Core8 no longer forces the battery divider coefficient on every configuration write. The nominal 7.34 value is now applied only in the board defaults path, so a saved or imported Core8 divider value is preserved. This is an intermediate step; the following commit replaces it with the opt-in checkbox, so document the final behavior rather than this intermediate state.",
+        "evidence": [
+          "firmware/config/boards/core8/board_configuration.cpp: removed engineConfiguration->vbattDividerCoeff assignment from setupVbatt() and added it to setBoardDefaultConfiguration()",
+          "firmware/config/boards/core8/prepend.txt: removed #define ts_readonly_vbattDividerCoeff 1",
+          "firmware/CHANGELOG.md: added Core8 battery-voltage divider calibration entry"
+        ]
+      },
+      {
+        "commit": "b0e5bf850e65cd427f7537ae719352d166be908a",
+        "decision": "update",
+        "rationale": "Battery divider calibration is now opt-in on all fixed-divider boards. A new \"Override battery divider coefficient (advanced)\" checkbox defaults off, so each board applies its nominal divider; enabling it permits manual calibration against a voltmeter, and clearing it restores the board nominal. Invalid or out-of-range values fall back to the nominal. Changes apply after a stopped-engine Burn or after saving and rebooting. The stored tune version advances to 20034, so back up the tune and transfer values with matching TunerStudio definitions from the older schema.",
+        "evidence": [
+          "firmware/controllers/algo/engine_configuration.cpp: new setBoardBatteryVoltageDivider() enforces nominal unless enableBatteryDividerOverride is set, with 0.01-99.0 finite-range fallback",
+          "firmware/integration/fome_config.txt: added bit enableBatteryDividerOverride and FLASH_DATA_VERSION bumped 20033 to 20034",
+          "firmware/tunerstudio/tunerstudio.template.ini: batteryDialog adds override checkbox, gates coefficient field, and adds batteryDividerHelp",
+          "firmware/config/boards/*/prepend.txt: ts_readonly_vbattDividerCoeff changed to \"!enableBatteryDividerOverride\" across fixed-divider boards",
+          "firmware/config/boards/tunerstudio-protection.md: new Battery-divider calibration section",
+          "unit_tests/tests/test_battery_voltage_divider.cpp: new tests for nominal enforcement, retained calibration, restore, and invalid fallback"
+        ]
+      },
+      {
+        "commit": "120668e3972fe2262cea8f73d9c3ee8efadd9a68",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the battery-divider calibration branch. Its child commits are audited separately and the merge adds no conflict-resolution changes of its own, so no additional documentation change is needed.",
+        "evidence": [
+          "Merge commit 120668e3 has parents b80159b4 and b0e5bf85 with no combined diff beyond the child commits",
+          "Merge subject: fix: require explicit opt-in for battery divider calibration"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/04-Sensors-And-Gauges/Driver-Controls-And-Feedback/Battery-Settings.md",
+      "docs/07-Advanced-Features/TunerStudio-Board-Protected-Settings.md"
+    ],
+    "recorded_at": "2026-10-27T19:32:25.689474+00:00"
+  }
+}

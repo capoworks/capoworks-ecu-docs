@@ -2,9 +2,49 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "b80159b4b537f92849d1742f8c315f7403defdbb",
-  "latest_analyzed_at": "2026-10-27T08:10:39.407076+00:00",
+  "latest_analyzed_commit": "120668e3972fe2262cea8f73d9c3ee8efadd9a68",
+  "latest_analyzed_at": "2026-10-27T19:32:25.690694+00:00",
   "entries": [
+    {
+      "commit": "120668e3972fe2262cea8f73d9c3ee8efadd9a68",
+      "subject": "Merge pull request #94 from capoworks/fix/core8-battery-divider-calibration",
+      "authored_at": "2026-10-27T16:33:06+01:00",
+      "parents": [
+        "b80159b4b537f92849d1742f8c315f7403defdbb",
+        "b0e5bf850e65cd427f7537ae719352d166be908a"
+      ],
+      "comment": "Integration merge of the battery-divider calibration branch. Its child commits are audited separately and the merge adds no conflict-resolution changes of its own, so no additional documentation change is needed.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-27T19:32:25.690694+00:00",
+      "integration_batch_commit": "120668e3972fe2262cea8f73d9c3ee8efadd9a68"
+    },
+    {
+      "commit": "b0e5bf850e65cd427f7537ae719352d166be908a",
+      "subject": "fix: require explicit opt-in for battery divider calibration on fixed-divider boards",
+      "authored_at": "2026-10-27T16:14:08+01:00",
+      "parents": [
+        "18ec4d69e5b0e4e93ac137709c7759958bd19528"
+      ],
+      "comment": "Battery divider calibration is now opt-in on all fixed-divider boards. A new \"Override battery divider coefficient (advanced)\" checkbox defaults off, so each board applies its nominal divider; enabling it permits manual calibration against a voltmeter, and clearing it restores the board nominal. Invalid or out-of-range values fall back to the nominal. Changes apply after a stopped-engine Burn or after saving and rebooting. The stored tune version advances to 20034, so back up the tune and transfer values with matching TunerStudio definitions from the older schema.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-27T19:32:25.690694+00:00",
+      "integration_batch_commit": "120668e3972fe2262cea8f73d9c3ee8efadd9a68"
+    },
+    {
+      "commit": "18ec4d69e5b0e4e93ac137709c7759958bd19528",
+      "subject": "fix(core8): allow battery voltage divider calibration",
+      "authored_at": "2026-10-27T15:36:14+01:00",
+      "parents": [
+        "b80159b4b537f92849d1742f8c315f7403defdbb"
+      ],
+      "comment": "Core8 no longer forces the battery divider coefficient on every configuration write. The nominal 7.34 value is now applied only in the board defaults path, so a saved or imported Core8 divider value is preserved. This is an intermediate step; the following commit replaces it with the opt-in checkbox, so document the final behavior rather than this intermediate state.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-27T19:32:25.690694+00:00",
+      "integration_batch_commit": "120668e3972fe2262cea8f73d9c3ee8efadd9a68"
+    },
     {
       "commit": "b80159b4b537f92849d1742f8c315f7403defdbb",
       "subject": "Merge pull request #93 from capoworks/ci/trim-matrix-on-relevant-changes",
@@ -767,45 +807,6 @@
       ],
       "comment": "Build-tooling portability change: the macOS unit-test job installs Homebrew Bash and prints make/bash versions, and gen_config_board.sh uses an env-based Bash shebang. No firmware feature, build option, or tune behavior changes for users.",
       "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-21T13:20:00.522905+00:00",
-      "integration_batch_commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4"
-    },
-    {
-      "commit": "5710b0c4c5115783330ffdf7d3fe8d55f57e8e00",
-      "subject": "Keep engine preset generation compatible with Bash 3.2",
-      "authored_at": "2026-10-21T00:16:38+02:00",
-      "parents": [
-        "6a58d55561e10a7936f16b7482dba206aa2a2944"
-      ],
-      "comment": "Replaces mapfile with a read loop in the engine preset renderer so it runs under Bash 3.2. The generated preset profile output is unchanged; this is a build-script portability fix with no user-facing firmware or configuration change.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-21T13:20:00.522905+00:00",
-      "integration_batch_commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4"
-    },
-    {
-      "commit": "6a58d55561e10a7936f16b7482dba206aa2a2944",
-      "subject": "Use Homebrew GNU Make for macOS unit tests",
-      "authored_at": "2026-10-21T00:08:35+02:00",
-      "parents": [
-        "c1c6fa222a32a8d3b45f55b2096db850aab891d2"
-      ],
-      "comment": "CI-only change: the macOS unit-test job installs Homebrew GNU Make and prepends its bin directory to PATH. No firmware behavior, build option, flashing step, or tune layout changes for users.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-21T13:20:00.522905+00:00",
-      "integration_batch_commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4"
-    },
-    {
-      "commit": "c1c6fa222a32a8d3b45f55b2096db850aab891d2",
-      "subject": "Add board resource evidence and opt-in feature preflight",
-      "authored_at": "2026-10-20T23:52:45+02:00",
-      "parents": [
-        "3060ccd5873a89e6499c9ade5756338ab7c529fd"
-      ],
-      "comment": "Adds Capoworks ECU build-resource tooling and a new build-resource guide. Custom firmware builds now accept VE RPM count (16/32), airmass blend size (8/16), cylinder trim count (1-12), and engine presets, and are resolved through the canonical catalog instead of the workflow's own board table. A resource gate now runs after the build and before packaging, so a rejected resource report prevents firmware publication. Normal firmware CI and Core8 CI also collect resource evidence. Builders should read the new resource guide and expect a failed resource gate to block artifacts; results prove build-time technical fit only, not runtime or hardware behavior.",
-      "decision": "update",
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-21T13:20:00.522905+00:00",
       "integration_batch_commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4"
