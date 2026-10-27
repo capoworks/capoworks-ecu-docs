@@ -4,7 +4,7 @@
   "source_branch": "master",
   "target_repository": "capoworks/capoworks-ecu-docs",
   "target_branch": "master",
-  "cursor_commit": "630d332a4776b5143686c2785dfc5337f0b1a95a",
+  "cursor_commit": "29c5db284be586200df3d5d74e00f909c19cbef4",
   "initial_backfill": {
     "through_commit": "be02e3cdaa2c177d05853a41af6dacc9c0766b77",
     "commit_count": 5,
@@ -12,56 +12,53 @@
   },
   "last_sync": {
     "range": {
-      "base_exclusive": "92c9c2ae0039225933c55d41eeda2e73987e0775",
-      "head_inclusive": "630d332a4776b5143686c2785dfc5337f0b1a95a",
+      "base_exclusive": "630d332a4776b5143686c2785dfc5337f0b1a95a",
+      "head_inclusive": "29c5db284be586200df3d5d74e00f909c19cbef4",
       "commit_count": 3
     },
     "model": "deepseek-flash",
     "usage": {
-      "prompt_tokens": 470320,
-      "completion_tokens": 2007,
-      "total_tokens": 472327,
+      "prompt_tokens": 479628,
+      "completion_tokens": 2835,
+      "total_tokens": 482463,
       "prompt_cache_hit_tokens": 3200,
-      "prompt_cache_miss_tokens": 467120
+      "prompt_cache_miss_tokens": 476428
     },
-    "summary": "Capoworks ECU now stores the maximum knock retard load bins as 16-bit values from 0 to 1000 with no fixed percent unit, so pressure-based loads above 250 kPa can be distinguished and loads above the last bin clamp to the final table row. The tune layout changes and the flash data version advances to 20033, so older binary tunes reset and the knock table and axes must be transferred with the matching TunerStudio INI. The two merge commits add no further user-facing change beyond the audited child commit.",
+    "summary": "Capoworks ECU clarified the lambda-protection minimum and restore load thresholds so their guidance follows the selected lambda load source instead of always showing percent. The two merge commits integrate that change and add no further user-facing behavior.",
     "outcome": "update",
     "decisions": [
       {
-        "commit": "45627ba30adf3f7ac015c51b92924a3fbf26714f",
+        "commit": "df5a944c9cb7b240d56ea31cc5ed4437f04b00ab",
         "decision": "update",
-        "rationale": "Capoworks ECU changed the maximum knock retard load bins from 8-bit percent values capped at 250 to 16-bit values from 0 to 1000 with no fixed unit. Pressure-based loads above 250 kPa are now distinguishable, and loads above the final bin clamp to the final table row. This changes the tune layout and advances the flash data version to 20033, so older binary tunes reset; record the knock table and its load/RPM axes before flashing and recreate them with the matching generated TunerStudio INI. The change is covered by unit tests only and has not been validated on an engine.",
+        "rationale": "The lambda-protection minimum and restore load fields no longer display a fixed percent unit. Their help text now states that thresholds use the selected lambda load source units: MAP or effective MAP in kPa, throttle, pedal or cylinder filling in percent, and fuel-model units for Model default. No tune layout or value range changed, so no retune or migration is required; existing numeric thresholds keep their stored values but must be read in the units of the currently selected Threshold load source.",
         "evidence": [
-          "firmware/integration/fome_config.txt: maxKnockRetardLoadBins changed from uint8_t[6] with \"%\" unit, max 250, to uint16_t[6] with empty unit, max 1000",
-          "firmware/integration/fome_config.txt: FLASH_DATA_VERSION advanced from 20032 to 20033",
-          "firmware/CHANGELOG.md: breaking-change and fixed entries for 16-bit knock retard load bins and clamping above the final bin",
-          "unit_tests/tests/test_knock.cpp: MaximumRetardSupportsHighPressureLoadBins checks 350 kPa and 750 kPa loads"
+          "firmware/integration/fome_config.txt: lambdaProtectionMinLoad units changed from \"%\" to \"\" with new help text about selected lambda load source units",
+          "firmware/integration/fome_config.txt: lambdaProtectionRestoreLoad units changed from \"%\" to \"\" with the same help text",
+          "firmware/CHANGELOG.md: added Fixed entry about misleading lambda-protection min/restore load units"
         ]
       },
       {
-        "commit": "f7896854283ebdd3e2c05dabc45935cdd2e89c34",
+        "commit": "0e9f1e612873e4293143516424b6c6a772129314",
         "decision": "no-impact",
-        "rationale": "Integration merge of master into the knock-axis branch. Its child commits are audited separately, and the combined diff only reconciles changelog lines already covered by those commits. No additional user-facing firmware, setup, flashing, or tune-migration change is introduced here.",
+        "rationale": "This is an integration merge of master into the lambda-load-units branch. Its child commits are audited separately, and the only conflict resolution was in the changelog, which combines already-documented entries. No additional firmware, setup, flashing or tune-migration behavior is introduced here.",
         "evidence": [
-          "Merge commit f7896854 with parents 45627ba3 and 92c9c2ae",
-          "Combined diff limited to firmware/CHANGELOG.md conflict resolution plus files from the merged master side",
-          "No new configuration fields or behavior beyond the audited child commits"
+          "Merge commit 0e9f1e61 with parents df5a944c and 630d332a",
+          "Combined diff limited to firmware/CHANGELOG.md conflict resolution adding existing Fixed entries"
         ]
       },
       {
-        "commit": "630d332a4776b5143686c2785dfc5337f0b1a95a",
+        "commit": "29c5db284be586200df3d5d74e00f909c19cbef4",
         "decision": "no-impact",
-        "rationale": "Pull-request merge that brings the already audited knock load-bin change into master. The merge itself adds no conflict-resolution or behavioral change beyond the child commit, so the documentation impact is fully described by that commit.",
+        "rationale": "This merge pull request brings the reviewed lambda-protection load-unit change into master. The change itself is documented under its own commit, and the merge adds no further user-facing behavior, settings or migration steps.",
         "evidence": [
-          "Merge commit 630d332a with parents 92c9c2ae and f7896854",
-          "Merge message references fix: support high-pressure knock retard load bins",
-          "Changed paths are the same three files already covered by commit 45627ba3"
+          "Merge commit 29c5db28 with parents 630d332a and 0e9f1e61",
+          "Changed paths limited to firmware/CHANGELOG.md and firmware/integration/fome_config.txt already covered by df5a944c"
         ]
       }
     ],
     "files_changed": [
-      "docs/07-Advanced-Features/Knock-Control.md"
+      "docs/05-Limits-And-Protections/Lambda-Protection.md"
     ],
-    "recorded_at": "2026-10-27T02:26:53.283713+00:00"
+    "recorded_at": "2026-10-27T02:29:51.961766+00:00"
   }
 }

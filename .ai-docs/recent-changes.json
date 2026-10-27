@@ -2,9 +2,50 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "630d332a4776b5143686c2785dfc5337f0b1a95a",
-  "latest_analyzed_at": "2026-10-27T02:26:53.285752+00:00",
+  "latest_analyzed_commit": "29c5db284be586200df3d5d74e00f909c19cbef4",
+  "latest_analyzed_at": "2026-10-27T02:29:51.963801+00:00",
   "entries": [
+    {
+      "commit": "29c5db284be586200df3d5d74e00f909c19cbef4",
+      "subject": "Merge pull request #91 from capoworks/fix/review-lambda-load-units",
+      "authored_at": "2026-10-26T01:03:57+01:00",
+      "parents": [
+        "630d332a4776b5143686c2785dfc5337f0b1a95a",
+        "0e9f1e612873e4293143516424b6c6a772129314"
+      ],
+      "comment": "This merge pull request brings the reviewed lambda-protection load-unit change into master. The change itself is documented under its own commit, and the merge adds no further user-facing behavior, settings or migration steps.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-27T02:29:51.963801+00:00",
+      "integration_batch_commit": "29c5db284be586200df3d5d74e00f909c19cbef4"
+    },
+    {
+      "commit": "0e9f1e612873e4293143516424b6c6a772129314",
+      "subject": "Merge branch 'master' into fix/review-lambda-load-units",
+      "authored_at": "2026-10-26T00:58:30+01:00",
+      "parents": [
+        "df5a944c9cb7b240d56ea31cc5ed4437f04b00ab",
+        "630d332a4776b5143686c2785dfc5337f0b1a95a"
+      ],
+      "comment": "This is an integration merge of master into the lambda-load-units branch. Its child commits are audited separately, and the only conflict resolution was in the changelog, which combines already-documented entries. No additional firmware, setup, flashing or tune-migration behavior is introduced here.",
+      "decision": "no-impact",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-27T02:29:51.963801+00:00",
+      "integration_batch_commit": "29c5db284be586200df3d5d74e00f909c19cbef4"
+    },
+    {
+      "commit": "df5a944c9cb7b240d56ea31cc5ed4437f04b00ab",
+      "subject": "fix: clarify lambda protection load units",
+      "authored_at": "2026-10-25T21:30:43+01:00",
+      "parents": [
+        "2123680491cf2d5b3c212ada620acdf64c4808ec"
+      ],
+      "comment": "The lambda-protection minimum and restore load fields no longer display a fixed percent unit. Their help text now states that thresholds use the selected lambda load source units: MAP or effective MAP in kPa, throttle, pedal or cylinder filling in percent, and fuel-model units for Model default. No tune layout or value range changed, so no retune or migration is required; existing numeric thresholds keep their stored values but must be read in the units of the currently selected Threshold load source.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-27T02:29:51.963801+00:00",
+      "integration_batch_commit": "29c5db284be586200df3d5d74e00f909c19cbef4"
+    },
     {
       "commit": "630d332a4776b5143686c2785dfc5337f0b1a95a",
       "subject": "Merge pull request #90 from capoworks/fix/review-knock-axis-range",
@@ -768,46 +809,6 @@
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-20T17:21:16.832280+00:00",
       "integration_batch_commit": "1734a4b70c11ff811885c4ee75e58cabef8b2af5"
-    },
-    {
-      "commit": "728292632f3c1ae1fb4a1747d7809cfd23204658",
-      "subject": "Merge pull request #69 from capoworks/ops/github-hosted-runners",
-      "authored_at": "2026-10-20T12:44:28+02:00",
-      "parents": [
-        "ee8be3687e27842eef36445f5c91a8d8ef83ff50",
-        "0c023c7d17aae037cf78fc2fcae90ab825cb6230"
-      ],
-      "comment": "This merge integrates the two CI commits already covered above. The combined diff contains only the same workflow runner and binutils changes, with no conflict-resolution edits and no additional user-facing effect.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:18:35.352752+00:00",
-      "integration_batch_commit": "728292632f3c1ae1fb4a1747d7809cfd23204658"
-    },
-    {
-      "commit": "0c023c7d17aae037cf78fc2fcae90ab825cb6230",
-      "subject": "ci: use bundled ARM binutils on hosted firmware builds",
-      "authored_at": "2026-10-20T10:59:25+02:00",
-      "parents": [
-        "4c088b92c1536af286170689d67e9b3f593a8ff8"
-      ],
-      "comment": "The hosted firmware build now links the bundled ARM objcopy and objdump into a temporary tools directory and adds it to the job PATH. This is CI-internal tooling setup; the documented local Core8 helper already uses the bundled ARM binutils, and no firmware, artifact, or user workflow changes.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:18:35.352752+00:00",
-      "integration_batch_commit": "728292632f3c1ae1fb4a1747d7809cfd23204658"
-    },
-    {
-      "commit": "4c088b92c1536af286170689d67e9b3f593a8ff8",
-      "subject": "ci: move software workflows to GitHub-hosted runners",
-      "authored_at": "2026-10-20T10:58:02+02:00",
-      "parents": [
-        "ee8be3687e27842eef36445f5c91a8d8ef83ff50"
-      ],
-      "comment": "The software workflows were moved from a self-hosted runner label to GitHub-hosted Ubuntu 24.04 runners, with Java 21 and build packages installed inside the job. This affects only how Capoworks CI jobs are executed; firmware behavior, artifacts for users, and local build instructions are unchanged.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-20T17:18:35.352752+00:00",
-      "integration_batch_commit": "728292632f3c1ae1fb4a1747d7809cfd23204658"
     }
   ]
 }
