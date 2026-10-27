@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "batch_head": "8ff37add6146ac2f485bfce5ef2877ae7efde580",
+  "previous_cursor_commit": "6f6ca600ff91d0ef9e37b1d6991a29bb44ba50be",
+  "cursor_commit": "8ff37add6146ac2f485bfce5ef2877ae7efde580",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "2123680491cf2d5b3c212ada620acdf64c4808ec",
+      "head_inclusive": "6f6ca600ff91d0ef9e37b1d6991a29bb44ba50be",
+      "commit_count": 2
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 325541,
+      "completion_tokens": 8106,
+      "total_tokens": 333647,
+      "prompt_cache_hit_tokens": 3200,
+      "prompt_cache_miss_tokens": 322341
+    },
+    "summary": "Capoworks ECU now labels the Model default table axis as Effective MAP for the SD + Alpha-N fuel strategy, matching the runtime native load coordinate. The Load Sources page is updated to remove the previously documented label discrepancy; no tune migration or calibration change is required.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "54019cb7711125a71d7b1b1d31cc4fd6becca209",
+        "decision": "update",
+        "rationale": "In Capoworks ECU, the Model default table axis label for the SD + Alpha-N fuel strategy now shows Effective MAP instead of Cylinder filling, matching the runtime native load coordinate. Tables that use Model default (for example target lambda, main ignition, injection phase, trims and knock) now display the correct Y-axis unit. No tune migration, reflash of calibration values, or breakpoint retune is required; the change is display-only and does not alter calibration offsets or the runtime load coordinate. Use the generated TunerStudio INI that matches the installed firmware so the corrected label appears.",
+        "evidence": [
+          "firmware/tunerstudio/tunerstudio.template.ini: modelDefaultLoadAxis now selects index 5 (Effective MAP kPa) when fuelAlgorithm is LM_SPEED_DENSITY or LM_SD_ALPHA_N, index 2 (TPS %) for LM_ALPHA_N, otherwise index 4",
+          "firmware/CHANGELOG.md: added Fixed entry 'Correct the Model default table axis label for SD + Alpha-N so it shows Effective MAP instead of Cylinder filling.'",
+          "java_tools/configuration_definition/src/test/java/com/rusefi/test/newParse/TsDerivedLoadAxisTest.java: DEFINITION updated to expect the LM_SD_ALPHA_N branch in modelDefaultLoadAxis"
+        ]
+      },
+      {
+        "commit": "6f6ca600ff91d0ef9e37b1d6991a29bb44ba50be",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the SD + Alpha-N axis-label fix. Its child commit is audited separately and the merge introduces no additional user-facing firmware, setup, flashing or tune-migration change.",
+        "evidence": [
+          "Merge commit 6f6ca600 has parents 212368049 and 54019cb77 and changed paths identical to the child commit (firmware/CHANGELOG.md, firmware/tunerstudio/tunerstudio.template.ini, TsDerivedLoadAxisTest.java)",
+          "No conflict-resolution content beyond the child commit's changes is present in the merge diff"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/08-Fuel/Fuel-Settings/Load-Sources.md"
+    ],
+    "recorded_at": "2026-10-26T23:38:10.837501+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "6f6ca600ff91d0ef9e37b1d6991a29bb44ba50be",
+      "head_inclusive": "8ff37add6146ac2f485bfce5ef2877ae7efde580",
+      "commit_count": 4
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 184485,
+      "completion_tokens": 6633,
+      "total_tokens": 191118,
+      "prompt_cache_hit_tokens": 184320,
+      "prompt_cache_miss_tokens": 165
+    },
+    "summary": "Capoworks ECU now keeps fresh generic defaults valid when the firmware is built with a small cylinder fuel trim capacity. If the default firing order needs more cylinders than the compiled trim count, the generic MINIMAL_PINS defaults disable injection instead of leaving a configuration that fails validation. Explicitly selecting a larger engine preset is unchanged and still fails validation when the trim capacity is too small. The cylinder fuel trim documentation and the on-demand build guide are updated to describe this behavior and the build-time capacity requirement.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "05ee981e8b6befc89e2855f880129540c72ba925",
+        "decision": "update",
+        "rationale": "Fresh generic defaults are now made safe when the firmware is compiled with a cylinder fuel trim capacity smaller than the default firing order. On the MINIMAL_PINS preset, if injection is enabled and the firing order needs more cylinders than CYLINDER_FUEL_TRIM_COUNT, resetConfigurationExt now turns injection off, so the default configuration passes validation instead of faulting. This only affects builds with the cylinder fuel trim module and a low trim count; explicitly choosing a larger engine preset still enables injection and still fails validation when the capacity is too small. No tune migration is needed, but builders choosing a small cylinder_trim_count should expect injection to start disabled on generic defaults and must enable it only after selecting a preset that fits the capacity.",
+        "evidence": [
+          "firmware/controllers/algo/engine_configuration.cpp: resetConfigurationExt adds a MODULE_CYLINDER_FUEL_TRIM guard that clears isInjectionEnabled for MINIMAL_PINS when getFiringOrderLength() > CYLINDER_FUEL_TRIM_COUNT",
+          "unit_tests/tests/system/test_engine_preset_policy.cpp: new lowCapacityMinimalPinsUsesSafeGenericDefaults and lowCapacityExplicitFourCylinderPresetStillFailsValidation tests for CYLINDER_FUEL_TRIM_COUNT == 2",
+          "firmware/CHANGELOG.md: Fixed entry 'Fresh generic defaults now disable injection when the compiled cylinder fuel trim capacity is insufficient for the default firing order.'"
+        ]
+      },
+      {
+        "commit": "f3c888b15365a21ed4b52e42d449bd2a2baf6476",
+        "decision": "no-impact",
+        "rationale": "Formatting-only change that reflows the condition added by the previous commit. No behavior, setting, or documentation changes.",
+        "evidence": [
+          "firmware/controllers/algo/engine_configuration.cpp: the MINIMAL_PINS injection guard condition is joined onto fewer lines with identical logic"
+        ]
+      },
+      {
+        "commit": "974c83f176bf6da08e99a4a72c79a0d81dce818a",
+        "decision": "no-impact",
+        "rationale": "Integration merge of master into the trim-defaults branch. Its only conflict resolution is a changelog line that belongs to the merged master commit, not to this branch's work, so it adds no separate user-facing change beyond the audited child commits.",
+        "evidence": [
+          "firmware/CHANGELOG.md combined diff: keeps the trim-defaults Fixed entry and adds the master entry about the SD + Alpha-N Model default axis label",
+          "firmware/tunerstudio/tunerstudio.template.ini and java_tools/configuration_definition/src/test/java/com/rusefi/test/newParse/TsDerivedLoadAxisTest.java come from the merged master side"
+        ]
+      },
+      {
+        "commit": "8ff37add6146ac2f485bfce5ef2877ae7efde580",
+        "decision": "no-impact",
+        "rationale": "Pull-request merge that brings the already-audited trim-defaults commits into master. No additional conflict-resolution or user-facing changes are introduced by the merge itself.",
+        "evidence": [
+          "Merge commit 8ff37add has parents 6f6ca600 and 974c83f1 and no diff of its own beyond the merged branch",
+          "Changed paths match the child commits: engine_configuration.cpp, CHANGELOG.md, unit tests, and the unit-test workflow"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/08-Fuel/Fuel-Settings/Cylinder-Fuel-Trim.md",
+      "docs/10-Software/On-Demand-Firmware-Build.md"
+    ],
+    "recorded_at": "2026-10-27T02:20:23.198419+00:00"
+  }
+}

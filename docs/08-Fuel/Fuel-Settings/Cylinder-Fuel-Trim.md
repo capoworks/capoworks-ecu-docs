@@ -110,6 +110,27 @@ The related output channels are:
 | `cylinderModelFuelTrim` | Effective per-cylinder change in percent after blend weighting |
 | `cylinderModelFuelTrimBranches` | Active branch bits: `1` for SD and/or `2` for Alpha-N |
 
+## Trim capacity and fresh defaults
+
+The number of trim tables is fixed at build time by the cylinder fuel trim
+capacity. Whenever injection is enabled, the capacity must cover the engine's
+configured cylinder count, which is derived from the firing order. A build with
+a capacity smaller than the engine needs cannot run injection and fails
+configuration validation.
+
+To keep a fresh, unconfigured ECU usable, Capoworks ECU now disables injection
+when the generic `MINIMAL_PINS` defaults are applied and the default firing
+order needs more cylinders than the compiled trim capacity. This only affects
+builds that include the cylinder fuel trim module with a low capacity. The
+engine type stays `MINIMAL_PINS`, the default firing order is unchanged, and
+the configuration passes validation with injection off.
+
+This safety net does not apply to an explicitly selected engine preset. If you
+choose a preset whose firing order needs more cylinders than the capacity, the
+preset still enables injection and validation still fails. In that case, use a
+build with a capacity at least as large as the engine's cylinder count, or
+select a preset that fits.
+
 ## Determining where trims are needed
 
 Compare how evenly the cylinders are contributing under the same operating
@@ -177,6 +198,8 @@ The final trim layout was introduced by
 [`223895c1`](https://github.com/capoworks/capoworks-ecu/commit/223895c17f82f9fd07bac9e81414661440ac7475),
 with blend and effective-authority behavior in
 [`eee63c82`](https://github.com/capoworks/capoworks-ecu/commit/eee63c82b531db9bc6fa640c58ad76cf740a2ff0).
+The fresh-defaults injection guard was added in
+[`05ee981e`](https://github.com/capoworks/capoworks-ecu/commit/05ee981e8b6befc89e2855f880129540c72ba925).
 
 - [Authoritative cylinder-model trim notes](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/docs/user/cylinder-model-fuel-trims.md?plain=1)
 - [Trim calculation and publication](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/controllers/algo/cylinder_model_fuel_trim.cpp)
@@ -189,3 +212,5 @@ with blend and effective-authority behavior in
 - [TunerStudio trim tables, menus, and cursors](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/tunerstudio/tunerstudio.template.ini)
 - [Core8 stack, RAM placement, and Lua heap settings](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/firmware/config/boards/core8/board.mk)
 - [Trim unit and integration tests](https://github.com/capoworks/capoworks-ecu/blob/8f4fcfb40135fe7e5f15b280f7e05d9863b60f52/unit_tests/tests/ignition_injection/test_cylinder_fuel_trim_integration.cpp)
+- [Fresh-defaults injection guard](https://github.com/capoworks/capoworks-ecu/blob/05ee981e8b6befc89e2855f880129540c72ba925/firmware/controllers/algo/engine_configuration.cpp)
+- [Low-capacity preset policy tests](https://github.com/capoworks/capoworks-ecu/blob/05ee981e8b6befc89e2855f880129540c72ba925/unit_tests/tests/system/test_engine_preset_policy.cpp)
