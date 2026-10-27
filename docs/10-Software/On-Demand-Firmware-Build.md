@@ -102,7 +102,13 @@ injection is enabled, the count must cover the configured engine cylinder count,
 TunerStudio rows but does not change the global 12-cylinder maximum. Enabling, disabling, or changing
 the count changes the persistent configuration layout, and no automatic tune migration is provided.
 Use the matching generated INI to preserve or transfer values. See
-[Build-time module profiles](/build-modules/#module-owned-inputs) for the current module details.
+[Build-time module profiles](../../build-modules/#module-owned-inputs) for the current module details.
+
+If the count is smaller than the default firing order needs, a fresh ECU on the generic
+`MINIMAL_PINS` defaults now starts with injection disabled so the default configuration still passes
+validation. Explicitly selecting a larger engine preset is not covered by that safety net and still
+fails validation until the build capacity is large enough. See
+[Cylinder Model Fuel Trim](/Fuel/Fuel-Settings/Cylinder-Fuel-Trim/) for the runtime behavior.
 
 ### Hella OPS-T
 
@@ -118,7 +124,7 @@ The optional `emp_pump` module adds the EMP CAN coolant-pump protocol, configura
 status handling. It requires the base `fan` module because cooling demand is derived from the fan
 controller states. Runtime `enableEmpPump` defaults to disabled, so selecting the module does not start
 the pump. The CAN bus, pump configuration, and runtime enable must be set deliberately. See
-[Build-time module profiles](/build-modules/#module-owned-inputs) for module ownership and generated
+[Build-time module profiles](../../build-modules/#module-owned-inputs) for module ownership and generated
 inputs.
 
 ### Shock preload
@@ -126,7 +132,7 @@ inputs.
 The optional `shock_preload` module adds the shock-preload controller on CAN2. It is accepted only on
 `core8`, `atlas`, `proteus_f4`, `proteus_f7`, and `proteus_h7`, and CAN read and write must both be
 enabled. Runtime `enableShockPreload` defaults to disabled, so a build selection does not activate the
-module. See [Build-time module profiles](/build-modules/#module-owned-inputs) for the CAN2 integration
+module. See [Build-time module profiles](../../build-modules/#module-owned-inputs) for the CAN2 integration
 boundary.
 
 ## Build behavior
