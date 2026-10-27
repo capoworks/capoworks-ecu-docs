@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "batch_head": "8a9878bd55d31d648b42a4504a7eac35928238da",
+  "previous_cursor_commit": "29c5db284be586200df3d5d74e00f909c19cbef4",
+  "cursor_commit": "8a9878bd55d31d648b42a4504a7eac35928238da",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "630d332a4776b5143686c2785dfc5337f0b1a95a",
+      "head_inclusive": "29c5db284be586200df3d5d74e00f909c19cbef4",
+      "commit_count": 3
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 479628,
+      "completion_tokens": 2835,
+      "total_tokens": 482463,
+      "prompt_cache_hit_tokens": 3200,
+      "prompt_cache_miss_tokens": 476428
+    },
+    "summary": "Capoworks ECU clarified the lambda-protection minimum and restore load thresholds so their guidance follows the selected lambda load source instead of always showing percent. The two merge commits integrate that change and add no further user-facing behavior.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "df5a944c9cb7b240d56ea31cc5ed4437f04b00ab",
+        "decision": "update",
+        "rationale": "The lambda-protection minimum and restore load fields no longer display a fixed percent unit. Their help text now states that thresholds use the selected lambda load source units: MAP or effective MAP in kPa, throttle, pedal or cylinder filling in percent, and fuel-model units for Model default. No tune layout or value range changed, so no retune or migration is required; existing numeric thresholds keep their stored values but must be read in the units of the currently selected Threshold load source.",
+        "evidence": [
+          "firmware/integration/fome_config.txt: lambdaProtectionMinLoad units changed from \"%\" to \"\" with new help text about selected lambda load source units",
+          "firmware/integration/fome_config.txt: lambdaProtectionRestoreLoad units changed from \"%\" to \"\" with the same help text",
+          "firmware/CHANGELOG.md: added Fixed entry about misleading lambda-protection min/restore load units"
+        ]
+      },
+      {
+        "commit": "0e9f1e612873e4293143516424b6c6a772129314",
+        "decision": "no-impact",
+        "rationale": "This is an integration merge of master into the lambda-load-units branch. Its child commits are audited separately, and the only conflict resolution was in the changelog, which combines already-documented entries. No additional firmware, setup, flashing or tune-migration behavior is introduced here.",
+        "evidence": [
+          "Merge commit 0e9f1e61 with parents df5a944c and 630d332a",
+          "Combined diff limited to firmware/CHANGELOG.md conflict resolution adding existing Fixed entries"
+        ]
+      },
+      {
+        "commit": "29c5db284be586200df3d5d74e00f909c19cbef4",
+        "decision": "no-impact",
+        "rationale": "This merge pull request brings the reviewed lambda-protection load-unit change into master. The change itself is documented under its own commit, and the merge adds no further user-facing behavior, settings or migration steps.",
+        "evidence": [
+          "Merge commit 29c5db28 with parents 630d332a and 0e9f1e61",
+          "Changed paths limited to firmware/CHANGELOG.md and firmware/integration/fome_config.txt already covered by df5a944c"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/05-Limits-And-Protections/Lambda-Protection.md"
+    ],
+    "recorded_at": "2026-10-27T02:29:51.961766+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "29c5db284be586200df3d5d74e00f909c19cbef4",
+      "head_inclusive": "8a9878bd55d31d648b42a4504a7eac35928238da",
+      "commit_count": 3
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 109660,
+      "completion_tokens": 3829,
+      "total_tokens": 113489,
+      "prompt_cache_hit_tokens": 3200,
+      "prompt_cache_miss_tokens": 106460
+    },
+    "summary": "Capoworks ECU now keeps STEP/DIR idle stepper drivers enabled between steps, waits a fixed 2 ms after enabling before the first STEP edge, and releases the driver after five seconds without movement or when main-relay power or battery voltage is unavailable. The idle hardware page documents the new timing and power-loss behavior.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "0a37638d7e9a02937f94998242304d47b41ba323",
+        "decision": "update",
+        "rationale": "Capoworks ECU changes STEP/DIR idle stepper behavior. The driver enable output now stays asserted between steps instead of being released after every pulse, a fixed 2 ms settle delay follows each enable before the first STEP edge, and the driver is released after five seconds without movement. The driver is also released, and no step is taken, when main-relay power is off or battery voltage is below the minimum stepper voltage, including during the 2 ms enable delay. No tune fields or calibration layout change, so no tune migration is needed. Verify the enable polarity and wiring for the installed board, and confirm the minimum stepper voltage setting matches the hardware before relying on the power-loss release.",
+        "evidence": [
+          "firmware/hw_layer/stepper.cpp: new isStepperPowered() checks engine->isMainRelayEnabled() and BatteryVoltage >= minStepperVoltage",
+          "firmware/hw_layer/stepper.cpp: StepDirectionStepper::pulse() enables only when m_enablePin.getLogicValue(), waits MS2US(2), rechecks power, and no longer disables after each pulse",
+          "firmware/hw_layer/stepper.cpp: StepDirectionStepper::sleep() disables after idleTimeoutSeconds = 5.0f using m_lastStep",
+          "firmware/hw_layer/stepper.cpp: doIteration() calls m_hw->disable() when power is unavailable",
+          "firmware/CHANGELOG.md: Fixed entry describing retained enable, 2 ms delay, five-second release, and power-loss release",
+          "unit_tests/tests/actuators/test_stepper.cpp: tests for enable delay, timeout, inverted enable mode, and power loss during enable delay"
+        ]
+      },
+      {
+        "commit": "5c735a8201fc40c28bf1f39241aaa6ef0e343a21",
+        "decision": "no-impact",
+        "rationale": "Whitespace-only change to the continuation line of the stepper power check. No behavior, configuration, or user-facing documentation changes.",
+        "evidence": [
+          "firmware/hw_layer/stepper.cpp: indentation of the Sensor::getOrZero(SensorType::BatteryVoltage) line inside isStepperPowered() changed only"
+        ]
+      },
+      {
+        "commit": "8a9878bd55d31d648b42a4504a7eac35928238da",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the idle stepper enable-timeout branch. Its child commits are audited separately and the merge adds no conflict-resolution changes, so there is no additional user-facing effect.",
+        "evidence": [
+          "Merge commit 8a9878bd55d31d648b42a4504a7eac35928238da has parents 29c5db284 and 5c735a820 with no combined diff content",
+          "Changed paths match the child commits: firmware/CHANGELOG.md, firmware/hw_layer/stepper.cpp, firmware/hw_layer/stepper.h, unit_tests/tests/actuators/test_stepper.cpp"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/06-Basic-Features/Idle-Control/Idle-Hardware.md"
+    ],
+    "recorded_at": "2026-10-27T08:07:34.266884+00:00"
+  }
+}
