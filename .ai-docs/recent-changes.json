@@ -2,9 +2,22 @@
   "schema_version": 1,
   "source_repository": "capoworks/capoworks-ecu",
   "source_branch": "master",
-  "latest_analyzed_commit": "120668e3972fe2262cea8f73d9c3ee8efadd9a68",
-  "latest_analyzed_at": "2026-10-27T19:32:25.690694+00:00",
+  "latest_analyzed_commit": "c2cac408bc885760eb2a5ceb46a0ea2902f02166",
+  "latest_analyzed_at": "2026-10-31T14:55:36.057429+00:00",
   "entries": [
+    {
+      "commit": "c2cac408bc885760eb2a5ceb46a0ea2902f02166",
+      "subject": "Allow custom firmware builds from selected source branches",
+      "authored_at": "2026-10-31T11:29:27+01:00",
+      "parents": [
+        "120668e3972fe2262cea8f73d9c3ee8efadd9a68"
+      ],
+      "comment": "The manual Custom firmware build workflow gains two optional inputs: source_ref (a raw branch name, default master) and source_sha (an optional full 40-character lowercase commit SHA). The workflow first checks out the trusted builder tooling from the workflow revision, validates the selectors, then checks out the selected firmware source, so builder scripts and policies no longer come from the branch being built. A requested SHA must match the checked-out HEAD or the run fails. The package manifest now records the requested branch as refs/heads/<branch> instead of a detached-HEAD null. Builders who need a specific branch or commit can now use the workflow; anyone relying on the previous fixed-master behavior should note that the default is still master. The build still does not flash an ECU and is not hardware validation.",
+      "decision": "update",
+      "model": "deepseek-flash",
+      "analyzed_at": "2026-10-31T14:55:36.057429+00:00",
+      "integration_batch_commit": "c2cac408bc885760eb2a5ceb46a0ea2902f02166"
+    },
     {
       "commit": "120668e3972fe2262cea8f73d9c3ee8efadd9a68",
       "subject": "Merge pull request #94 from capoworks/fix/core8-battery-divider-calibration",
@@ -793,19 +806,6 @@
         "e04544ed46cb547f5a423c0e2b1fae27945a5e09"
       ],
       "comment": "Integration merge of the build-resource-matrix branch. Its child commits are audited separately and the merge adds no conflict-resolution changes with distinct user-facing effect.",
-      "decision": "no-impact",
-      "model": "deepseek-flash",
-      "analyzed_at": "2026-10-21T13:20:00.522905+00:00",
-      "integration_batch_commit": "413ce9aace47c3436a9be9ac4cc4a4ea5a8134e4"
-    },
-    {
-      "commit": "e04544ed46cb547f5a423c0e2b1fae27945a5e09",
-      "subject": "Select modern Bash for macOS configuration generation",
-      "authored_at": "2026-10-21T00:24:41+02:00",
-      "parents": [
-        "5710b0c4c5115783330ffdf7d3fe8d55f57e8e00"
-      ],
-      "comment": "Build-tooling portability change: the macOS unit-test job installs Homebrew Bash and prints make/bash versions, and gen_config_board.sh uses an env-based Bash shebang. No firmware feature, build option, or tune behavior changes for users.",
       "decision": "no-impact",
       "model": "deepseek-flash",
       "analyzed_at": "2026-10-21T13:20:00.522905+00:00",

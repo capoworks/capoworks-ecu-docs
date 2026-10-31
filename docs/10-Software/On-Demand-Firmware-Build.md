@@ -18,11 +18,13 @@ an image with an INI from another board or build.
 
 ## Manual workflow request inputs
 
-The **Custom firmware build** workflow takes seven inputs:
+The **Custom firmware build** workflow takes nine inputs:
 
 | Input | Required | Allowed values | Description |
 | --- | --- | --- | --- |
 | `request_id` | Yes | Letters, digits, `_`, and `-` | Opaque identifier used in the run name. |
+| `source_ref` | No | Raw branch name; default `master` | Firmware source branch to build. Must be a plain branch name, not a `refs/...` path. |
+| `source_sha` | No | Empty, or a full 40-character lowercase commit SHA | Exact firmware source commit to build. When set, it takes precedence over `source_ref`. |
 | `board` | Yes | One ID from the list below | Board target for the build. |
 | `features` | No | Comma-separated opt-in module tokens | Optional modules to add to the base profile. Leave empty for the base profile only. |
 | `ve_rpm_count` | No | `16` or `32`; default `16` | RPM points in both the Speed Density and Alpha-N VE tables. The VE load dimension remains 16 points. |
@@ -137,14 +139,24 @@ boundary.
 
 ## Build behavior
 
-The manual workflow checks out the current `master` source, installs the build dependencies, and runs
-the repository's own compile script for the selected board. It then verifies that the firmware image
-was produced, checks the generated module profile, extracts resource evidence, and gates the package
-against the active board policy.
+The manual workflow first checks out the trusted builder tooling from the workflow revision, then
+checks out the selected firmware source. The builder scripts, catalog, and resource policies therefore
+come from the trusted tooling revision, not from the branch being built. The workflow installs the
+build dependencies and runs the repository's own compile script for the selected board. It then
+verifies that the firmware image was produced, checks the generated module profile, extracts resource
+evidence, and gates the package against the active board policy.
 
-Because the manual workflow's source is always `master`, it does not build an arbitrary branch or tag.
-Use the local build instructions in [Build-time module profiles](../../build-modules/) when you need a
-specific source revision or a profile the workflow does not accept.
+`source_ref` selects a branch and defaults to `master`. `source_sha` selects an exact commit and takes
+precedence over `source_ref` when both are set. The branch name must be a plain branch name; values
+that start with `refs/`, start with `-`, contain control characters, or are otherwise not a valid Git
+branch name are rejected before the build starts. A `source_sha` must be a full 40-character lowercase
+commit SHA, and the checked-out HEAD must match it or the run fails with a source revision mismatch.
+
+Building a branch or commit other than `master` means the firmware source may not match the builder
+tooling revision. The resource gate and packaging checks still run, but a successful build does not
+establish that the branch has been validated on any board, engine, or wiring setup. Use the local
+build instructions in [Build-time module profiles](../../build-modules/) when you need a profile the
+workflow does not accept.
 
 ## Artifacts
 
@@ -155,14 +167,14 @@ A successful manual run uploads an artifact named `custom-firmware-<board>` cont
 | `fome.bin` | Firmware image. |
 | `fome_update.srec` | Application update artifact, when the build produces one. |
 | `fome_<board>.ini` | Matching TunerStudio definition, when the build produces one. |
-| `manifest.json` | Requested and resolved profile, source commit, run identifiers, and SHA-256 and size for each file. |
+| `manifest.json` | Requested and resolved profile, source branch and commit, run identifiers, and SHA-256 and size for each file. |
 
 Artifacts are retained for 14 days. Download them before they expire.
 
 ## Limits and safety
 
 - Treat the firmware image and its generated INI as one matching pair. Do not pair an image with an INI from another board or build.
-- The manifest records the source commit and file hashes for traceability; it is not a cryptographic authenticity guarantee.
+- The manifest records the source branch, source commit, and file hashes for traceability; it is not a cryptographic authenticity guarantee.
 - Neither the public builder nor the manual workflow flashes an ECU. Flashing remains a separate, deliberate operation.
 - A successful build does not establish that the firmware has been validated on a particular board, engine, sensor, or wiring setup.
 - The public builder allows up to six builds per user per day.
