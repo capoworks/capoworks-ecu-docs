@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "batch_head": "c2cac408bc885760eb2a5ceb46a0ea2902f02166",
+  "previous_cursor_commit": "120668e3972fe2262cea8f73d9c3ee8efadd9a68",
+  "cursor_commit": "c2cac408bc885760eb2a5ceb46a0ea2902f02166",
+  "previous_last_sync": {
+    "range": {
+      "base_exclusive": "b80159b4b537f92849d1742f8c315f7403defdbb",
+      "head_inclusive": "120668e3972fe2262cea8f73d9c3ee8efadd9a68",
+      "commit_count": 3
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 279894,
+      "completion_tokens": 2443,
+      "total_tokens": 282337,
+      "prompt_cache_hit_tokens": 1536,
+      "prompt_cache_miss_tokens": 278358
+    },
+    "summary": "Capoworks ECU now makes battery-voltage divider calibration an explicit opt-in on fixed-divider boards. A new \"Override battery divider coefficient (advanced)\" checkbox defaults off, so each board applies its nominal divider; enabling it allows rare manual calibration against a voltmeter, and clearing it restores the board nominal. The stored tune version advances to 20034, so back up and transfer tunes using matching TunerStudio definitions.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "18ec4d69e5b0e4e93ac137709c7759958bd19528",
+        "decision": "update",
+        "rationale": "Core8 no longer forces the battery divider coefficient on every configuration write. The nominal 7.34 value is now applied only in the board defaults path, so a saved or imported Core8 divider value is preserved. This is an intermediate step; the following commit replaces it with the opt-in checkbox, so document the final behavior rather than this intermediate state.",
+        "evidence": [
+          "firmware/config/boards/core8/board_configuration.cpp: removed engineConfiguration->vbattDividerCoeff assignment from setupVbatt() and added it to setBoardDefaultConfiguration()",
+          "firmware/config/boards/core8/prepend.txt: removed #define ts_readonly_vbattDividerCoeff 1",
+          "firmware/CHANGELOG.md: added Core8 battery-voltage divider calibration entry"
+        ]
+      },
+      {
+        "commit": "b0e5bf850e65cd427f7537ae719352d166be908a",
+        "decision": "update",
+        "rationale": "Battery divider calibration is now opt-in on all fixed-divider boards. A new \"Override battery divider coefficient (advanced)\" checkbox defaults off, so each board applies its nominal divider; enabling it permits manual calibration against a voltmeter, and clearing it restores the board nominal. Invalid or out-of-range values fall back to the nominal. Changes apply after a stopped-engine Burn or after saving and rebooting. The stored tune version advances to 20034, so back up the tune and transfer values with matching TunerStudio definitions from the older schema.",
+        "evidence": [
+          "firmware/controllers/algo/engine_configuration.cpp: new setBoardBatteryVoltageDivider() enforces nominal unless enableBatteryDividerOverride is set, with 0.01-99.0 finite-range fallback",
+          "firmware/integration/fome_config.txt: added bit enableBatteryDividerOverride and FLASH_DATA_VERSION bumped 20033 to 20034",
+          "firmware/tunerstudio/tunerstudio.template.ini: batteryDialog adds override checkbox, gates coefficient field, and adds batteryDividerHelp",
+          "firmware/config/boards/*/prepend.txt: ts_readonly_vbattDividerCoeff changed to \"!enableBatteryDividerOverride\" across fixed-divider boards",
+          "firmware/config/boards/tunerstudio-protection.md: new Battery-divider calibration section",
+          "unit_tests/tests/test_battery_voltage_divider.cpp: new tests for nominal enforcement, retained calibration, restore, and invalid fallback"
+        ]
+      },
+      {
+        "commit": "120668e3972fe2262cea8f73d9c3ee8efadd9a68",
+        "decision": "no-impact",
+        "rationale": "Integration merge of the battery-divider calibration branch. Its child commits are audited separately and the merge adds no conflict-resolution changes of its own, so no additional documentation change is needed.",
+        "evidence": [
+          "Merge commit 120668e3 has parents b80159b4 and b0e5bf85 with no combined diff beyond the child commits",
+          "Merge subject: fix: require explicit opt-in for battery divider calibration"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/04-Sensors-And-Gauges/Driver-Controls-And-Feedback/Battery-Settings.md",
+      "docs/07-Advanced-Features/TunerStudio-Board-Protected-Settings.md"
+    ],
+    "recorded_at": "2026-10-27T19:32:25.689474+00:00"
+  },
+  "last_sync": {
+    "range": {
+      "base_exclusive": "120668e3972fe2262cea8f73d9c3ee8efadd9a68",
+      "head_inclusive": "c2cac408bc885760eb2a5ceb46a0ea2902f02166",
+      "commit_count": 1
+    },
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 72511,
+      "completion_tokens": 3194,
+      "total_tokens": 75705,
+      "prompt_cache_hit_tokens": 1536,
+      "prompt_cache_miss_tokens": 70975
+    },
+    "summary": "The Custom firmware build workflow can now build from a selected source branch or an exact source commit instead of always using master. The builder tooling is checked out from the trusted workflow revision and kept separate from the selected firmware source, and the package manifest records the requested branch. The on-demand build page is updated to describe the new source inputs and the limits that apply.",
+    "outcome": "update",
+    "decisions": [
+      {
+        "commit": "c2cac408bc885760eb2a5ceb46a0ea2902f02166",
+        "decision": "update",
+        "rationale": "The manual Custom firmware build workflow gains two optional inputs: source_ref (a raw branch name, default master) and source_sha (an optional full 40-character lowercase commit SHA). The workflow first checks out the trusted builder tooling from the workflow revision, validates the selectors, then checks out the selected firmware source, so builder scripts and policies no longer come from the branch being built. A requested SHA must match the checked-out HEAD or the run fails. The package manifest now records the requested branch as refs/heads/<branch> instead of a detached-HEAD null. Builders who need a specific branch or commit can now use the workflow; anyone relying on the previous fixed-master behavior should note that the default is still master. The build still does not flash an ECU and is not hardware validation.",
+        "evidence": [
+          "custom-firmware-build.yaml adds source_ref (default master) and source_sha (default '') workflow_dispatch inputs",
+          "custom-firmware-build.yaml adds 'Check out trusted builder tooling' at github.sha and copies misc/firmware_builder to $RUNNER_TEMP before 'Check out selected firmware source' with ref: ${{ inputs.source_sha || inputs.source_ref }}",
+          "custom-firmware-build.yaml 'Capture source revision' fails with 'Source revision mismatch' when INPUT_SOURCE_SHA is set and differs from HEAD",
+          "pipeline.py adds _validated_source_ref requiring a canonical refs/heads/<branch> ref and a new --source-ref argument; manifest source.ref uses it when provided",
+          "test_pipeline.py adds test_detached_head_records_explicit_source_branch, test_invalid_source_ref_creates_no_output, and test_trusted_tooling_precedes_one_selected_source_checkout"
+        ]
+      }
+    ],
+    "files_changed": [
+      "docs/10-Software/On-Demand-Firmware-Build.md"
+    ],
+    "recorded_at": "2026-10-31T14:55:36.054965+00:00"
+  }
+}
